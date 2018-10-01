@@ -7,7 +7,7 @@ Rowe Technologies Inc. Python library
 There is currently no main file to run.  This library contains core library files to create a python application.
 
 
-#Dependicencies
+# Dependencies
 Must use Python version 3.5
 
 OSX and Linux
