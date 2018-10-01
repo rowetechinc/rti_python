@@ -1,0 +1,9 @@
+rti_python ChangeLog
+
+rti_python - 1.0.1
+ - Add PD0 ensemble size calculation to Prediction Model
+
+rti_python - 1.0.0
+ - Fixed bug in Prediction model Max Velocity and Narrowband
+ - Added water absorption to Ranges in Prediction Model.
+ - Added pytest Unit testing for Prediction Model.
