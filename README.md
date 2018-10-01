@@ -20,3 +20,23 @@ Windows
 ```javascript
 python -m pip install -r requirements.txt -UI --user
 ```
+
+
+## ADCP
+All the available commands and subsystem types.  This also contains the prediction model
+
+## Codecs
+Decode the ADCP data from different formats.
+
+## Ensemble
+Ensemble data formats
+
+## Unittest
+All the unittests.
+
+
+## Waves
+Waves MATLAB formats
+
+## Writer
+Write the ensemble data to a file format.
