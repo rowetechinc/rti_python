@@ -1,6 +1,7 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 import pandas as pd
+
 
 class Correlation:
     """
@@ -38,5 +39,5 @@ class Correlation:
                 self.Correlation[bin_num][beam] = Ensemble.GetFloat(packet_pointer, Ensemble().BytesInFloat, data)
                 packet_pointer += Ensemble().BytesInFloat
 
-        logger.debug(self.Correlation)
+        logging.debug(self.Correlation)
 

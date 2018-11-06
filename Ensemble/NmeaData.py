@@ -1,6 +1,7 @@
 import pynmea2
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
+
 
 class NmeaData:
     """
@@ -75,8 +76,8 @@ class NmeaData:
                     self.GPHDG = nmea_msg
 
             except Exception:
-                logger.debug("Error decoding NMEA msg")
+                logging.debug("Error decoding NMEA msg")
 
-        logger.debug(nmea_str)
-        logger.debug(self.nmea_sentences)
+        logging.debug(nmea_str)
+        logging.debug(self.nmea_sentences)
 

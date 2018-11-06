@@ -1,5 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 
 class GoodEarth:
@@ -39,5 +39,5 @@ class GoodEarth:
                 self.GoodEarth[bin_num][beam] = Ensemble.GetInt32(packet_pointer, Ensemble().BytesInInt32, data)
                 packet_pointer += Ensemble().BytesInInt32
 
-        logger.debug(self.GoodEarth)
+        logging.debug(self.GoodEarth)
 

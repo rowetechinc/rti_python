@@ -1,5 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 
 class SystemSetup:
@@ -70,27 +70,27 @@ class SystemSetup:
             self.WpTransmitBandwidth = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 19, Ensemble().BytesInFloat, data)
             self.WpReceiveBandwidth = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 20, Ensemble().BytesInFloat, data)
 
-        logger.debug(self.BtSamplesPerSecond)
-        logger.debug(self.BtSystemFreqHz)
-        logger.debug(self.BtCPCE)
-        logger.debug(self.BtNCE)
-        logger.debug(self.BtRepeatN)
-        logger.debug(self.WpSamplesPerSecond)
-        logger.debug(self.WpSystemFreqHz)
-        logger.debug(self.WpCPCE)
-        logger.debug(self.WpNCE)
-        logger.debug(self.WpRepeatN)
-        logger.debug(self.WpLagSamples)
-        logger.debug(self.Voltage)
-        logger.debug(self.XmtVoltage)
-        logger.debug(self.BtBroadband)
-        logger.debug(self.BtLagLength)
-        logger.debug(self.BtNarrowband)
-        logger.debug(self.BtBeamMux)
-        logger.debug(self.WpBroadband)
-        logger.debug(self.WpLagLength)
-        logger.debug(self.WpTransmitBandwidth)
-        logger.debug(self.WpReceiveBandwidth)
+        logging.debug(self.BtSamplesPerSecond)
+        logging.debug(self.BtSystemFreqHz)
+        logging.debug(self.BtCPCE)
+        logging.debug(self.BtNCE)
+        logging.debug(self.BtRepeatN)
+        logging.debug(self.WpSamplesPerSecond)
+        logging.debug(self.WpSystemFreqHz)
+        logging.debug(self.WpCPCE)
+        logging.debug(self.WpNCE)
+        logging.debug(self.WpRepeatN)
+        logging.debug(self.WpLagSamples)
+        logging.debug(self.Voltage)
+        logging.debug(self.XmtVoltage)
+        logging.debug(self.BtBroadband)
+        logging.debug(self.BtLagLength)
+        logging.debug(self.BtNarrowband)
+        logging.debug(self.BtBeamMux)
+        logging.debug(self.WpBroadband)
+        logging.debug(self.WpLagLength)
+        logging.debug(self.WpTransmitBandwidth)
+        logging.debug(self.WpReceiveBandwidth)
 
 
 

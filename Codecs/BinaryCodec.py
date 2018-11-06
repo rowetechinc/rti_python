@@ -1,25 +1,25 @@
 import struct
 import abc
-from Utilities.events import EventHandler
+from rti_python.Utilities.events import EventHandler
 
-from Ensemble.Ensemble import Ensemble
-from Ensemble.BeamVelocity import BeamVelocity
-from Ensemble.InstrumentVelocity import InstrumentVelocity
-from Ensemble.EarthVelocity import EarthVelocity
-from Ensemble.Amplitude import Amplitude
-from Ensemble.Correlation import Correlation
-from Ensemble.GoodBeam import GoodBeam
-from Ensemble.GoodEarth import GoodEarth
-from Ensemble.EnsembleData import EnsembleData
-from Ensemble.AncillaryData import AncillaryData
-from Ensemble.BottomTrack import BottomTrack
-from Ensemble.NmeaData import NmeaData
-from Ensemble.RangeTracking import RangeTracking
-from Ensemble.SystemSetup import SystemSetup
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.Ensemble.BeamVelocity import BeamVelocity
+from rti_python.Ensemble.InstrumentVelocity import InstrumentVelocity
+from rti_python.Ensemble.EarthVelocity import EarthVelocity
+from rti_python.Ensemble.Amplitude import Amplitude
+from rti_python.Ensemble.Correlation import Correlation
+from rti_python.Ensemble.GoodBeam import GoodBeam
+from rti_python.Ensemble.GoodEarth import GoodEarth
+from rti_python.Ensemble.EnsembleData import EnsembleData
+from rti_python.Ensemble.AncillaryData import AncillaryData
+from rti_python.Ensemble.BottomTrack import BottomTrack
+from rti_python.Ensemble.NmeaData import NmeaData
+from rti_python.Ensemble.RangeTracking import RangeTracking
+from rti_python.Ensemble.SystemSetup import SystemSetup
 
 from PyCRC.CRCCCITT import CRCCCITT
 
-from log import logger
+from rti_python.log import logger as logging
 
 
 class WaveBurstInfo:
@@ -105,7 +105,7 @@ class BinaryCodec:
             #print("Checksum good: ", calcChecksum == checksum[0])
 
             if checksum[0] == calcChecksum:
-                logger.debug(ensNum[0])
+                logging.debug(ensNum[0])
                 try:
                     # Decode data
                     ensemble = self.decode_data_sets(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payloadSize[0]])
@@ -113,7 +113,7 @@ class BinaryCodec:
                     # ************************
                     self.process_ensemble(ensemble)
                 except Exception as e:
-                    logger.error("Error decoding ensemble. ", e)
+                    logging.error("Error decoding ensemble. ", e)
 
             # Remove ensemble from buffer
             ensEnd = ensStart + Ensemble().HeaderSize + payloadSize[0] + Ensemble().ChecksumSize
@@ -165,95 +165,94 @@ class BinaryCodec:
 
             # Beam Velocity
             if "E000001" in name:
-                logger.debug(name)
+                logging.debug(name)
                 bv = BeamVelocity(num_elements, element_multiplier)
                 bv.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddBeamVelocity(bv)
 
             # Instrument Velocity
             if "E000002" in name:
-                logger.debug(name)
+                logging.debug(name)
                 iv = InstrumentVelocity(num_elements, element_multiplier)
                 iv.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddInstrumentVelocity(iv)
 
             # Earth Velocity
             if "E000003" in name:
-                logger.debug(name)
+                logging.debug(name)
                 ev = EarthVelocity(num_elements, element_multiplier)
                 ev.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddEarthVelocity(ev)
 
             # Amplitude
             if "E000004" in name:
-                logger.debug(name)
+                logging.debug(name)
                 amp = Amplitude(num_elements, element_multiplier)
                 amp.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddAmplitude(amp)
 
             # Correlation
             if "E000005" in name:
-                logger.debug(name)
+                logging.debug(name)
                 corr = Correlation(num_elements, element_multiplier)
                 corr.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddCorrelation(corr)
 
             # Good Beam
             if "E000006" in name:
-                logger.debug(name)
+                logging.debug(name)
                 gb = GoodBeam(num_elements, element_multiplier)
                 gb.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddGoodBeam(gb)
 
             # Good Earth
             if "E000007" in name:
-                logger.debug(name)
+                logging.debug(name)
                 ge = GoodEarth(num_elements, element_multiplier)
                 ge.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddGoodEarth(ge)
 
             # Ensemble Data
             if "E000008" in name:
-                logger.debug(name)
+                logging.debug(name)
                 ed = EnsembleData(num_elements, element_multiplier)
                 ed.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddEnsembleData(ed)
 
             # Ancillary Data
             if "E000009" in name:
-                logger.debug(name)
+                logging.debug(name)
                 ad = AncillaryData(num_elements, element_multiplier)
                 ad.decode(ens[packetPointer:packetPointer+data_set_size])
                 ensemble.AddAncillaryData(ad)
 
             # Bottom Track
             if "E000010" in name:
-                logger.debug(name)
+                logging.debug(name)
                 bt = BottomTrack(num_elements, element_multiplier)
                 bt.decode(ens[packetPointer:packetPointer + data_set_size])
                 ensemble.AddBottomTrack(bt)
 
             # NMEA data
             if "E000011" in name:
-                logger.debug(name)
+                logging.debug(name)
                 nd = NmeaData(num_elements, element_multiplier)
                 nd.decode(ens[packetPointer:packetPointer + data_set_size])
                 ensemble.AddNmeaData(nd)
 
             # System Setup
             if "E000014" in name:
-                logger.debug(name)
+                logging.debug(name)
                 ss = SystemSetup(num_elements, element_multiplier)
                 ss.decode(ens[packetPointer:packetPointer + data_set_size])
                 ensemble.AddSystemSetup(ss)
 
             # Range Tracking
             if "E000015" in name:
-                logger.debug(name)
+                logging.debug(name)
                 rt = RangeTracking(num_elements, element_multiplier)
                 rt.decode(ens[packetPointer:packetPointer + data_set_size])
                 ensemble.AddRangeTracking(rt)
-
 
             # Move to the next dataset
             packetPointer += data_set_size

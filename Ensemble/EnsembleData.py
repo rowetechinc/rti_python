@@ -1,6 +1,6 @@
 import struct
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 from datetime import datetime
 
 
@@ -68,11 +68,11 @@ class EnsembleData:
 
         self.SubsystemConfig = struct.unpack("B", data[packet_pointer + Ensemble().BytesInInt32 * 22 + 3:packet_pointer + Ensemble().BytesInInt32 * 22 + 4])[0]
 
-        logger.debug(self.EnsembleNumber)
-        logger.debug(str(self.Month) + "/" + str(self.Day) + "/" + str(self.Year) + "  " + str(self.Hour) + ":" + str(self.Minute) + ":" + str(self.Second) + "." + str(self.HSec))
-        logger.debug(self.SerialNumber)
-        logger.debug(str(self.SysFirmwareMajor) + "." + str(self.SysFirmwareMinor) + "." + str(self.SysFirmwareRevision) + "-" + str(self.SysFirmwareSubsystemCode))
-        logger.debug(self.SubsystemConfig)
+        logging.debug(self.EnsembleNumber)
+        logging.debug(str(self.Month) + "/" + str(self.Day) + "/" + str(self.Year) + "  " + str(self.Hour) + ":" + str(self.Minute) + ":" + str(self.Second) + "." + str(self.HSec))
+        logging.debug(self.SerialNumber)
+        logging.debug(str(self.SysFirmwareMajor) + "." + str(self.SysFirmwareMinor) + "." + str(self.SysFirmwareRevision) + "-" + str(self.SysFirmwareSubsystemCode))
+        logging.debug(self.SubsystemConfig)
 
     def datetime_str(self):
         """

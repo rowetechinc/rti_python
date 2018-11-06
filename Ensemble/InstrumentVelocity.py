@@ -1,6 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
-
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 class InstrumentVelocity:
     """
@@ -38,4 +37,4 @@ class InstrumentVelocity:
                 self.Velocities[bin_num][beam] = Ensemble.GetFloat(packetpointer, Ensemble().BytesInFloat, data)
                 packetpointer += Ensemble().BytesInFloat
 
-        logger.debug(self.Velocities)
+        logging.debug(self.Velocities)

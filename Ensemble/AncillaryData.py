@@ -1,5 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 
 class AncillaryData:
@@ -62,13 +62,13 @@ class AncillaryData:
             self.RollGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 15, Ensemble().BytesInFloat, data)
             self.VerticalGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 16, Ensemble().BytesInFloat, data)
 
-        logger.debug(self.FirstBinRange)
-        logger.debug(self.BinSize)
-        logger.debug(self.Heading)
-        logger.debug(self.Pitch)
-        logger.debug(self.Roll)
-        logger.debug(self.Salinity)
-        logger.debug(self.SpeedOfSound)
+        logging.debug(self.FirstBinRange)
+        logging.debug(self.BinSize)
+        logging.debug(self.Heading)
+        logging.debug(self.Pitch)
+        logging.debug(self.Roll)
+        logging.debug(self.Salinity)
+        logging.debug(self.SpeedOfSound)
 
 
 

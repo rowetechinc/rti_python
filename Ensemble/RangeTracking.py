@@ -1,5 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 
 class RangeTracking:
@@ -150,15 +150,15 @@ class RangeTracking:
                 self.InstrumentVelocity.append(Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 7, Ensemble().BytesInFloat, data))
                 self.EarthVelocity.append(Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 8, Ensemble().BytesInFloat, data))
 
-        logger.debug(self.NumBeams)
-        logger.debug(self.SNR)
-        logger.debug(self.Range)
-        logger.debug(self.Pings)
-        logger.debug(self.Amplitude)
-        logger.debug(self.Correlation)
-        logger.debug(self.BeamVelocity)
-        logger.debug(self.InstrumentVelocity)
-        logger.debug(self.EarthVelocity)
+        logging.debug(self.NumBeams)
+        logging.debug(self.SNR)
+        logging.debug(self.Range)
+        logging.debug(self.Pings)
+        logging.debug(self.Amplitude)
+        logging.debug(self.Correlation)
+        logging.debug(self.BeamVelocity)
+        logging.debug(self.InstrumentVelocity)
+        logging.debug(self.EarthVelocity)
 
 
 

@@ -1,5 +1,5 @@
-from Ensemble.Ensemble import Ensemble
-from log import logger
+from rti_python.Ensemble.Ensemble import Ensemble
+from rti_python.log import logger as logging
 
 
 class GoodBeam:
@@ -39,5 +39,5 @@ class GoodBeam:
                 self.GoodBeam[bin_num][beam] = Ensemble.GetInt32(packet_pointer, Ensemble().BytesInInt32, data)
                 packet_pointer += Ensemble().BytesInInt32
 
-        logger.debug(self.GoodBeam)
+        logging.debug(self.GoodBeam)
 
