@@ -163,14 +163,14 @@ class BottomTrack:
                 self.Corr_PulseCoherent.append(0.0)
 
 
-        logger.debug(self.FirstPingTime)
-        logger.debug(self.LastPingTime)
-        logger.debug(self.Heading)
-        logger.debug(self.Pitch)
-        logger.debug(self.Roll)
-        logger.debug(self.Salinity)
-        logger.debug(self.SpeedOfSound)
-        logger.debug(self.EarthVelocity)
+        logging.debug(self.FirstPingTime)
+        logging.debug(self.LastPingTime)
+        logging.debug(self.Heading)
+        logging.debug(self.Pitch)
+        logging.debug(self.Roll)
+        logging.debug(self.Salinity)
+        logging.debug(self.SpeedOfSound)
+        logging.debug(self.EarthVelocity)
 
 
 
