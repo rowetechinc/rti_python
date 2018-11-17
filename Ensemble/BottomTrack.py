@@ -174,3 +174,15 @@ class BottomTrack:
 
 
 
+    def avg_range(self):
+        # Average the ranges
+        range_count = 0
+        range_accum = 0.0
+        for beam in range(int(self.NumBeams)):
+            if self.Range[beam] > 0.0:
+                range_count += 1
+                range_accum += self.Range[beam]
+        if range_count > 0:
+            return range_accum / range_count
+        else:
+            return 0.0
