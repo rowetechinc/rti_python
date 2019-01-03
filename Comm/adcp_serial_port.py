@@ -3,6 +3,7 @@ from serial import threaded
 import sys
 import glob
 import time
+import logging
 
 
 class AdcpSerialPort:
@@ -20,19 +21,18 @@ class AdcpSerialPort:
                                         parity=parity,
                                         stopbits=stopbits)
 
+        if not self.raw_serial.is_open:
+            self.raw_serial.open()
+            logging.error("Serial Port could not be opened")
+        else:
+            logging.debug("Serial Port Connected")
+
+        logging.debug(self.raw_serial.get_settings())
+
         #self.protocol = serial.threaded.ReaderThread(self.serial, AdcpSerialPort.ReadHandler)
 
     def send_break(self, break_len=1.25):
         self.raw_serial.send_break(break_len)
-
-    def connect(self):
-        if not self.raw_serial.is_open:
-            self.raw_serial.open()
-            print("Serial Port connected and open")
-        else:
-            print("Serial Port already connected")
-
-        print(self.raw_serial.get_settings())
 
     def disconnect(self):
         self.raw_serial.close()
@@ -80,11 +80,11 @@ class AdcpSerialPort:
 
         def connection_made(self, transport):
             self.received_lines.append(transport)
-            print("Connection made at: " + str(transport))
+            logging.debug("Connection made at: " + str(transport))
 
         def connection_lost(self, exc):
             self.received_lines.append(exc)
-            print("Connection lost: " + str(exc))
+            logging.debug("Connection lost: " + str(exc))
 
 
 
