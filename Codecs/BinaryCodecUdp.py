@@ -1,12 +1,12 @@
 import socket
 import datetime
 
-from log import logger
+from rti_python.log import logger
 
-from Codecs.BinaryCodec import BinaryCodec
-from Ensemble.Ensemble import Ensemble
+from rti_python.Codecs.BinaryCodec import BinaryCodec
+from rti_python.Ensemble.Ensemble import Ensemble
 
-from Utilities.events import EventHandler
+from rti_python.Utilities.events import EventHandler
 
 
 class EnsembleMetaData:

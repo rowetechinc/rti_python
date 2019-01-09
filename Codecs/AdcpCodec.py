@@ -1,8 +1,8 @@
 import logging
-from Codecs.BinaryCodec import BinaryCodec
-from Codecs.BinaryCodecUdp import BinaryCodecUdp
-from Codecs.WaveForceCodec import WaveForceCodec
-from Utilities.events import EventHandler
+from rti_python.Codecs.BinaryCodec import BinaryCodec
+from rti_python.Codecs.BinaryCodecUdp import BinaryCodecUdp
+from rti_python.Codecs.WaveForceCodec import WaveForceCodec
+from rti_python.Utilities.events import EventHandler
 
 logger = logging.getLogger("ADCP Codec")
 logger.setLevel(logging.ERROR)
