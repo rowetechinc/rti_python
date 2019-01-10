@@ -122,7 +122,8 @@ class BinaryCodec:
     @abc.abstractmethod
     def process_ensemble(self, ens):
         # Pass to event handler
-        self.EnsembleEvent(ens)
+        #self.EnsembleEvent(ens)
+        logging.debug("Ensemble Processed")
 
     def decode_data_sets(self, ens):
         """
