@@ -16,10 +16,8 @@ from rti_python.Ensemble.BottomTrack import BottomTrack
 from rti_python.Ensemble.NmeaData import NmeaData
 from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
-
 from PyCRC.CRCCCITT import CRCCCITT
-
-from rti_python.log import logger as logging
+import logging
 
 
 class WaveBurstInfo:

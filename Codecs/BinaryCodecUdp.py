@@ -1,7 +1,7 @@
 import socket
 import datetime
 
-from rti_python.log import logger
+import logging
 
 from rti_python.Codecs.BinaryCodec import BinaryCodec
 from rti_python.Ensemble.Ensemble import Ensemble
@@ -52,7 +52,7 @@ class BinaryCodecUdp(BinaryCodec):
         # Set ProjectInfo
         #self.ProjectInfo = ProjectInfo()
 
-        logger.info("Binary codec - UDP Port: " + str(udp_port))
+        logging.info("Binary codec - UDP Port: " + str(udp_port))
 
         # Create socket
         self.udp_port = udp_port                                        # UDP Port
@@ -67,11 +67,11 @@ class BinaryCodecUdp(BinaryCodec):
             # Stream data
             self.stream_data(ensemble)
 
-            logger.debug("Stream ensemble data")
+            logging.debug("Stream ensemble data")
         except ConnectionRefusedError as err:
-            logger.error("Error streaming ensemble data", err)
+            logging.error("Error streaming ensemble data", err)
         except Exception as err:
-            logger.error("Error streaming ensemble data", err)
+            logging.error("Error streaming ensemble data", err)
 
     def stream_data(self, ens):
         """
@@ -101,7 +101,7 @@ class BinaryCodecUdp(BinaryCodec):
                 # Stream the data
                 ens.EnsembleData.DateTime = date_time
             else:
-                logger.error("BAD Date and Time: " + str(ensemble_number))
+                logging.error("BAD Date and Time: " + str(ensemble_number))
 
             ens.EnsembleData.Meta = self.Meta
             self.send_udp(Ensemble().toJSON(ens.EnsembleData).encode())

@@ -1,6 +1,6 @@
 import struct
 from rti_python.Ensemble.Ensemble import Ensemble
-from rti_python.log import logger as logging
+import logging
 from datetime import datetime
 
 

@@ -11,9 +11,9 @@ class RtiLogger:
     logging.debug("DEBUG MESSAGE")
     """
 
-    def __init__(self, file_path=None, log_format='[%(levelname)s] [%(asctime)s] (%(threadName)-10s) %(message)s'):
+    def __init__(self, file_path=None, log_level=logging.DEBUG, log_format='[%(levelname)s] [%(asctime)s] (%(threadName)-10s) %(message)s'):
         # Set the logging level
-        logging.basicConfig(level=logging.DEBUG,
+        logging.basicConfig(level=log_level,
                             format=log_format)
 
         # If a file path is given, then also log to a file
