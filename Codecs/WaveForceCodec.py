@@ -3,6 +3,7 @@ import os
 import struct
 import threading
 from rti_python.Waves.WaveEnsemble import WaveEnsemble
+from obsub import event
 
 
 class WaveForceCodec:
@@ -13,21 +14,20 @@ class WaveForceCodec:
     def __init__(self):
         self.Lat = 0.0
         self.Lon = 0.0
-        self.EnsInBurst = 0
-        self.FilePath = ""
-        self.EnsInBurst = 0
+        self.EnsInBurst = 2048
+        self.FilePath = "C:\RTI_Capture"
         self.Buffer = []
         self.BufferCount = 0
         self.RecordCount = 0
-        self.Bin1 = 0
-        self.Bin2 = 0
-        self.Bin3 = 0
-        self.PressureSensorDepth = 0
+        self.Bin1 = 3
+        self.Bin2 = 4
+        self.Bin3 = 5
+        self.PressureSensorDepth = 30
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
         self.selected_bin = []
 
-    def init(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth):
+    def init(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -65,14 +65,14 @@ class WaveForceCodec:
         :param ens: Ensemble to buffer.
         """
         if self.EnsInBurst > 0:
-            logger.debug("Added Ensemble to burst")
+            logging.debug("Added Ensemble to burst")
 
             # Add to the buffer
             self.Buffer.append(ens)
             self.BufferCount += 1
 
             # Process the buffer when a burst is complete
-            if self.BufferCount == self.EnsInBurst:
+            if self.BufferCount >= self.EnsInBurst:
                 # Get the ensembles from the buffer
                 ens_buff = self.Buffer[0:self.EnsInBurst]
 
@@ -83,6 +83,10 @@ class WaveForceCodec:
                 # Process the buffer
                 th = threading.Thread(target=self.process, args=[ens_buff])
                 th.start()
+
+    @event
+    def process_data_event(self, file_name):
+        logging.debug("Wave Codec Process Data" + file_name)
 
     def process(self, ens_buff):
         """
@@ -232,10 +236,13 @@ class WaveForceCodec:
         ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
 
         # Write the file
-        self.write_file(ba)
+        filename = self.write_file(ba)
 
         # Increment the record count
         self.RecordCount += 1
+
+        # Send event that file process complete
+        self.process_data_event(filename)
 
     def write_file(self, ba):
         """
@@ -247,9 +254,11 @@ class WaveForceCodec:
         if not os.path.isdir(self.FilePath):
             os.mkdir(self.FilePath)
 
-        filename = self.FilePath + "D0000" + str(self.RecordCount) + ".mat"
+        filename = self.FilePath + os.sep + "D0000" + str(self.RecordCount) + ".mat"
         with open(filename, 'wb') as f:
             f.write(ba)
+
+        return filename
 
     def process_txt(self, ens):
         """

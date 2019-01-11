@@ -3,7 +3,7 @@ from rti_python.Codecs.BinaryCodec import BinaryCodec
 from rti_python.Codecs.BinaryCodecUdp import BinaryCodecUdp
 from rti_python.Codecs.WaveForceCodec import WaveForceCodec
 from rti_python.Utilities.events import EventHandler
-
+from obsub import event
 
 class AdcpCodec:
     """
@@ -48,6 +48,7 @@ class AdcpCodec:
         :return:
         """
 
+        self.WaveForceCodec.process_data_event += self.process_wave_data
         self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth)
         self.IsWfcEnabled = True
 
@@ -68,5 +69,9 @@ class AdcpCodec:
         # Pass ensemble to all subscribers of the ensemble data.
         self.EnsembleEvent(ens)
 
+
+    @event
+    def process_wave_data(self, sender, file_name):
+        logging.debug("ADCP Wave Codec Process Data" + file_name)
 
 

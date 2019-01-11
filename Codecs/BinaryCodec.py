@@ -44,6 +44,9 @@ class BinaryCodec:
     def __init__(self):
         self.buffer = bytearray()
 
+        self.MAX_TIMEOUT = 5
+        self.timeout = 0
+
         self.EnsembleEvent = EventHandler(self)
 
     def add(self, data):
@@ -90,6 +93,9 @@ class BinaryCodec:
 
         # Ensure the entire ensemble is in the buffer
         if len(self.buffer) >= ensStart + Ensemble().HeaderSize + payloadSize[0] + Ensemble().ChecksumSize:
+            # Reset timeout
+            self.timeout = 0
+
             # Check checksum
             checksumLoc = ensStart + Ensemble().HeaderSize + payloadSize[0]
             checksum = struct.unpack("I", self.buffer[checksumLoc:checksumLoc + Ensemble().ChecksumSize])
@@ -116,6 +122,13 @@ class BinaryCodec:
             # Remove ensemble from buffer
             ensEnd = ensStart + Ensemble().HeaderSize + payloadSize[0] + Ensemble().ChecksumSize
             del self.buffer[0:ensEnd]
+        else:
+            # If the header is bad
+            # give it a couple tries to see if more data will come in to make the header good
+            self.timeout += 1
+            if self.timeout > self.MAX_TIMEOUT:
+                del self.buffer[0]
+                logging.warning("Bad Ensemble header found")
 
     @abc.abstractmethod
     def process_ensemble(self, ens):

@@ -9,11 +9,11 @@ class RtiBinaryWriter:
     def __init__(self, file_path=None, header="RTI_", extension=".ens"):
 
         if file_path:
-            self.file = open(file_path, "a+")
+            self.file = open(file_path, "wb")
         else:
             folder_path = "C:\\RTI_Capture\\"
             file_path = self.create_file_name(folder_path, header=header, extension=extension)
-            self.file = open(file_path, "a+")
+            self.file = open(file_path, "wb")
 
         self.bytes_written = 0
 
