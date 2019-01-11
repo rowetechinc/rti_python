@@ -4,11 +4,6 @@ from rti_python.Codecs.BinaryCodecUdp import BinaryCodecUdp
 from rti_python.Codecs.WaveForceCodec import WaveForceCodec
 from rti_python.Utilities.events import EventHandler
 
-logger = logging.getLogger("ADCP Codec")
-logger.setLevel(logging.ERROR)
-FORMAT = '[%(asctime)-15s][%(levelname)s][%(name)s:%(funcName)s] %(message)s'
-logging.basicConfig(format=FORMAT)
-
 
 class AdcpCodec:
     """
@@ -63,11 +58,11 @@ class AdcpCodec:
         codec to process.
         :param ens: Ensemble data.
         """
-        logger.debug("Received processed ensemble")
+        logging.debug("Received processed ensemble")
 
         # If the WaveForce codec is enabled, then pass the ensemble data to the WaveForce codec
         if self.IsWfcEnabled:
-            logger.debug("Send to WaveForce Codec")
+            logging.debug("Send to WaveForce Codec")
             self.WaveForceCodec.add(ens)
 
         # Pass ensemble to all subscribers of the ensemble data.

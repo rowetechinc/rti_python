@@ -4,11 +4,6 @@ import struct
 import threading
 from rti_python.Waves.WaveEnsemble import WaveEnsemble
 
-logger = logging.getLogger("WaveForce Codec")
-logger.setLevel(logging.ERROR)
-FORMAT = '[%(asctime)-15s][%(levelname)s][%(name)s:%(funcName)s] %(message)s'
-logging.basicConfig(format=FORMAT)
-
 
 class WaveForceCodec:
     """
@@ -94,7 +89,7 @@ class WaveForceCodec:
         Process all the data in the ensemble buffer.
         :param ens_buff: Ensemble data buffer.
         """
-        logger.debug("Process Waves Burst")
+        logging.debug("Process Waves Burst")
 
         # Local variables
         num_bins = len(self.selected_bin)
