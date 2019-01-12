@@ -51,12 +51,34 @@ class WaveForceCodec:
         self.PressureSensorDepth = ps_depth
         self.RecordCount = 0
 
+        self.selected_bin.clear()
         self.selected_bin.append(bin1)
         self.selected_bin.append(bin2)
         self.selected_bin.append(bin3)
 
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
+
+    def update_settings(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30):
+        """
+        Update the settings for the codec.
+        :param ens_in_burst: Number of ensembles in a burst.
+        :param path: File path to store the file.
+        :param lat: Latitude data.
+        :param lon: Longitude data.
+        :param bin1: First selected bin.
+        :param bin2: Second selected bin.
+        :param bin3: Third selected bin.
+        :param ps_depth Pressure Sensor depth.  Depth of the ADCP.
+        """
+        self.EnsInBurst = ens_in_burst
+        self.FilePath = path
+        self.Lat = lat
+        self.Lon = lon
+        self.Bin1 = bin1
+        self.Bin2 = bin2
+        self.Bin3 = bin3
+        self.PressureSensorDepth = ps_depth
 
     def add(self, ens):
         """

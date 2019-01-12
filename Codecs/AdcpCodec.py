@@ -5,6 +5,7 @@ from rti_python.Codecs.WaveForceCodec import WaveForceCodec
 from rti_python.Utilities.events import EventHandler
 from obsub import event
 
+
 class AdcpCodec:
     """
     ADCP Codec will decode the 
@@ -52,6 +53,22 @@ class AdcpCodec:
         self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth)
         self.IsWfcEnabled = True
 
+    def update_settings_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth):
+        """
+        Update the settings in the Waveforce codec.
+        :param ens_in_burst: Ensembles in a burst.
+        :param path: Path to record the burst matlab files.
+        :param lat: Latitude where data was recorded.
+        :param lon: Longitude where data was recorded.
+        :param bin1: First bin to measure.
+        :param bin2: Second bin to measure.
+        :param bin3: Third bin to measure.
+        :param ps_depth: Pressure sensor depth.
+        :return:
+        """
+
+        self.WaveForceCodec.update_settings(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth)
+
     def process_ensemble(self, sender, ens):
         """
         Take the ensemble from the codec and pass it to all the subscribers.
@@ -69,9 +86,11 @@ class AdcpCodec:
         # Pass ensemble to all subscribers of the ensemble data.
         self.EnsembleEvent(ens)
 
-
-    @event
     def process_wave_data(self, sender, file_name):
+        # Handle the waves data
+        self.publish_waves_event(file_name)
         logging.debug("ADCP Wave Codec Process Data" + file_name)
 
-
+    @event
+    def publish_waves_event(self, file_name):
+        logging.debug("Publish waves event" + file_name)
