@@ -9,3 +9,4 @@ pyinstaller
 scipy
 pynmea2
 obsub
+configparser
