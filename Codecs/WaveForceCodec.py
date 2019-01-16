@@ -253,7 +253,7 @@ class WaveForceCodec:
         ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
         ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
 
-        ba.extend(self.process_wz0(beam_3_vel, num_vert_ens, num_bins))     # [WZ0] Vertical Beam Beam Velocity
+        ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
         ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
         ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
 
