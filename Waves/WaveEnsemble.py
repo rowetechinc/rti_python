@@ -277,14 +277,14 @@ class WaveEnsemble:
 
         # Create enough entries for all the bins or (bins x beams)
         # Initialize with bad values
-        for bins in range(num_bins):
+        for selected_bin in selected_bins:
             beam_data = []
             for beam in range(num_beams):
                 # Vertical Beam velocity
                 if ens.IsBeamVelocity and ens.IsCorrelation:
                     # Check the correlation against the correlation threshold
-                    if ens.Correlation.Correlation[selected_bins[bins]][beam] >= corr_thresh:
-                        beam_data.append(ens.BeamVelocity.Velocities[selected_bins[bins]][beam])
+                    if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
+                        beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
                     else:
 
                         beam_data.append(Ensemble.BadVelocity)
@@ -294,9 +294,9 @@ class WaveEnsemble:
 
             # Earth Velocity
             if ens.IsEarthVelocity:
-                self.east_vel.append(ens.EarthVelocity.Velocities[selected_bins[bins]][0])
-                self.north_vel.append(ens.EarthVelocity.Velocities[selected_bins[bins]][1])
-                self.vertical_vel.append(ens.EarthVelocity.Velocities[selected_bins[bins]][2])
+                self.east_vel.append(ens.EarthVelocity.Velocities[selected_bin][0])
+                self.north_vel.append(ens.EarthVelocity.Velocities[selected_bin][1])
+                self.vertical_vel.append(ens.EarthVelocity.Velocities[selected_bin][2])
 
         avg_range_ct = 0
         avg_range = 0.0

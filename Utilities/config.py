@@ -97,6 +97,15 @@ class RtiConfig:
             self.config['Waves'] = {}
             self.config['Waves']['output_dir'] = os.path.expanduser('~')
             self.config['Waves']['ens_in_burst'] = '2048'
+            self.config['Waves']['selected_bin_1'] = '1'
+            self.config['Waves']['selected_bin_2'] = '3'
+            self.config['Waves']['selected_bin_3'] = '5'
+            self.config['Waves']['corr_thresh'] = '0.25'
+            self.config['Waves']['height_source'] = 'vertical'
+            self.config['Waves']['pressure_sensor_height'] = '0.0'
+            self.config['Waves']['pressure_sensor_offset'] = '0.0'
+            self.config['Waves']['latitude'] = '0.0'
+            self.config['Waves']['longitude'] = '0.0'
 
             self.write()
 
@@ -109,5 +118,38 @@ class RtiConfig:
             self.config['Waves']['ens_in_burst'] = '2048'
             self.write()
 
+        if not self.config.has_option('Waves', 'selected_bin_1'):
+            self.config['Waves']['selected_bin_1'] = '1'
+            self.write()
 
+        if not self.config.has_option('Waves', 'selected_bin_2'):
+            self.config['Waves']['selected_bin_2'] = '3'
+            self.write()
 
+        if not self.config.has_option('Waves', 'selected_bin_3'):
+            self.config['Waves']['selected_bin_3'] = '5'
+            self.write()
+
+        if not self.config.has_option('Waves', 'corr_thresh'):
+            self.config['Waves']['corr_thresh'] = '0.25'
+            self.write()
+
+        if not self.config.has_option('Waves', 'height_source'):
+            self.config['Waves']['height_source'] = 'vertical'
+            self.write()
+
+        if not self.config.has_option('Waves', 'pressure_sensor_height'):
+            self.config['Waves']['pressure_sensor_height'] = '0.0'
+            self.write()
+
+        if not self.config.has_option('Waves', 'pressure_sensor_offset'):
+            self.config['Waves']['pressure_sensor_offset'] = '0.0'
+            self.write()
+
+        if not self.config.has_option('Waves', 'latitude'):
+            self.config['Waves']['latitude'] = '0.0'
+            self.write()
+
+        if not self.config.has_option('Waves', 'longitude'):
+            self.config['Waves']['longitude'] = '0.0'
+            self.write()
