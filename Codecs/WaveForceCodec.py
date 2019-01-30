@@ -276,9 +276,24 @@ class WaveForceCodec:
         if not os.path.isdir(self.FilePath):
             os.mkdir(self.FilePath)
 
-        filename = self.FilePath + os.sep + "D0000" + str(self.RecordCount) + ".mat"
+        filename = self.find_file_name()
         with open(filename, 'wb') as f:
             f.write(ba)
+
+        return filename
+
+    def find_file_name(self):
+        """
+        Create a file name D00001.mat.
+        Verify the file does not exist, if it
+        exist, increment the index.
+        :return: New file name
+        """
+        filename = self.FilePath + os.sep + "D" + str(self.RecordCount).zfill(5) + ".mat"
+
+        while os.path.isfile(filename):
+            self.RecordCount += 1
+            filename = self.FilePath + os.sep + "D" + str(self.RecordCount).zfill(5) + ".mat"
 
         return filename
 
