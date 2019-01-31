@@ -52,9 +52,12 @@ class WaveForceCodec:
         self.RecordCount = 0
 
         self.selected_bin.clear()
-        self.selected_bin.append(bin1)
-        self.selected_bin.append(bin2)
-        self.selected_bin.append(bin3)
+        if bin1 >= 0:
+            self.selected_bin.append(bin1)
+        if bin2 >= 0:
+            self.selected_bin.append(bin2)
+        if bin3 >= 0:
+            self.selected_bin.append(bin3)
 
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
@@ -79,6 +82,14 @@ class WaveForceCodec:
         self.Bin2 = bin2
         self.Bin3 = bin3
         self.PressureSensorDepth = ps_depth
+
+        self.selected_bin.clear()
+        if bin1 >= 0:
+            self.selected_bin.append(bin1)
+        if bin2 >= 0:
+            self.selected_bin.append(bin2)
+        if bin3 >= 0:
+            self.selected_bin.append(bin3)
 
     def add(self, ens):
         """
