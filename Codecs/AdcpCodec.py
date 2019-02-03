@@ -34,7 +34,7 @@ class AdcpCodec:
         """
         self.binary_codec.add(data)
 
-    def enable_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth):
+    def enable_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source):
         """
         Enable the WaveForce codec.  This data will be encoded
         into the Matlab format.
@@ -46,14 +46,15 @@ class AdcpCodec:
         :param bin2: Second bin to measure.
         :param bin3: Third bin to measure.
         :param ps_depth: Pressure sensor depth.
+        :param height_source Height source selected.
         :return:
         """
 
         self.WaveForceCodec.process_data_event += self.process_wave_data
-        self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth)
+        self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source)
         self.IsWfcEnabled = True
 
-    def update_settings_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth):
+    def update_settings_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source):
         """
         Update the settings in the Waveforce codec.
         :param ens_in_burst: Ensembles in a burst.
@@ -64,10 +65,11 @@ class AdcpCodec:
         :param bin2: Second bin to measure.
         :param bin3: Third bin to measure.
         :param ps_depth: Pressure sensor depth.
+        :param height_source Height source selected.
         :return:
         """
 
-        self.WaveForceCodec.update_settings(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth)
+        self.WaveForceCodec.update_settings(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source)
 
     def process_ensemble(self, sender, ens):
         """

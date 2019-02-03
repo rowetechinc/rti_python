@@ -22,12 +22,13 @@ class WaveForceCodec:
         self.Bin1 = 3
         self.Bin2 = 4
         self.Bin3 = 5
+        self.height_source = 4
         self.PressureSensorDepth = 30
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
         self.selected_bin = []
 
-    def init(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30):
+    def init(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -48,6 +49,7 @@ class WaveForceCodec:
         self.Bin1 = bin1
         self.Bin2 = bin2
         self.Bin3 = bin3
+        self.height_source = height_source
         self.PressureSensorDepth = ps_depth
         self.RecordCount = 0
 
@@ -62,7 +64,7 @@ class WaveForceCodec:
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
 
-    def update_settings(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30):
+    def update_settings(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4):
         """
         Update the settings for the codec.
         :param ens_in_burst: Number of ensembles in a burst.
@@ -81,6 +83,7 @@ class WaveForceCodec:
         self.Bin1 = bin1
         self.Bin2 = bin2
         self.Bin3 = bin3
+        self.height_source = height_source
         self.PressureSensorDepth = ps_depth
 
         self.selected_bin.clear()
@@ -172,7 +175,7 @@ class WaveForceCodec:
         for ens in ens_buff:
             # Create a waves ensemble
             ens_wave = WaveEnsemble()
-            ens_wave.add(ens, self.selected_bin)
+            ens_wave.add(ens, self.selected_bin, height_source=self.height_source)
 
             # Add the waves ensemble to the list
             ens_waves_buff.append(ens_wave)
@@ -227,7 +230,7 @@ class WaveForceCodec:
                     if ens_wave.num_beams > 3:
                         beam_3_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][3]))      # Beam 3 Beam Velocity
 
-        # Selected Bins
+        # Selected Bin Heights
         if ens_buff[0].IsEnsembleData:
             for sel_bin in range(num_bins):
                 bin_ht = ens_buff[0].AncillaryData.FirstBinRange + (self.selected_bin[sel_bin] * ens_buff[0].AncillaryData.BinSize)
