@@ -170,7 +170,7 @@ class WaveEnsemble:
         :param selected_bins: The bins selected to process.
         :param height_source: The height source.  Default: 4.  The default is to used vert_beam_height which is average of range tracking.
         :param corr_thresh: Correlation threshold.  Used to verify the data is good.  Default: 0.25
-        :param pressure_offset: Pressure offset.  Default: 0
+        :param pressure_offset: Pressure offset added to the depth measured from the pressure sensor in meters.  Default: 0
         """
 
         self.height_source = height_source

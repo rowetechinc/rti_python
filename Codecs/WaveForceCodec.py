@@ -15,7 +15,7 @@ class WaveForceCodec:
         self.Lat = 0.0
         self.Lon = 0.0
         self.EnsInBurst = 2048
-        self.FilePath = "C:\RTI_Capture"
+        self.FilePath = os.path.expanduser('~')
         self.Buffer = []
         self.BufferCount = 0
         self.RecordCount = 0
@@ -23,12 +23,14 @@ class WaveForceCodec:
         self.Bin2 = 4
         self.Bin3 = 5
         self.height_source = 4
+        self.CorrThreshold = 0.25
+        self.PressureOffset = 0.0
         self.PressureSensorDepth = 30
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
         self.selected_bin = []
 
-    def init(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4):
+    def init(self, ens_in_burst=2048, path=os.path.expanduser('~'), lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -50,6 +52,8 @@ class WaveForceCodec:
         self.Bin2 = bin2
         self.Bin3 = bin3
         self.height_source = height_source
+        self.CorrThreshold = corr_thresh
+        self.PressureOffset = pressure_offset
         self.PressureSensorDepth = ps_depth
         self.RecordCount = 0
 
@@ -64,7 +68,7 @@ class WaveForceCodec:
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
 
-    def update_settings(self, ens_in_burst=2048, path="C:\RTI_Capture", lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4):
+    def update_settings(self, ens_in_burst=2048, path=os.path.expanduser('~'), lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
         """
         Update the settings for the codec.
         :param ens_in_burst: Number of ensembles in a burst.
@@ -84,6 +88,8 @@ class WaveForceCodec:
         self.Bin2 = bin2
         self.Bin3 = bin3
         self.height_source = height_source
+        self.CorrThreshold = corr_thresh
+        self.PressureOffset = pressure_offset
         self.PressureSensorDepth = ps_depth
 
         self.selected_bin.clear()
@@ -175,7 +181,7 @@ class WaveForceCodec:
         for ens in ens_buff:
             # Create a waves ensemble
             ens_wave = WaveEnsemble()
-            ens_wave.add(ens, self.selected_bin, height_source=self.height_source)
+            ens_wave.add(ens, self.selected_bin, height_source=self.height_source, corr_thresh=self.CorrThreshold, pressure_offset=self.PressureOffset)
 
             # Add the waves ensemble to the list
             ens_waves_buff.append(ens_wave)
