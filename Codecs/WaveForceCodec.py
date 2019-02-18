@@ -223,18 +223,22 @@ class WaveForceCodec:
 
                 for sel_bin in range(num_bins):
                     # Earth Velocity (WUS, WVS, WZS)
-                    wus_buff.extend(struct.pack('f', ens_wave.east_vel[sel_bin]))
-                    wvs_buff.extend(struct.pack('f', ens_wave.north_vel[sel_bin]))
-                    wzs_buff.extend(struct.pack('f', ens_wave.vertical_vel[sel_bin]))
+                    if len(ens_wave.east_vel) > 0:
+                        wus_buff.extend(struct.pack('f', ens_wave.east_vel[sel_bin]))
+                    if len(ens_wave.north_vel) > 0:
+                        wvs_buff.extend(struct.pack('f', ens_wave.north_vel[sel_bin]))
+                    if len(ens_wave.vertical_vel) > 0:
+                        wzs_buff.extend(struct.pack('f', ens_wave.vertical_vel[sel_bin]))
 
                     # Beam Velocity (WB0, WB1, WB2, WB3)
-                    beam_0_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][0]))          # Beam 0 Beam Velocity
-                    if ens_wave.num_beams > 1:
-                        beam_1_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][1]))      # Beam 1 Beam Velocity
-                    if ens_wave.num_beams > 2:
-                        beam_2_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][2]))      # Beam 2 Beam Velocity
-                    if ens_wave.num_beams > 3:
-                        beam_3_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][3]))      # Beam 3 Beam Velocity
+                    if len(ens_wave.beam_vel[sel_bin]) > 0:
+                        beam_0_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][0]))          # Beam 0 Beam Velocity
+                        if ens_wave.num_beams > 1:
+                            beam_1_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][1]))      # Beam 1 Beam Velocity
+                        if ens_wave.num_beams > 2:
+                            beam_2_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][2]))      # Beam 2 Beam Velocity
+                        if ens_wave.num_beams > 3:
+                            beam_3_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][3]))      # Beam 3 Beam Velocity
 
         # Selected Bin Heights
         if ens_buff[0].IsEnsembleData:
@@ -254,13 +258,20 @@ class WaveForceCodec:
         ba.extend(self.process_wdt(ens_buff))                               # [WDT] Time between ensembles
         ba.extend(self.process_whv(sel_bins_buff, num_bins))                # [WHV] Wave Cell Depths
         ba.extend(self.process_whp(ps_depth_buff))                          # [WHP] Pressure Sensor Height
-        ba.extend(self.process_wus(wus_buff, num_4beam_ens, num_bins))      # [WUS] East Velocity
-        ba.extend(self.process_wvs(wvs_buff, num_4beam_ens, num_bins))      # [WVS] North Velocity
-        ba.extend(self.process_wzs(wzs_buff, num_4beam_ens, num_bins))      # [WZS] Vertical Velocity
-        ba.extend(self.process_wb0(beam_0_vel, num_4beam_ens, num_bins))    # [WB0] Beam 0 Beam Velocity
-        ba.extend(self.process_wb1(beam_1_vel, num_4beam_ens, num_bins))    # [WB1] Beam 1 Beam Velocity
-        ba.extend(self.process_wb2(beam_2_vel, num_4beam_ens, num_bins))    # [WB2] Beam 2 Beam Velocity
-        ba.extend(self.process_wb3(beam_3_vel, num_4beam_ens, num_bins))    # [WB3] Beam 3 Beam Velocity
+        if len(wus_buff) > 0:
+            ba.extend(self.process_wus(wus_buff, num_4beam_ens, num_bins))      # [WUS] East Velocity
+        if len(wvs_buff) > 0:
+            ba.extend(self.process_wvs(wvs_buff, num_4beam_ens, num_bins))      # [WVS] North Velocity
+        if len(wzs_buff) > 0:
+            ba.extend(self.process_wzs(wzs_buff, num_4beam_ens, num_bins))      # [WZS] Vertical Velocity
+        if len(beam_0_vel) > 0:
+            ba.extend(self.process_wb0(beam_0_vel, num_4beam_ens, num_bins))    # [WB0] Beam 0 Beam Velocity
+        if len(beam_1_vel) > 0:
+            ba.extend(self.process_wb1(beam_1_vel, num_4beam_ens, num_bins))    # [WB1] Beam 1 Beam Velocity
+        if len(beam_2_vel) > 0:
+            ba.extend(self.process_wb2(beam_2_vel, num_4beam_ens, num_bins))    # [WB2] Beam 2 Beam Velocity
+        if len(beam_3_vel) > 0:
+            ba.extend(self.process_wb3(beam_3_vel, num_4beam_ens, num_bins))    # [WB3] Beam 3 Beam Velocity
         ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
         ba.extend(self.process_wr1(rt_1, num_4beam_ens))                    # [WR1] Beam 1 Range Tracking
         ba.extend(self.process_wr2(rt_2, num_4beam_ens))                    # [WR2] Beam 2 Range Tracking

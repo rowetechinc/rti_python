@@ -1,5 +1,6 @@
 import pytest
 import os
+import scipy.io as sio
 import rti_python.Codecs.WaveForceCodec as wfc
 import rti_python.Ensemble.AncillaryData as AncillaryData
 import rti_python.Ensemble.EnsembleData as EnsembleData
@@ -77,8 +78,12 @@ def test_update():
 
 
 def test_add_ens():
+    curr_dir = os.path.dirname(os.path.realpath(__file__))
+    num_ens_in_burst = 3
+
     codec = wfc.WaveForceCodec()
-    codec.init(3, "", 32.0, 118.0, 3, 4, 5, 30, 4)
+    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4)
+    codec.process_data_event += waves_rcv
 
     # Create Ensembles
     ancillary_data = AncillaryData.AncillaryData(17, 1)
@@ -87,15 +92,41 @@ def test_add_ens():
     ancillary_data.Roll = 1.0
     ancillary_data.TransducerDepth = 30.2
     ancillary_data.WaterTemp = 23.5
+    ancillary_data.BinSize = 1
+    ancillary_data.FirstBinRange = 3
 
     ensemble_data = EnsembleData.EnsembleData(19, 1)
     ensemble_data.EnsembleNumber = 1
     ensemble_data.NumBeams = 4
     ensemble_data.NumBins = 10
+    ensemble_data.Year = 2019
+    ensemble_data.Month = 2
+    ensemble_data.Day = 19
+    ensemble_data.Hour = 10
+    ensemble_data.Minute = 22
+    ensemble_data.Second = 39
+    ensemble_data.HSec = 10
 
     ensemble = Ensemble.Ensemble()
     ensemble.AddAncillaryData(ancillary_data)
     ensemble.AddEnsembleData(ensemble_data)
 
+    for ens_cnt in range(num_ens_in_burst):
+        codec.add(ensemble)
 
-    codec.add(ensemble)
+
+def waves_rcv(self, file_name):
+
+    assert True == os.path.isfile(file_name)
+
+    # Read in the MATLAB file
+    mat_data = sio.loadmat(file_name)
+
+    assert 32.0 == mat_data['lat'][0][0]
+    assert 118.0 == mat_data['lon'][0][0]
+
+    assert 6.0 == mat_data['whv'][0][0]
+    assert 7.0 == mat_data['whv'][0][1]
+    assert 8.0 == mat_data['whv'][0][2]
+
+    assert 212353954335.1 == mat_data['wft'][0][0]
