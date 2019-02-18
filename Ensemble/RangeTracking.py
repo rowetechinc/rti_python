@@ -8,7 +8,7 @@ class RangeTracking:
     Values that give details about the wave heights.
     """
 
-    def __init__(self, num_elements, element_multiplier):
+    def __init__(self, num_elements=8, element_multiplier=4):
         self.ds_type = 10
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier

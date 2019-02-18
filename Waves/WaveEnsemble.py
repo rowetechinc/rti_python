@@ -313,6 +313,9 @@ class WaveEnsemble:
                     self.range_tracking.append(-1.0)
             else:
                 self.range_tracking.append(-1.0)
+        if self.pressure >= 0:
+            avg_range += self.pressure
+            avg_range_ct += 1
 
         if ens.IsRangeTracking:
             # Get the average range
@@ -361,7 +364,7 @@ class WaveEnsemble:
             else:
                 self.height = -1.0
         elif self.height_source == 4:
-            self.height = self.vert_beam_height
+            self.height = self.vert_beam_height             # Avg of 4 Range Tracking
         elif self.height_source == 5:
             self.height = self.pressure
 

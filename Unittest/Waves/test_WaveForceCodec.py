@@ -4,6 +4,7 @@ import scipy.io as sio
 import rti_python.Codecs.WaveForceCodec as wfc
 import rti_python.Ensemble.AncillaryData as AncillaryData
 import rti_python.Ensemble.EnsembleData as EnsembleData
+import rti_python.Ensemble.RangeTracking as RangeTracking
 import rti_python.Ensemble.Ensemble as Ensemble
 
 
@@ -149,17 +150,42 @@ def test_add_ens():
     ensemble_data3.Second = 39
     ensemble_data3.HSec = 10
 
+    range_track1 = RangeTracking.RangeTracking()
+    range_track1.NumBeams = 4
+    range_track1.Range.append(38.0)
+    range_track1.Range.append(39.0)
+    range_track1.Range.append(40.0)
+    range_track1.Range.append(41.0)
+
+    range_track2 = RangeTracking.RangeTracking()
+    range_track2.NumBeams = 4
+    range_track2.Range.append(20.5)
+    range_track2.Range.append(21.6)
+    range_track2.Range.append(22.7)
+    range_track2.Range.append(23.8)
+
+    range_track3 = RangeTracking.RangeTracking()
+    range_track3.NumBeams = 4
+    range_track3.Range.append(33.1)
+    range_track3.Range.append(34.2)
+    range_track3.Range.append(35.3)
+    range_track3.Range.append(36.4)
+
+
     ensemble1 = Ensemble.Ensemble()
     ensemble1.AddAncillaryData(ancillary_data1)
     ensemble1.AddEnsembleData(ensemble_data1)
+    ensemble1.AddRangeTracking(range_track1)
 
     ensemble2 = Ensemble.Ensemble()
     ensemble2.AddAncillaryData(ancillary_data2)
     ensemble2.AddEnsembleData(ensemble_data2)
+    ensemble2.AddRangeTracking(range_track2)
 
     ensemble3 = Ensemble.Ensemble()
     ensemble3.AddAncillaryData(ancillary_data3)
-    ensemble3.AddEnsembleData(ensemble_data2)
+    ensemble3.AddEnsembleData(ensemble_data3)
+    ensemble3.AddRangeTracking(range_track3)
 
     codec.add(ensemble1)
     codec.add(ensemble2)
@@ -173,31 +199,52 @@ def waves_rcv(self, file_name):
     # Read in the MATLAB file
     mat_data = sio.loadmat(file_name)
 
+    # Lat and Lon
     assert 32.0 == mat_data['lat'][0][0]
     assert 118.0 == mat_data['lon'][0][0]
 
+    # Wave Cell Depths
     assert 6.0 == mat_data['whv'][0][0]
     assert 7.0 == mat_data['whv'][0][1]
     assert 8.0 == mat_data['whv'][0][2]
 
+    # First Ensemble Time
     assert 212353954335.1 == mat_data['wft'][0][0]
 
+    # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
 
+    # Pressure Sensor Height
     assert 30 == mat_data['whp'][0][0]
 
+    # Heading
     assert 22.0 == mat_data['whg'][0][0]
     assert 23.0 == mat_data['whg'][1][0]
     assert 24.0 == mat_data['whg'][2][0]
 
+    # Pitch
     assert 10.0 == mat_data['wph'][0][0]
     assert 13.0 == mat_data['wph'][1][0]
     assert 14.0 == mat_data['wph'][2][0]
 
+    # Roll
     assert 1.0 == mat_data['wrl'][0][0]
     assert 3.0 == mat_data['wrl'][1][0]
     assert 4.0 == mat_data['wrl'][2][0]
 
+    # Pressure
     assert 30.2 == pytest.approx(mat_data['wps'][0][0], 0.1)
     assert 33.2 == pytest.approx(mat_data['wps'][1][0], 0.1)
     assert 34.2 == pytest.approx(mat_data['wps'][2][0], 0.1)
+
+    # Water Temp
+    assert 23.5 == pytest.approx(mat_data['wts'][0][0], 0.1)
+    assert 26.5 == pytest.approx(mat_data['wts'][1][0], 0.1)
+    assert 27.5 == pytest.approx(mat_data['wts'][2][0], 0.1)
+
+    # Average Range and Pressure
+    assert 37.64 == pytest.approx(mat_data['wah'][0][0], 0.1)
+    assert 24.36 == pytest.approx(mat_data['wah'][1][0], 0.1)
+    assert 34.64 == pytest.approx(mat_data['wah'][2][0], 0.1)
+
+    

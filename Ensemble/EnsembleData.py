@@ -10,7 +10,7 @@ class EnsembleData:
     Integer values that give details about the ensemble.
     """
 
-    def __init__(self, num_elements, element_multiplier):
+    def __init__(self, num_elements=19, element_multiplier=1):
         self.ds_type = 10
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
