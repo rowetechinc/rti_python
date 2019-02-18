@@ -86,33 +86,84 @@ def test_add_ens():
     codec.process_data_event += waves_rcv
 
     # Create Ensembles
-    ancillary_data = AncillaryData.AncillaryData(17, 1)
-    ancillary_data.Heading = 22.0
-    ancillary_data.Pitch = 10.0
-    ancillary_data.Roll = 1.0
-    ancillary_data.TransducerDepth = 30.2
-    ancillary_data.WaterTemp = 23.5
-    ancillary_data.BinSize = 1
-    ancillary_data.FirstBinRange = 3
+    ancillary_data1 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data1.Heading = 22.0
+    ancillary_data1.Pitch = 10.0
+    ancillary_data1.Roll = 1.0
+    ancillary_data1.TransducerDepth = 30.2
+    ancillary_data1.WaterTemp = 23.5
+    ancillary_data1.BinSize = 1
+    ancillary_data1.FirstBinRange = 3
 
-    ensemble_data = EnsembleData.EnsembleData(19, 1)
-    ensemble_data.EnsembleNumber = 1
-    ensemble_data.NumBeams = 4
-    ensemble_data.NumBins = 10
-    ensemble_data.Year = 2019
-    ensemble_data.Month = 2
-    ensemble_data.Day = 19
-    ensemble_data.Hour = 10
-    ensemble_data.Minute = 22
-    ensemble_data.Second = 39
-    ensemble_data.HSec = 10
+    ancillary_data2 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data2.Heading = 23.0
+    ancillary_data2.Pitch = 13.0
+    ancillary_data2.Roll = 3.0
+    ancillary_data2.TransducerDepth = 33.2
+    ancillary_data2.WaterTemp = 26.5
+    ancillary_data2.BinSize = 1
+    ancillary_data2.FirstBinRange = 3
 
-    ensemble = Ensemble.Ensemble()
-    ensemble.AddAncillaryData(ancillary_data)
-    ensemble.AddEnsembleData(ensemble_data)
+    ancillary_data3 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data3.Heading = 24.0
+    ancillary_data3.Pitch = 14.0
+    ancillary_data3.Roll = 4.0
+    ancillary_data3.TransducerDepth = 34.2
+    ancillary_data3.WaterTemp = 27.5
+    ancillary_data3.BinSize = 1
+    ancillary_data3.FirstBinRange = 3
 
-    for ens_cnt in range(num_ens_in_burst):
-        codec.add(ensemble)
+    ensemble_data1 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data1.EnsembleNumber = 1
+    ensemble_data1.NumBeams = 4
+    ensemble_data1.NumBins = 10
+    ensemble_data1.Year = 2019
+    ensemble_data1.Month = 2
+    ensemble_data1.Day = 19
+    ensemble_data1.Hour = 10
+    ensemble_data1.Minute = 22
+    ensemble_data1.Second = 39
+    ensemble_data1.HSec = 10
+
+    ensemble_data2 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data2.EnsembleNumber = 1
+    ensemble_data2.NumBeams = 4
+    ensemble_data2.NumBins = 10
+    ensemble_data2.Year = 2019
+    ensemble_data2.Month = 2
+    ensemble_data2.Day = 19
+    ensemble_data2.Hour = 10
+    ensemble_data2.Minute = 23
+    ensemble_data2.Second = 39
+    ensemble_data2.HSec = 10
+
+    ensemble_data3 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data3.EnsembleNumber = 1
+    ensemble_data3.NumBeams = 4
+    ensemble_data3.NumBins = 10
+    ensemble_data3.Year = 2019
+    ensemble_data3.Month = 2
+    ensemble_data3.Day = 19
+    ensemble_data3.Hour = 10
+    ensemble_data3.Minute = 24
+    ensemble_data3.Second = 39
+    ensemble_data3.HSec = 10
+
+    ensemble1 = Ensemble.Ensemble()
+    ensemble1.AddAncillaryData(ancillary_data1)
+    ensemble1.AddEnsembleData(ensemble_data1)
+
+    ensemble2 = Ensemble.Ensemble()
+    ensemble2.AddAncillaryData(ancillary_data2)
+    ensemble2.AddEnsembleData(ensemble_data2)
+
+    ensemble3 = Ensemble.Ensemble()
+    ensemble3.AddAncillaryData(ancillary_data3)
+    ensemble3.AddEnsembleData(ensemble_data2)
+
+    codec.add(ensemble1)
+    codec.add(ensemble2)
+    codec.add(ensemble3)
 
 
 def waves_rcv(self, file_name):
@@ -130,3 +181,23 @@ def waves_rcv(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     assert 212353954335.1 == mat_data['wft'][0][0]
+
+    assert 60.0 == mat_data['wdt'][0][0]
+
+    assert 30 == mat_data['whp'][0][0]
+
+    assert 22.0 == mat_data['whg'][0][0]
+    assert 23.0 == mat_data['whg'][1][0]
+    assert 24.0 == mat_data['whg'][2][0]
+
+    assert 10.0 == mat_data['wph'][0][0]
+    assert 13.0 == mat_data['wph'][1][0]
+    assert 14.0 == mat_data['wph'][2][0]
+
+    assert 1.0 == mat_data['wrl'][0][0]
+    assert 3.0 == mat_data['wrl'][1][0]
+    assert 4.0 == mat_data['wrl'][2][0]
+
+    assert 30.2 == pytest.approx(mat_data['wps'][0][0], 0.1)
+    assert 33.2 == pytest.approx(mat_data['wps'][1][0], 0.1)
+    assert 34.2 == pytest.approx(mat_data['wps'][2][0], 0.1)

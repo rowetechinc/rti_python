@@ -465,7 +465,7 @@ class WaveForceCodec:
 
         ba = bytearray()
 
-        if len(ens_buff) >= 4:
+        if len(ens_buff) >= 3:
             # Get the first 4 Beam sample
             if ens_buff[0].IsEnsembleData:
                 subcfg = ens_buff[0].EnsembleData.SubsystemConfig
