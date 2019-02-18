@@ -126,5 +126,5 @@ PlanR/frontend/planr/node_modules/
 # PyTest
 .pytest_cache/
 
-rti_python/Unittest/Waves/*.mat
-rti_python/Unittest/.pytest*
+Unittest/Waves/*.mat
+Unittest/.pytest*

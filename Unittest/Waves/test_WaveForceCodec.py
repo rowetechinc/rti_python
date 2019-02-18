@@ -247,4 +247,4 @@ def waves_rcv(self, file_name):
     assert 24.36 == pytest.approx(mat_data['wah'][1][0], 0.1)
     assert 34.64 == pytest.approx(mat_data['wah'][2][0], 0.1)
 
-    
+
