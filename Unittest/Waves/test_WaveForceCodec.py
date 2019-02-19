@@ -247,4 +247,320 @@ def waves_rcv(self, file_name):
     assert 24.36 == pytest.approx(mat_data['wah'][1][0], 0.1)
     assert 34.64 == pytest.approx(mat_data['wah'][2][0], 0.1)
 
+    # Range Tracking
+    assert 38.0 == pytest.approx(mat_data['wr0'][0][0], 0.1)
+    assert 20.5 == pytest.approx(mat_data['wr0'][1][0], 0.1)
+    assert 33.1 == pytest.approx(mat_data['wr0'][2][0], 0.1)
 
+    assert 39.0 == pytest.approx(mat_data['wr1'][0][0], 0.1)
+    assert 21.6 == pytest.approx(mat_data['wr1'][1][0], 0.1)
+    assert 34.2 == pytest.approx(mat_data['wr1'][2][0], 0.1)
+
+    assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
+    assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
+    assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
+
+    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
+    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
+    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
+
+    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
+    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
+    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
+
+    # Selected Wave Height Source
+    # Average height
+    assert 37.64 == pytest.approx(mat_data['whs'][0][0], 0.1)
+    assert 24.36 == pytest.approx(mat_data['whs'][1][0], 0.1)
+    assert 34.64 == pytest.approx(mat_data['whs'][2][0], 0.1)
+
+def test_add_ens_with_vert():
+    curr_dir = os.path.dirname(os.path.realpath(__file__))
+    num_ens_in_burst = 3
+
+    codec = wfc.WaveForceCodec()
+    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec.process_data_event += waves_rcv_with_vert
+
+    # Create Ensembles
+    ancillary_data1 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data1.Heading = 22.0
+    ancillary_data1.Pitch = 10.0
+    ancillary_data1.Roll = 1.0
+    ancillary_data1.TransducerDepth = 30.2
+    ancillary_data1.WaterTemp = 23.5
+    ancillary_data1.BinSize = 1
+    ancillary_data1.FirstBinRange = 3
+
+    ancillary_data2 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data2.Heading = 23.0
+    ancillary_data2.Pitch = 13.0
+    ancillary_data2.Roll = 3.0
+    ancillary_data2.TransducerDepth = 33.2
+    ancillary_data2.WaterTemp = 26.5
+    ancillary_data2.BinSize = 1
+    ancillary_data2.FirstBinRange = 3
+
+    ancillary_data3 = AncillaryData.AncillaryData(17, 1)
+    ancillary_data3.Heading = 24.0
+    ancillary_data3.Pitch = 14.0
+    ancillary_data3.Roll = 4.0
+    ancillary_data3.TransducerDepth = 34.2
+    ancillary_data3.WaterTemp = 27.5
+    ancillary_data3.BinSize = 1
+    ancillary_data3.FirstBinRange = 3
+
+    ensemble_data1 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data1.EnsembleNumber = 1
+    ensemble_data1.NumBeams = 4
+    ensemble_data1.NumBins = 10
+    ensemble_data1.Year = 2019
+    ensemble_data1.Month = 2
+    ensemble_data1.Day = 19
+    ensemble_data1.Hour = 10
+    ensemble_data1.Minute = 22
+    ensemble_data1.Second = 39
+    ensemble_data1.HSec = 10
+
+    ensemble_data2 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data2.EnsembleNumber = 2
+    ensemble_data2.NumBeams = 1
+    ensemble_data2.NumBins = 10
+    ensemble_data2.Year = 2019
+    ensemble_data2.Month = 2
+    ensemble_data2.Day = 19
+    ensemble_data2.Hour = 10
+    ensemble_data2.Minute = 23
+    ensemble_data2.Second = 39
+    ensemble_data2.HSec = 10
+
+    ensemble_data3 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data3.EnsembleNumber = 3
+    ensemble_data3.NumBeams = 4
+    ensemble_data3.NumBins = 10
+    ensemble_data3.Year = 2019
+    ensemble_data3.Month = 2
+    ensemble_data3.Day = 19
+    ensemble_data3.Hour = 10
+    ensemble_data3.Minute = 24
+    ensemble_data3.Second = 39
+    ensemble_data3.HSec = 10
+
+    ensemble_data4 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data4.EnsembleNumber = 4
+    ensemble_data4.NumBeams = 1
+    ensemble_data4.NumBins = 10
+    ensemble_data4.Year = 2019
+    ensemble_data4.Month = 2
+    ensemble_data4.Day = 19
+    ensemble_data4.Hour = 10
+    ensemble_data4.Minute = 25
+    ensemble_data4.Second = 39
+    ensemble_data4.HSec = 10
+
+    ensemble_data5 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data5.EnsembleNumber = 5
+    ensemble_data5.NumBeams = 4
+    ensemble_data5.NumBins = 10
+    ensemble_data5.Year = 2019
+    ensemble_data5.Month = 2
+    ensemble_data5.Day = 19
+    ensemble_data5.Hour = 10
+    ensemble_data5.Minute = 26
+    ensemble_data5.Second = 39
+    ensemble_data5.HSec = 10
+
+    ensemble_data6 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data6.EnsembleNumber = 6
+    ensemble_data6.NumBeams = 1
+    ensemble_data6.NumBins = 10
+    ensemble_data6.Year = 2019
+    ensemble_data6.Month = 2
+    ensemble_data6.Day = 19
+    ensemble_data6.Hour = 10
+    ensemble_data6.Minute = 27
+    ensemble_data6.Second = 39
+    ensemble_data6.HSec = 10
+
+    ensemble_data7 = EnsembleData.EnsembleData(19, 1)
+    ensemble_data7.EnsembleNumber = 7
+    ensemble_data7.NumBeams = 4
+    ensemble_data7.NumBins = 10
+    ensemble_data7.Year = 2019
+    ensemble_data7.Month = 2
+    ensemble_data7.Day = 19
+    ensemble_data7.Hour = 10
+    ensemble_data7.Minute = 28
+    ensemble_data7.Second = 39
+    ensemble_data7.HSec = 10
+
+    range_track1 = RangeTracking.RangeTracking()
+    range_track1.NumBeams = 4
+    range_track1.Range.append(38.0)
+    range_track1.Range.append(39.0)
+    range_track1.Range.append(40.0)
+    range_track1.Range.append(41.0)
+
+    range_track2 = RangeTracking.RangeTracking()
+    range_track2.NumBeams = 1
+    range_track2.Range.append(37.0)
+
+    range_track3 = RangeTracking.RangeTracking()
+    range_track3.NumBeams = 4
+    range_track3.Range.append(20.5)
+    range_track3.Range.append(21.6)
+    range_track3.Range.append(22.7)
+    range_track3.Range.append(23.8)
+
+    range_track4 = RangeTracking.RangeTracking()
+    range_track4.NumBeams = 1
+    range_track4.Range.append(25.3)
+
+    range_track5 = RangeTracking.RangeTracking()
+    range_track5.NumBeams = 4
+    range_track5.Range.append(33.1)
+    range_track5.Range.append(34.2)
+    range_track5.Range.append(35.3)
+    range_track5.Range.append(36.4)
+
+    range_track6 = RangeTracking.RangeTracking()
+    range_track6.NumBeams = 1
+    range_track6.Range.append(34.9)
+
+    range_track7 = RangeTracking.RangeTracking()
+    range_track7.NumBeams = 4
+    range_track7.Range.append(32.1)
+    range_track7.Range.append(35.2)
+    range_track7.Range.append(33.3)
+    range_track7.Range.append(36.4)
+
+    ensemble1 = Ensemble.Ensemble()
+    ensemble1.AddAncillaryData(ancillary_data1)
+    ensemble1.AddEnsembleData(ensemble_data1)
+    ensemble1.AddRangeTracking(range_track1)
+
+    ensemble2 = Ensemble.Ensemble()
+    ensemble2.AddAncillaryData(ancillary_data2)
+    ensemble2.AddEnsembleData(ensemble_data2)
+    ensemble2.AddRangeTracking(range_track2)
+
+    ensemble3 = Ensemble.Ensemble()
+    ensemble3.AddAncillaryData(ancillary_data3)
+    ensemble3.AddEnsembleData(ensemble_data3)
+    ensemble3.AddRangeTracking(range_track3)
+
+    ensemble4 = Ensemble.Ensemble()
+    ensemble4.AddAncillaryData(ancillary_data1)
+    ensemble4.AddEnsembleData(ensemble_data4)
+    ensemble4.AddRangeTracking(range_track4)
+
+    ensemble5 = Ensemble.Ensemble()
+    ensemble5.AddAncillaryData(ancillary_data2)
+    ensemble5.AddEnsembleData(ensemble_data5)
+    ensemble5.AddRangeTracking(range_track5)
+
+    ensemble6 = Ensemble.Ensemble()
+    ensemble6.AddAncillaryData(ancillary_data3)
+    ensemble6.AddEnsembleData(ensemble_data6)
+    ensemble6.AddRangeTracking(range_track6)
+
+    ensemble7 = Ensemble.Ensemble()
+    ensemble7.AddAncillaryData(ancillary_data3)
+    ensemble7.AddEnsembleData(ensemble_data7)
+    ensemble7.AddRangeTracking(range_track7)
+
+    codec.add(ensemble1)
+    codec.add(ensemble2)
+    codec.add(ensemble3)
+    codec.add(ensemble4)
+    codec.add(ensemble5)
+    codec.add(ensemble6)
+    codec.add(ensemble7)
+
+
+def waves_rcv_with_vert(self, file_name):
+
+    assert True == os.path.isfile(file_name)
+
+    # Read in the MATLAB file
+    mat_data = sio.loadmat(file_name)
+
+    # Lat and Lon
+    assert 32.0 == mat_data['lat'][0][0]
+    assert 118.0 == mat_data['lon'][0][0]
+
+    # Wave Cell Depths
+    assert 6.0 == mat_data['whv'][0][0]
+    assert 7.0 == mat_data['whv'][0][1]
+    assert 8.0 == mat_data['whv'][0][2]
+
+    # First Ensemble Time
+    assert 212353954335.1 == mat_data['wft'][0][0]
+
+    # Time between Ensembles
+    assert 60.0 == mat_data['wdt'][0][0]
+
+    # Pressure Sensor Height
+    assert 30 == mat_data['whp'][0][0]
+
+    # Heading
+    assert 22.0 == mat_data['whg'][0][0]
+    assert 24.0 == mat_data['whg'][1][0]
+    assert 23.0 == mat_data['whg'][2][0]
+
+    # Pitch
+    assert 10.0 == mat_data['wph'][0][0]
+    assert 14.0 == mat_data['wph'][1][0]
+    assert 13.0 == mat_data['wph'][2][0]
+
+    # Roll
+    assert 1.0 == mat_data['wrl'][0][0]
+    assert 4.0 == mat_data['wrl'][1][0]
+    assert 3.0 == mat_data['wrl'][2][0]
+
+    # Pressure
+    assert 30.2 == pytest.approx(mat_data['wps'][0][0], 0.1)
+    assert 33.2 == pytest.approx(mat_data['wps'][1][0], 0.1)
+    assert 34.2 == pytest.approx(mat_data['wps'][2][0], 0.1)
+
+    # Water Temp
+    assert 23.5 == pytest.approx(mat_data['wts'][0][0], 0.1)
+    assert 26.5 == pytest.approx(mat_data['wts'][1][0], 0.1)
+    assert 27.5 == pytest.approx(mat_data['wts'][2][0], 0.1)
+
+    # Average Range and Pressure
+    assert 37.64 == pytest.approx(mat_data['wah'][0][0], 0.1)
+    assert 24.36 == pytest.approx(mat_data['wah'][1][0], 0.1)
+    assert 34.64 == pytest.approx(mat_data['wah'][2][0], 0.1)
+
+    # Range Tracking
+    assert 38.0 == pytest.approx(mat_data['wr0'][0][0], 0.1)
+    assert 20.5 == pytest.approx(mat_data['wr0'][1][0], 0.1)
+    assert 33.1 == pytest.approx(mat_data['wr0'][2][0], 0.1)
+
+    assert 39.0 == pytest.approx(mat_data['wr1'][0][0], 0.1)
+    assert 21.6 == pytest.approx(mat_data['wr1'][1][0], 0.1)
+    assert 34.2 == pytest.approx(mat_data['wr1'][2][0], 0.1)
+
+    assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
+    assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
+    assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
+
+    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
+    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
+    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
+
+    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
+    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
+    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
+
+    # Selected Wave Height Source
+    # Average height
+    assert 37.64 == pytest.approx(mat_data['whs'][0][0], 0.1)
+    assert 24.36 == pytest.approx(mat_data['whs'][1][0], 0.1)
+    assert 34.64 == pytest.approx(mat_data['whs'][2][0], 0.1)
+
+    # Vertical Beam Pressure
+    assert 33.2 == pytest.approx(mat_data['wzp'][0][0], 0.1)
+    assert 30.2 == pytest.approx(mat_data['wzp'][1][0], 0.1)
+    assert 34.2 == pytest.approx(mat_data['wzp'][2][0], 0.1)

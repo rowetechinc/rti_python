@@ -17,7 +17,8 @@ class WaveForceCodec:
         self.EnsInBurst = 2048
         self.FilePath = os.path.expanduser('~')
         self.Buffer = []
-        self.BufferCount = 0
+        self.BufferCount = 0                # Count the number of vertical ens, assumed vertical is after 4 beam
+        self.TotalEnsInBurst = 0            # This will include vertical and 4 beam ens
         self.RecordCount = 0
         self.Bin1 = 3
         self.Bin2 = 4
@@ -106,21 +107,31 @@ class WaveForceCodec:
         process the buffer and output the data to a matlab file.
         :param ens: Ensemble to buffer.
         """
+
         if self.EnsInBurst > 0:
             logging.debug("Added Ensemble to burst")
 
             # Add to the buffer
             self.Buffer.append(ens)
-            self.BufferCount += 1
+
+            # Increment the buffer count for every vertical data
+            # 3 or 4 beam data will be combined with vertical beam data.
+            # It is assumed that a vertical beam will be after a 4 beam
+            if ens.EnsembleData.NumBeams == 1:  # Check for vertical beam
+                self.BufferCount += 1           # Keep count of vertical beam ens
+                self.TotalEnsInBurst += 1       # Keep count of all ens
+            else:
+                self.TotalEnsInBurst += 1       # Keep count of all ens (4 or 3 beam ens)
 
             # Process the buffer when a burst is complete
             if self.BufferCount >= self.EnsInBurst:
                 # Get the ensembles from the buffer
-                ens_buff = self.Buffer[0:self.EnsInBurst]
+                ens_buff = self.Buffer[0:self.TotalEnsInBurst]
 
                 # Remove the ensembles from the buffer
-                del self.Buffer[0:self.EnsInBurst]
+                del self.Buffer[0:self.TotalEnsInBurst]
                 self.BufferCount = 0
+                self.TotalEnsInBurst = 0
 
                 # Process the buffer
                 th = threading.Thread(target=self.process, args=[ens_buff])
@@ -195,7 +206,8 @@ class WaveForceCodec:
 
                 for sel_bin in range(num_bins):
                     # Beam Velocity (WZ0)
-                    beam_vert_vel.extend(struct.pack('f', ens_wave.vert_beam_vel[sel_bin]))
+                    if len(ens_wave.vert_beam_vel) > sel_bin:
+                        beam_vert_vel.extend(struct.pack('f', ens_wave.vert_beam_vel[sel_bin]))
 
                 # Range Tracking (WZR)
                 rt_vert.extend(struct.pack('f', ens_wave.range_tracking[0]))
@@ -284,7 +296,8 @@ class WaveForceCodec:
         ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
         ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
 
-        ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
+        if len(beam_vert_vel) > 0:
+            ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
         ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
         ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
 
