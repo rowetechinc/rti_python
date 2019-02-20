@@ -21,7 +21,7 @@ class EarthVelocity:
         for bins in range(num_elements):
             bins = []
             for beams in range(element_multiplier):
-                bins.append([Ensemble().BadVelocity])
+                bins.append(Ensemble().BadVelocity)
 
             self.Velocities.append(bins)
 

@@ -286,7 +286,6 @@ class WaveEnsemble:
                     if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
                         beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
                     else:
-
                         beam_data.append(Ensemble.BadVelocity)
 
             # Add the data for each bin
