@@ -124,7 +124,10 @@ class WaveForceCodec:
                 self.TotalEnsInBurst += 1       # Keep count of all ens (4 or 3 beam ens)
 
             # Process the buffer when a burst is complete
-            if self.BufferCount >= self.EnsInBurst:
+            # If BufferCount is 0, then no vertical beam
+            # Check if the total ensembles then is the total number of ensembles in burst
+            # or check if the total number of vertical beam ensembles is found
+            if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst) or self.BufferCount >= self.EnsInBurst:
                 # Get the ensembles from the buffer
                 ens_buff = self.Buffer[0:self.TotalEnsInBurst]
 

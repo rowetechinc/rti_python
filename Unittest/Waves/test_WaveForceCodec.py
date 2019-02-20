@@ -1330,24 +1330,33 @@ def waves_rcv_with_ENU(self, file_name):
     # Earth East Velocity
     assert -1.45 == pytest.approx(mat_data['wus'][0][0], 0.1)
     assert -1.67 == pytest.approx(mat_data['wus'][1][0], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wus'][2][0], 0.1)
     assert -11.45 == pytest.approx(mat_data['wus'][0][1], 0.1)
     assert -11.67 == pytest.approx(mat_data['wus'][1][1], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wus'][2][1], 0.1)
     assert -12.45 == pytest.approx(mat_data['wus'][0][2], 0.1)
     assert -12.67 == pytest.approx(mat_data['wus'][1][2], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wus'][2][2], 0.1)
 
     # Earth North Velocity
     assert 0.25 == pytest.approx(mat_data['wvs'][0][0], 0.1)
     assert 0.67 == pytest.approx(mat_data['wvs'][1][0], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][0], 0.1)
     assert 1.25 == pytest.approx(mat_data['wvs'][0][1], 0.1)
     assert 1.67 == pytest.approx(mat_data['wvs'][1][1], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][1], 0.1)
     assert 2.25 == pytest.approx(mat_data['wvs'][0][2], 0.1)
     assert 2.67 == pytest.approx(mat_data['wvs'][1][2], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][2], 0.1)
 
     # Earth Vertical Velocity
     assert -0.1 == pytest.approx(mat_data['wzs'][0][0], 0.1)
     assert -0.029 == pytest.approx(mat_data['wzs'][1][0], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][0], 0.1)
     assert -1.1 == pytest.approx(mat_data['wzs'][0][1], 0.1)
     assert -1.027 == pytest.approx(mat_data['wzs'][1][1], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][1], 0.1)
     assert -2.1 == pytest.approx(mat_data['wzs'][0][2], 0.1)
     assert -2.027 == pytest.approx(mat_data['wzs'][1][2], 0.1)
+    assert 88.88 == pytest.approx(mat_data['wvs'][2][2], 0.1)
 

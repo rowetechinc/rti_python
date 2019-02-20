@@ -34,7 +34,7 @@ class AdcpCodec:
         """
         self.binary_codec.add(data)
 
-    def enable_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source):
+    def enable_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source, corr_thresh, pressure_offset):
         """
         Enable the WaveForce codec.  This data will be encoded
         into the Matlab format.
@@ -47,14 +47,16 @@ class AdcpCodec:
         :param bin3: Third bin to measure.
         :param ps_depth: Pressure sensor depth.
         :param height_source Height source selected.
+        :param corr_thresh Correlation Threshold to mark data bad.  (0.0 - 1.0)
+        :param pressure_offset Pressure Sensor offset in meters to add to pressure depth.
         :return:
         """
 
         self.WaveForceCodec.process_data_event += self.process_wave_data
-        self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source)
+        self.WaveForceCodec.init(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source, corr_thresh, pressure_offset)
         self.IsWfcEnabled = True
 
-    def update_settings_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source):
+    def update_settings_waveforce_codec(self, ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source, corr_thresh, pressure_offset):
         """
         Update the settings in the Waveforce codec.
         :param ens_in_burst: Ensembles in a burst.
@@ -66,10 +68,12 @@ class AdcpCodec:
         :param bin3: Third bin to measure.
         :param ps_depth: Pressure sensor depth.
         :param height_source Height source selected.
+        :param corr_thresh Correlation Threshold to mark data bad. (0.0 - 1.0)
+        :param pressure_offset Pressure Sensor offset to add to the pressure depth value in meters.
         :return:
         """
 
-        self.WaveForceCodec.update_settings(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source)
+        self.WaveForceCodec.update_settings(ens_in_burst, path, lat, lon, bin1, bin2, bin3, ps_depth, height_source, corr_thresh, pressure_offset)
 
     def process_ensemble(self, sender, ens):
         """
