@@ -236,6 +236,10 @@ class WaveEnsemble:
                     self.vert_beam_vel.append(ens.BeamVelocity.Velocities[selected_bins[bins]][0])
                 else:
                     self.vert_beam_vel.append(Ensemble.BadVelocity)
+            # No correlation data, so just use the beam velocity
+            elif ens.IsBeamVelocity:
+                self.vert_beam_vel.append(ens.BeamVelocity.Velocities[selected_bins[bins]][0])
+
 
         # Cleanup
         # Check Vertical beam height data (avg range)
@@ -280,13 +284,16 @@ class WaveEnsemble:
         for selected_bin in selected_bins:
             beam_data = []
             for beam in range(num_beams):
-                # Vertical Beam velocity
+                # Check Correlation to use Beam velocity
                 if ens.IsBeamVelocity and ens.IsCorrelation:
                     # Check the correlation against the correlation threshold
                     if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
                         beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
                     else:
                         beam_data.append(Ensemble.BadVelocity)
+                # No correlation data, so just use the beam velocity
+                elif ens.IsBeamVelocity:
+                    beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
 
             # Add the data for each bin
             self.beam_vel.append(beam_data)
