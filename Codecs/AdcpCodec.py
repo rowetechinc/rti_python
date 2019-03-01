@@ -27,6 +27,13 @@ class AdcpCodec:
         # Event to receive the ensembles
         self.EnsembleEvent = EventHandler(self)
 
+    def shutdown(self):
+        """
+        Shutdown the object.
+        :return:
+        """
+        self.binary_codec.shutdown()
+
     def add(self, data):
         """
         Add the data to the codecs.

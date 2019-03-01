@@ -59,6 +59,13 @@ class BinaryCodecUdp(BinaryCodec):
         self.udp_ip = '127.0.0.1'                                       # UDP IP (Localhost)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
 
+    def shutdown(self):
+        """
+        Do nothing
+        :return:
+        """
+        pass
+
     def process_ens(self, ensemble):
         # Pass to event handler
         self.EnsembleEvent(ensemble)

@@ -18,7 +18,8 @@ from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
 from PyCRC.CRCCCITT import CRCCCITT
 import logging
-
+from threading import Thread
+import threading
 
 class WaveBurstInfo:
     """
@@ -34,20 +35,36 @@ class WaveBurstInfo:
         self.Bin3 = 0
 
 
-class BinaryCodec:
+class BinaryCodec():
     """
     Decode RoweTech ADCP Binary data.
     """
 
+    # Use for publish and subscribe event
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
+
+        #Thread.__init__(self)
+        #self.thread_event = threading.Event()
+        #self.thread_alive = True
+        #self.start()
+
         self.buffer = bytearray()
 
         self.MAX_TIMEOUT = 5
         self.timeout = 0
 
         self.EnsembleEvent = EventHandler(self)
+
+    def shutdown(self):
+        """
+        Shutdown the thread.
+        :return:
+        """
+        #self.thread_alive = False
+        #self.thread_event.set()
+        #self.join()
 
     def add(self, data):
         """
@@ -57,12 +74,19 @@ class BinaryCodec:
         self.buffer.extend(data)
         self.find_ensemble()
 
+        # Wakeup the thread to process the ensemble
+        #self.thread_event.set()
+
     def find_ensemble(self):
         """
         Find the start of an ensemble.  Then find the end of the ensemble.
         Then remove the ensemble from the buffer and process the raw data.
         :return:
         """
+
+        #while self.thread_alive:
+            # Wait for the next ensemble
+            #self.thread_event.wait()
 
         # Look for first 16 bytes of header
         delimiter = b'\x80'*16
@@ -129,6 +153,7 @@ class BinaryCodec:
             if self.timeout > self.MAX_TIMEOUT:
                 del self.buffer[0]
                 logging.warning("Bad Ensemble header found")
+                self.timeout = 0
 
     @abc.abstractmethod
     def process_ensemble(self, ens):
