@@ -35,7 +35,7 @@ class WaveBurstInfo:
         self.Bin3 = 0
 
 
-class BinaryCodec():
+class BinaryCodec(Thread):
     """
     Decode RoweTech ADCP Binary data.
     """
@@ -45,10 +45,10 @@ class BinaryCodec():
 
     def __init__(self):
 
-        #Thread.__init__(self)
-        #self.thread_event = threading.Event()
-        #self.thread_alive = True
-        #self.start()
+        Thread.__init__(self)
+        self.thread_event = threading.Event()
+        self.thread_alive = True
+        self.start()
 
         self.buffer = bytearray()
 
@@ -62,9 +62,9 @@ class BinaryCodec():
         Shutdown the thread.
         :return:
         """
-        #self.thread_alive = False
-        #self.thread_event.set()
-        #self.join()
+        self.thread_alive = False
+        self.thread_event.set()
+        self.join()
 
     def add(self, data):
         """
@@ -72,29 +72,29 @@ class BinaryCodec():
         :param data: Raw byte data.
         """
         self.buffer.extend(data)
-        self.find_ensemble()
+        #self.find_ensemble()
 
         # Wakeup the thread to process the ensemble
-        #self.thread_event.set()
+        self.thread_event.set()
 
-    def find_ensemble(self):
+    def run(self):
         """
         Find the start of an ensemble.  Then find the end of the ensemble.
         Then remove the ensemble from the buffer and process the raw data.
         :return:
         """
 
-        #while self.thread_alive:
+        while self.thread_alive:
             # Wait for the next ensemble
-            #self.thread_event.wait()
+            self.thread_event.wait()
 
-        # Look for first 16 bytes of header
-        delimiter = b'\x80'*16
-        ens_start = self.buffer.find(delimiter)
+            # Look for first 16 bytes of header
+            delimiter = b'\x80'*16
+            ens_start = self.buffer.find(delimiter)
 
-        if ens_start >= 0 and len(self.buffer) > Ensemble().HeaderSize + ens_start:
-            # Decode the Ensemble
-            self.decode_ensemble(ens_start)
+            if ens_start >= 0 and len(self.buffer) > Ensemble().HeaderSize + ens_start:
+                # Decode the Ensemble
+                self.decode_ensemble(ens_start)
 
     def decode_ensemble(self, ensStart):
         """
