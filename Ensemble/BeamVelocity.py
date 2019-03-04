@@ -9,6 +9,11 @@ class BeamVelocity:
     """
 
     def __init__(self, num_elements, element_multiplier):
+        """
+        Beam Velocity data.
+        :param num_elements: Number of bins
+        :param element_multiplier: Number of beams.
+        """
         self.ds_type = 10
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier

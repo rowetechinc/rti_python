@@ -57,7 +57,7 @@ class RtiConfig:
         ports = adcp_serial.get_serial_ports()
 
         # Verify the section exist
-        if not 'Comm' in self.config:
+        if 'Comm' not in self.config:
             self.config['Comm'] = {}
             if ports:
                 self.config['Comm']['Port'] = ports[0]
@@ -93,7 +93,7 @@ class RtiConfig:
         """
 
         # Verify the section exist
-        if not 'Waves' in self.config:
+        if 'Waves' not in self.config:
             self.config['Waves'] = {}
             self.config['Waves']['output_dir'] = os.path.expanduser('~')
             self.config['Waves']['ens_in_burst'] = '1024'
@@ -152,4 +152,29 @@ class RtiConfig:
 
         if not self.config.has_option('Waves', 'longitude'):
             self.config['Waves']['longitude'] = '0.0'
+            self.write()
+
+    def init_average_waves_config(self):
+        """
+        Default configuration for the Average Waves Column.
+        Call this to add the Average Waves Column (AWC) sections to the config.
+        You can later add more to this section here or in your own code.
+        :return:
+        """
+
+        # Verify the section exist
+        if 'AWC' not in self.config:
+            self.config['AWC'] = {}
+            self.config['AWC']['num_ensembles'] = '600'
+            self.config['AWC']['output_dir'] = os.path.expanduser('~')
+
+            self.write()
+
+        # Verify each value exist
+        if not self.config.has_option('AWC', 'num_ensembles'):
+            self.config['AWC']['num_ensembles'] = '600'
+            self.write()
+
+        if not self.config.has_option('AWC', 'output_dir'):
+            self.config['AWC']['output_dir'] = os.path.expanduser('~')
             self.write()
