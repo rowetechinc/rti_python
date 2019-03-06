@@ -167,7 +167,6 @@ class RtiConfig:
             self.config['AWC'] = {}
             self.config['AWC']['num_ensembles'] = '600'
             self.config['AWC']['output_dir'] = os.path.expanduser('~')
-
             self.write()
 
         # Verify each value exist

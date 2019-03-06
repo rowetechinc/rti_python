@@ -1,6 +1,8 @@
 from collections import deque
 import logging
 from rti_python.Ensemble.Ensemble import Ensemble
+from threading import Lock
+import copy
 
 
 class AverageWaterColumn:
@@ -31,6 +33,8 @@ class AverageWaterColumn:
         self.ens_beam_list = deque([], self.num_ens)
         self.ens_instr_list = deque([], self.num_ens)
         self.ens_earth_list = deque([], self.num_ens)
+
+        self.thread_lock = Lock()
 
     def add_ens(self, ens):
         """
@@ -134,7 +138,14 @@ class AverageWaterColumn:
         avg_accum = []
         avg_count = []
 
-        for ens_vel in vel:
+        # lock the thread when iterating the deque
+        self.thread_lock.acquire(True, 1000)
+
+        # Create a deep copy of the data
+        # This will make it thread safe
+        deep_copy_vel = copy.deepcopy(vel)
+
+        for ens_vel in deep_copy_vel:
             temp_num_bins = len(ens_vel)
             temp_num_beams = len(ens_vel[0])
 
@@ -163,6 +174,9 @@ class AverageWaterColumn:
                     if ens_vel[ens_bin][beam] != Ensemble.BadVelocity:
                         avg_accum[ens_bin][beam] += ens_vel[ens_bin][beam]      # Accumulate velocity
                         avg_count[ens_bin][beam] += 1                           # Count good data
+
+        # Unlock thread
+        self.thread_lock.release()
 
         # Average the data accumulate
         for ens_bin in range(len(avg_accum)):
