@@ -186,6 +186,31 @@ class Ensemble:
         self.NmeaData = ds
 
     @staticmethod
+    def generate_header(value_type, num_elements, element_multiplier, imag, name_length, name):
+        """
+        Generate the header for an ensemble dataset.
+
+        Big Endian
+        :param value_type: Value type (float, int, string)
+        :param num_elements: Number of elements or number of bins.
+        :param element_multiplier: Element multipler or number of beams.
+        :param imag: NOT USED
+        :param name_length: Length of the name.
+        :param name: Name of the dataset.
+        :return: Header for a dataset.
+        """
+        result = []
+
+        result += Ensemble.int32_to_bytes(value_type)                   # Value Type
+        result += Ensemble.int32_to_bytes(num_elements)                 # Number of elements
+        result += Ensemble.int32_to_bytes(element_multiplier)           # Element Multiplier
+        result += Ensemble.int32_to_bytes(imag)                         # Image
+        result += Ensemble.int32_to_bytes(name_length)                  # Name Length
+        result += name.encode()                                         # Name
+
+        return result
+
+    @staticmethod
     def toJSON(self, pretty=False):
         """
         Convert to JSON.
@@ -209,6 +234,15 @@ class Ensemble:
         return struct.unpack("I", ens[start:start + numBytes])[0]
 
     @staticmethod
+    def int32_to_bytes(value):
+        """
+        Convert the given Int32 value to 4 bytes.
+        :param value: Value to convert.
+        :return: 4 Bytes representing the value.
+        """
+        return struct.pack("I", value)
+
+    @staticmethod
     def GetUInt16(start, numBytes, ens):
         """
         Convert the bytes given into an uint16.
@@ -221,6 +255,15 @@ class Ensemble:
         return struct.unpack("b", ens[start:start + numBytes])[0]
 
     @staticmethod
+    def uint16_to_bytes(value):
+        """
+        Convert the given UInt16 value to 4 bytes.
+        :param value: Value to convert.
+        :return: 4 Bytes representing the value.
+        """
+        return struct.pack("b", value)
+
+    @staticmethod
     def GetFloat(start, numBytes, ens):
         """
         Convert the bytes given into an int32.
@@ -231,6 +274,15 @@ class Ensemble:
         :return: Int32 of the data in the buffer.
         """
         return struct.unpack("f", ens[start:start + numBytes])[0]
+
+    @staticmethod
+    def float_to_bytes(value):
+        """
+        Convert the given float value to 4 bytes.
+        :param value: Value to convert.
+        :return: 4 Bytes representing the value.
+        """
+        return struct.pack("f", value)
 
     @staticmethod
     def GetDataSetSize(ds_type, name_len, num_elements, element_multipler):

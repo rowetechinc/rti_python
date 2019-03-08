@@ -14,7 +14,7 @@ class Amplitude:
         self.element_multiplier = element_multiplier
         self.image = 0
         self.name_len = 8
-        self.Name = "E000004"
+        self.Name = "E000004\0"
         self.Amplitude = []
 
         #self.EnsembleNumber = ensemble_number
@@ -44,3 +44,30 @@ class Amplitude:
                 packet_pointer += Ensemble().BytesInFloat
 
         logging.debug(self.Amplitude)
+
+    def encode(self):
+        """
+        Encode the data into RTB format.
+        :return:
+        """
+
+        payload_size = (self.num_elements * self.element_multiplier * Ensemble.BytesInFloat)
+
+        result = []
+
+        # Generate header
+        result += Ensemble.generate_header(self.ds_type,
+                                           self.num_elements,
+                                           self.element_multiplier,
+                                           self.image,
+                                           self.name_len,
+                                           self.Name)
+
+        # Add the data
+        for beam in range(self.element_multiplier):
+            for bin_num in range(self.num_elements):
+                val = self.Amplitude[bin_num][beam]
+                result += Ensemble.float_to_bytes(val)
+
+        return result
+
