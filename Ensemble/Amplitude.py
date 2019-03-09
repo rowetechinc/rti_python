@@ -50,9 +50,6 @@ class Amplitude:
         Encode the data into RTB format.
         :return:
         """
-
-        payload_size = (self.num_elements * self.element_multiplier * Ensemble.BytesInFloat)
-
         result = []
 
         # Generate header
@@ -71,3 +68,22 @@ class Amplitude:
 
         return result
 
+    def encode_csv(self, dt, ss_code, ss_config):
+        """
+        Encode the Amplitude into CSV format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        str_result = []
+
+        for beam in range(self.element_multiplier):
+            for bin_num in range(self.num_elements):
+                # Get the value
+                val = self.Amplitude[bin_num][beam]
+
+                # Create the CSV string
+                str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_AMP, ss_code, ss_config, bin_num, beam, val))
+
+        return str_result

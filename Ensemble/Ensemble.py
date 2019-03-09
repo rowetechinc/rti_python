@@ -1,5 +1,6 @@
 import struct
 import json
+import datetime
 
 
 class Ensemble:
@@ -29,6 +30,27 @@ class Ensemble:
 
     # Bad Velocity
     BadVelocity = float(88.888000)
+
+    # CSV Data Types
+    CSV_AMP = "Amp"
+    CSV_CORR = "Corr"
+    CSV_BEAM_VEL = "BeamVel"
+    CSV_INSTR_VEL = "InstrVel"
+    CSV_EARTH_VEL = "EarthVel"
+    CSV_GOOD_BEAM = "GoodBeam"
+    CSV_GOOD_EARTH = "GoodEarth"
+    CSV_PRESSURE = "Pressure"
+    CSV_HEADING = "Heading"
+    CSV_Pitch = "Pitch"
+    CSV_Roll = "Roll"
+    CSV_RT = "RT"
+    CSV_BT_RANGE = "BT_Range"
+    CSV_BT_BEAM_VEL = "BT_BeamVel"
+    CSV_BT_INSTR_VEL = "BT_InstrVel"
+    CSV_BT_EARTH_VEL = "BT_EarthVel"
+    CSV_GPS_HEADING = "GPS_Heading"
+    CSV_GPS_VTG = "GPS_VTG"
+    CSV_NMEA = "NMEA"
 
     def __init__(self):
         self.RawData = None
@@ -185,6 +207,31 @@ class Ensemble:
         self.IsNmeaData = True
         self.NmeaData = ds
 
+    def encode_csv(self):
+        result = []
+
+        dt = datetime.datetime.now()
+
+        # Get the subsytem code and config
+        ss_code = ""
+        ss_config = ""
+        if self.IsEnsembleData:
+            ss_code = self.EnsembleData.SysFirmwareSubsystemCode
+            ss_config = self.EnsembleData.SubsystemConfig
+
+        if self.IsAmplitude:
+            result += self.Amplitude.encode_csv(dt, ss_code, ss_config)
+        if self.IsCorrelation:
+            result += self.Correlation.encode_csv(dt, ss_code, ss_config)
+        if self.IsBeamVelocity:
+            result += self.BeamVelocity.encode_csv(dt, ss_code, ss_config)
+        if self.IsInstrumentVelocity:
+            result += self.InstrumentVelocity.encode_csv(dt, ss_code, ss_config)
+        if self.IsEarthVelocity:
+            result += self.EarthVelocity.encode_csv(dt, ss_code, ss_config)
+
+        return result
+
     @staticmethod
     def generate_header(value_type, num_elements, element_multiplier, imag, name_length, name):
         """
@@ -220,6 +267,43 @@ class Ensemble:
             return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4) + "\n"
         else:
             return json.dumps(self, default=lambda o: o.__dict__) + "\n"
+
+    @staticmethod
+    def gen_csv_line(dt, data_type, ss_code, ss_config, bin_num, beam_num, value):
+        """
+        Create a csv line.  Use this so all the lines have the same format.
+
+        The data_type options are:
+        Amp = Amplitude
+        Corr = Correlation
+        BeamVel = Beam Velocity
+        InstrVel = Instrument Velocity
+        EarthVel = Earth Velocity
+        Pressure = Pressure Depth
+        Heading = Heading
+        Pitch = Pitch
+        Roll = Roll
+        RT = Range Tracking
+        BT_Range = Bottom Track Range
+        BT_BeamVel = Bottom Track Beam Velocity
+        BT_InstrVel = Bottom Track Instrument Velocity
+        BT_EarthVel = Bottom Track Earth Velocity
+
+
+        Ex:
+        2019/03/07 00:51:35:478159, Amp, 1, 3, A, 1, 23.03
+        :param dt:
+        :param data_type:
+        :param ss_code:
+        :param ss_config:
+        :param bin_num:
+        :param beam_num:
+        :param value:
+        :return:
+        """
+        dt_str = dt.strftime('%Y/%m/%d %H:%M:%S:%f')
+
+        return "{},{},{},{},{},{},{}".format(dt_str, data_type, ss_code, ss_config, bin_num, beam_num, value)
 
     @staticmethod
     def GetInt32(start, numBytes, ens):

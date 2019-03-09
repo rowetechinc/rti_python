@@ -1,11 +1,9 @@
 import pytest
-
+import datetime
+import re
 from rti_python.Ensemble.Ensemble import Ensemble
 from rti_python.Ensemble.Amplitude import Amplitude
-from rti_python.Ensemble.Correlation import Correlation
-from rti_python.Ensemble.BeamVelocity import BeamVelocity
-from rti_python.Ensemble.InstrumentVelocity import InstrumentVelocity
-from rti_python.Ensemble.EarthVelocity import EarthVelocity
+
 
 def test_generate_header():
 
@@ -14,7 +12,7 @@ def test_generate_header():
     element_multiplier = 4      # 4 Beams
     imag = 0                    # NOT USED
     name_length = 8             # Length of name
-    name = "E000004\0"            # Amp name
+    name = "E000004\0"          # Amp name
 
     header = Ensemble.generate_header(value_type,
                                       num_elements,
@@ -62,7 +60,6 @@ def test_generate_header():
     assert ord('0') == header[25]
     assert ord('4') == header[26]
     assert ord('\0') == header[27]
-
 
 def test_amplitude():
 
@@ -130,26 +127,30 @@ def test_amplitude():
             result_val += 1.1
             index += Ensemble().BytesInFloat
 
-def test_encode_csv():
 
-    num_bins = 33
+def test_amplitude_encode_csv():
+    num_bins = 30
     num_beams = 4
 
-    ens = Ensemble()
     amp = Amplitude(num_bins, num_beams)
-    corr = Correlation(num_bins, num_beams)
-    beam_vel = BeamVelocity(num_bins, num_beams)
-    inst_vel = InstrumentVelocity(num_bins, num_beams)
-    earth_vel = EarthVelocity(num_bins, num_beams)
 
-    ens.AddAmplitude(amp)
-    ens.AddCorrelation(corr)
-    ens.AddBeamVelocity(beam_vel)
-    ens.AddInstrumentVelocity(inst_vel)
-    ens.AddEarthVelocity(earth_vel)
+    # Populate data
+    val = 1.0
+    for beam in range(amp.element_multiplier):
+        for bin_num in range(amp.num_elements):
+            amp.Amplitude[bin_num][beam] = val
+            val += 1.1
 
-    results = ens.encode_csv()
-    total_lines = num_bins * num_beams * 5
+    dt = datetime.datetime.now()
 
-    assert len(results) == total_lines
+    # Create CSV lines
+    result = amp.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    test_value = 1.0
+    for line in result:
+        assert bool(re.search(str(test_value), line))
+        assert bool(re.search('Amp', line))
+        test_value += 1.1
+
 
