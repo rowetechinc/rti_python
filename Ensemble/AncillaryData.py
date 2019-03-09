@@ -14,7 +14,7 @@ class AncillaryData:
         self.element_multiplier = element_multiplier
         self.image = 0
         self.name_len = 8
-        self.Name = "E000009"
+        self.Name = "E000009\0"
 
         self.FirstBinRange = 0.0        # Blank.  Depth to the first bin in meters.
         self.BinSize = 0.0              # Size of a bin in meters.
@@ -70,5 +70,64 @@ class AncillaryData:
         logging.debug(self.Salinity)
         logging.debug(self.SpeedOfSound)
 
+    def encode(self):
+        """
+        Encode the data into RTB format.
+        :return:
+        """
+        result = []
+
+        # Generate header
+        result += Ensemble.generate_header(self.ds_type,
+                                           self.num_elements,
+                                           self.element_multiplier,
+                                           self.image,
+                                           self.name_len,
+                                           self.Name)
+
+        # Add the data
+        result += Ensemble.float_to_bytes(self.FirstBinRange)
+        result += Ensemble.float_to_bytes(self.BinSize)
+        result += Ensemble.float_to_bytes(self.FirstPingTime)
+        result += Ensemble.float_to_bytes(self.LastPingTime)
+        result += Ensemble.float_to_bytes(self.Heading)
+        result += Ensemble.float_to_bytes(self.Pitch)
+        result += Ensemble.float_to_bytes(self.Roll)
+        result += Ensemble.float_to_bytes(self.WaterTemp)
+        result += Ensemble.float_to_bytes(self.SystemTemp)
+        result += Ensemble.float_to_bytes(self.Salinity)
+        result += Ensemble.float_to_bytes(self.Pressure)
+        result += Ensemble.float_to_bytes(self.TransducerDepth)
+        result += Ensemble.float_to_bytes(self.SpeedOfSound)
+        result += Ensemble.float_to_bytes(self.RawMagFieldStrength)
+        result += Ensemble.float_to_bytes(self.PitchGravityVector)
+        result += Ensemble.float_to_bytes(self.RollGravityVector)
+        result += Ensemble.float_to_bytes(self.VerticalGravityVector)
+
+        return result
+
+    def encode_csv(self, dt, ss_code, ss_config):
+        """
+        Encode into CSV format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        str_result = []
+
+        # Create the CSV strings
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, self.LastPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, self.Heading))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, self.Pitch))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, self.Roll))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, self.WaterTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, self.SystemTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, self.Pressure))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, self.TransducerDepth))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, self.SpeedOfSound))
+
+        return str_result
 
 

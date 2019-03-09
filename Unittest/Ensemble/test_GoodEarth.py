@@ -1,22 +1,18 @@
 import pytest
-
+import datetime
+import re
 from rti_python.Ensemble.Ensemble import Ensemble
-from rti_python.Ensemble.Amplitude import Amplitude
-from rti_python.Ensemble.Correlation import Correlation
-from rti_python.Ensemble.BeamVelocity import BeamVelocity
-from rti_python.Ensemble.InstrumentVelocity import InstrumentVelocity
-from rti_python.Ensemble.EarthVelocity import EarthVelocity
-from rti_python.Ensemble.GoodBeam import GoodBeam
 from rti_python.Ensemble.GoodEarth import GoodEarth
+
 
 def test_generate_header():
 
-    value_type = 10             # Float
+    value_type = 20             # Int
     num_elements = 30           # 30 bins
     element_multiplier = 4      # 4 Beams
     imag = 0                    # NOT USED
     name_length = 8             # Length of name
-    name = "E000004\0"            # Amp name
+    name = "E000007\0"          # Good Earth name
 
     header = Ensemble.generate_header(value_type,
                                       num_elements,
@@ -26,7 +22,7 @@ def test_generate_header():
                                       name)
 
     # Value type
-    assert 0xA == header[0]
+    assert 0x14 == header[0]
     assert 0x0 == header[1]
     assert 0x0 == header[2]
     assert 0x0 == header[3]
@@ -62,25 +58,24 @@ def test_generate_header():
     assert ord('0') == header[23]
     assert ord('0') == header[24]
     assert ord('0') == header[25]
-    assert ord('4') == header[26]
+    assert ord('7') == header[26]
     assert ord('\0') == header[27]
 
 
-def test_amplitude():
-
-    amp = Amplitude(30, 4)
+def test_good_earth():
+    gb = GoodEarth(30, 4)
 
     # Populate data
     val = 1.0
-    for beam in range(amp.element_multiplier):
-        for bin_num in range(amp.num_elements):
-            amp.Amplitude[bin_num][beam] = val
+    for beam in range(gb.element_multiplier):
+        for bin_num in range(gb.num_elements):
+            gb.GoodEarth[bin_num][beam] = val
             val += 1.1
 
-    result = amp.encode()
+    result = gb.encode()
 
     # Value type
-    assert 0xA == result[0]
+    assert 0x14 == result[0]
     assert 0x0 == result[1]
     assert 0x0 == result[2]
     assert 0x0 == result[3]
@@ -116,46 +111,46 @@ def test_amplitude():
     assert ord('0') == result[23]
     assert ord('0') == result[24]
     assert ord('0') == result[25]
-    assert ord('4') == result[26]
+    assert ord('7') == result[26]
     assert ord('\0') == result[27]
 
     # Length
-    assert len(result) == 28 + ((amp.element_multiplier * amp.num_elements) * Ensemble.BytesInFloat)
+    assert len(result) == 28 + ((gb.element_multiplier * gb.num_elements) * Ensemble.BytesInInt32)
 
-    # Amplitude data
+    # Data
     result_val = 1.0
     index = 28                  # 28 = Header size
-    for beam in range(amp.element_multiplier):
-        for bin_num in range(amp.num_elements):
+    for beam in range(gb.element_multiplier):
+        for bin_num in range(gb.num_elements):
             test_val = Ensemble.GetFloat(index, Ensemble().BytesInFloat, bytearray(result))
             assert result_val == pytest.approx(test_val, 0.1)
             result_val += 1.1
             index += Ensemble().BytesInFloat
 
-def test_encode_csv():
 
-    num_bins = 33
+def test_encode_csv():
+    num_bins = 30
     num_beams = 4
 
-    ens = Ensemble()
-    amp = Amplitude(num_bins, num_beams)
-    corr = Correlation(num_bins, num_beams)
-    beam_vel = BeamVelocity(num_bins, num_beams)
-    inst_vel = InstrumentVelocity(num_bins, num_beams)
-    earth_vel = EarthVelocity(num_bins, num_beams)
-    gb = GoodBeam(num_bins, num_beams)
-    ge = GoodEarth(num_bins, num_beams)
+    gb = GoodEarth(num_bins, num_beams)
 
-    ens.AddAmplitude(amp)
-    ens.AddCorrelation(corr)
-    ens.AddBeamVelocity(beam_vel)
-    ens.AddInstrumentVelocity(inst_vel)
-    ens.AddEarthVelocity(earth_vel)
-    ens.AddGoodBeam(gb)
-    ens.AddGoodEarth(ge)
+    # Populate data
+    val = 1.0
+    for beam in range(gb.element_multiplier):
+        for bin_num in range(gb.num_elements):
+            gb.GoodEarth[bin_num][beam] = val
+            val += 1.1
 
-    results = ens.encode_csv()
-    total_lines = num_bins * num_beams * 7
+    dt = datetime.datetime.now()
 
-    assert len(results) == total_lines
+    # Create CSV lines
+    result = gb.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    test_value = 1.0
+    for line in result:
+        assert bool(re.search(str(test_value), line))
+        assert bool(re.search(Ensemble.CSV_GOOD_EARTH, line))
+        test_value += 1.1
+
 

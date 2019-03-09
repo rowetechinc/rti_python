@@ -40,14 +40,22 @@ class Ensemble:
     CSV_GOOD_BEAM = "GoodBeam"
     CSV_GOOD_EARTH = "GoodEarth"
     CSV_PRESSURE = "Pressure"
+    CSV_XDCR_DEPTH = "XdcrDepth"
     CSV_HEADING = "Heading"
-    CSV_Pitch = "Pitch"
-    CSV_Roll = "Roll"
+    CSV_PITCH = "Pitch"
+    CSV_ROLL = "Roll"
+    CSV_WATER_TEMP = "WaterTemp"
+    CSV_SYS_TEMP = "SysTemp"
+    CSV_SOS = "SpeedOfSound"
+    CSV_FIRST_PING_TIME = "FirstPingTime"
+    CSV_LAST_PING_TIME = "LastPingTime"
+    CSV_STATUS = "Status"
     CSV_RT = "RT"
     CSV_BT_RANGE = "BT_Range"
     CSV_BT_BEAM_VEL = "BT_BeamVel"
     CSV_BT_INSTR_VEL = "BT_InstrVel"
     CSV_BT_EARTH_VEL = "BT_EarthVel"
+    CSV_BT_STATUS = "BT_Status"
     CSV_GPS_HEADING = "GPS_Heading"
     CSV_GPS_VTG = "GPS_VTG"
     CSV_NMEA = "NMEA"
@@ -207,6 +215,39 @@ class Ensemble:
         self.IsNmeaData = True
         self.NmeaData = ds
 
+    def encode(self):
+        """
+        Encode the ensemble to RTB format.
+        :return:
+        """
+        payload = []
+
+        # Generate Payload
+        if self.IsAncillaryData:
+            payload += self.AncillaryData.encode()
+        if self.IsAmplitude:
+            payload += self.Amplitude.encode()
+        if self.IsCorrelation:
+            payload += self.Correlation.encode()
+        if self.IsBeamVelocity:
+            payload += self.BeamVelocity.encode()
+        if self.IsInstrumentVelocity:
+            payload += self.InstrumentVelocity.encode()
+        if self.IsEarthVelocity:
+            payload += self.EarthVelocity.encode()
+        if self.IsGoodBeam:
+            payload += self.GoodBeam.encode()
+        if self.IsGoodEarth:
+            payload += self.GoodEarth.encode()
+
+        # Generate the header
+        header = []
+
+        # Generate the Checksum
+        checksum = []
+
+        return header + payload + checksum
+
     def encode_csv(self):
         result = []
 
@@ -229,6 +270,12 @@ class Ensemble:
             result += self.InstrumentVelocity.encode_csv(dt, ss_code, ss_config)
         if self.IsEarthVelocity:
             result += self.EarthVelocity.encode_csv(dt, ss_code, ss_config)
+        if self.IsGoodBeam:
+            result += self.GoodBeam.encode_csv(dt, ss_code, ss_config)
+        if self.IsGoodEarth:
+            result += self.GoodEarth.encode_csv(dt, ss_code, ss_config)
+        if self.IsAncillaryData:
+            result += self.AncillaryData.encode_csv(dt, ss_code, ss_config)
 
         return result
 

@@ -11,12 +11,12 @@ class EnsembleData:
     """
 
     def __init__(self, num_elements=19, element_multiplier=1):
-        self.ds_type = 10
+        self.ds_type = 20
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
         self.image = 0
         self.name_len = 8
-        self.Name = "E000008"
+        self.Name = "E000008\0"
 
         self.EnsembleNumber = 0
         self.NumBins = 0
@@ -24,11 +24,11 @@ class EnsembleData:
         self.DesiredPingCount = 0
         self.ActualPingCount = 0
         self.SerialNumber = ""
-        self.SysFirmwareMajor = ""
-        self.SysFirmwareMinor = ""
-        self.SysFirmwareRevision = ""
+        self.SysFirmwareMajor = 0
+        self.SysFirmwareMinor = 0
+        self.SysFirmwareRevision = 0
         self.SysFirmwareSubsystemCode = ""
-        self.SubsystemConfig = ""
+        self.SubsystemConfig = 0
         self.Status = 0
         self.Year = 0
         self.Month = 0
@@ -86,3 +86,59 @@ class EnsembleData:
 
     def firmware_str(self):
         return "{0}.{1}.{2} - {3}".format(self.SysFirmwareMajor, self.SysFirmwareMinor, self.SysFirmwareRevision, self.SysFirmwareSubsystemCode)
+
+    def encode(self):
+        """
+        Encode the data into RTB format.
+        :return:
+        """
+        result = []
+
+        # Generate header
+        result += Ensemble.generate_header(self.ds_type,
+                                           self.num_elements,
+                                           self.element_multiplier,
+                                           self.image,
+                                           self.name_len,
+                                           self.Name)
+
+        # Add the data
+        result += Ensemble.int32_to_bytes(self.EnsembleNumber)
+        result += Ensemble.int32_to_bytes(self.NumBins)
+        result += Ensemble.int32_to_bytes(self.NumBeams)
+        result += Ensemble.int32_to_bytes(self.DesiredPingCount)
+        result += Ensemble.int32_to_bytes(self.ActualPingCount)
+        result += self.SerialNumber.encode("UTF-8")
+        result += bytes([self.SysFirmwareMajor])
+        result += bytes([self.SysFirmwareMinor])
+        result += bytes([self.SysFirmwareRevision])
+        result += self.SysFirmwareSubsystemCode.encode("UTF-8")
+        result += bytes([0])
+        result += bytes([0])
+        result += bytes([0])
+        result += bytes([self.SubsystemConfig])
+        result += Ensemble.int32_to_bytes(self.Status)
+        result += Ensemble.int32_to_bytes(self.Year)
+        result += Ensemble.int32_to_bytes(self.Month)
+        result += Ensemble.int32_to_bytes(self.Day)
+        result += Ensemble.int32_to_bytes(self.Hour)
+        result += Ensemble.int32_to_bytes(self.Minute)
+        result += Ensemble.int32_to_bytes(self.Second)
+        result += Ensemble.int32_to_bytes(self.HSec)
+
+        return result
+
+    def encode_csv(self, dt, ss_code, ss_config):
+        """
+        Encode into CSV format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        str_result = []
+
+        # Create the CSV strings
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_STATUS, ss_code, ss_config, 0, 0, self.Status))
+
+        return str_result

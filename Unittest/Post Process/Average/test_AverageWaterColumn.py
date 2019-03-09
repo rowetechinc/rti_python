@@ -62,7 +62,8 @@ def test_AWC_1ens():
     ens.AddEarthVelocity(earthVel)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
 
     # verify empty list
     assert not result[0]
@@ -125,8 +126,9 @@ def test_AWC_2ens():
     ens.AddEarthVelocity(earthVel)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
 
     # verify empty list
     assert not result[0]
@@ -189,9 +191,10 @@ def test_AWC_3ens():
     ens.AddEarthVelocity(earthVel)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
 
     # verify empty list
     assert result[0]
@@ -272,9 +275,10 @@ def test_AWC_data():
     ens.AddEarthVelocity(earthVel)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
 
     # verify empty list
     assert result[0]
@@ -408,10 +412,11 @@ def test_AWC_4ens():
     ens1.AddEarthVelocity(earthVel1)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens1)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens1)
+    result = awc.average()
 
     # verify not empty list
     assert result[0]
@@ -545,10 +550,11 @@ def test_AWC_4ens_new_data():
     ens1.AddEarthVelocity(earthVel1)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens1)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens1)
+    result = awc.average()
 
     # verify not empty list
     assert result[0]
@@ -655,10 +661,11 @@ def test_AWC_change_beam():
     ens1.AddEarthVelocity(earthVel1)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens1)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens1)
+    result = awc.average()
 
     # verify empty list
     assert not result[0]
@@ -774,10 +781,11 @@ def test_AWC_change_ss_code():
     ens1.AddEarthVelocity(earthVel1)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens1)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens1)
+    result = awc.average()
 
     # verify not empty list
     assert result[0]
@@ -911,10 +919,11 @@ def test_AWC_change_ss_config():
     ens1.AddEarthVelocity(earthVel1)
 
     awc = AverageWaterColumn(3, '3', '1')
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens)
-    result = awc.add_ens(ens1)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens1)
+    result = awc.average()
 
     # verify not empty list
     assert result[0]
