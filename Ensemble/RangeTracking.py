@@ -14,7 +14,7 @@ class RangeTracking:
         self.element_multiplier = element_multiplier
         self.image = 0
         self.name_len = 8
-        self.Name = "E000015"
+        self.Name = "E000015\0"
 
         self.NumBeams = 0.0
         self.SNR = []

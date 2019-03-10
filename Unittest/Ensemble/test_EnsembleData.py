@@ -196,14 +196,20 @@ def test_ensembledata():
     assert serial[29] == result[77]
     assert serial[30] == result[78]
     assert serial[31] == result[79]
-    #assert "01H00000000000000000000000999999" == str(result[48:79], "UTF-8")
+
+    str_serial = bytes(result[48:80]).decode("UTF-8")
+    assert "01H00000000000000000000000999999" == str_serial
 
     # Firmware Major
     assert 2 == result[80]
     assert 11 == result[81]
     assert 5 == result[82]
     assert 65 == result[83]
-    #assert "A" == str(result[83], "UTF-8")
+
+    char_ss_code = chr(result[83])
+    assert 'A' == char_ss_code
+    str_ss_code = bytes(result[83:84]).decode("UTF-8")
+    assert 'A' == str_ss_code
 
     # Subsystem Config
     assert 0 == result[84]
