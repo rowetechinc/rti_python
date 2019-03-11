@@ -60,7 +60,7 @@ class GoodBeam:
         for beam in range(self.element_multiplier):
             for bin_num in range(self.num_elements):
                 val = self.GoodBeam[bin_num][beam]
-                result += Ensemble.float_to_bytes(val)
+                result += Ensemble.int32_to_bytes(val)
 
         return result
 

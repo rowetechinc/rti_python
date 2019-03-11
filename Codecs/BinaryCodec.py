@@ -136,7 +136,7 @@ class BinaryCodec(Thread):
                 logging.debug(ensNum[0])
                 try:
                     # Decode data
-                    ensemble = self.decode_data_sets(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payloadSize[0]])
+                    ensemble = BinaryCodec.decode_data_sets(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payloadSize[0]])
 
                     # ************************
                     self.process_ensemble(ensemble)
@@ -161,7 +161,8 @@ class BinaryCodec(Thread):
         self.EnsembleEvent(ens)
         logging.debug("Ensemble Processed")
 
-    def decode_data_sets(self, ens):
+    @staticmethod
+    def decode_data_sets(ens):
         """
         Decode the datasets in the ensemble.
         :param ens: Ensemble data.  Decode the dataset.

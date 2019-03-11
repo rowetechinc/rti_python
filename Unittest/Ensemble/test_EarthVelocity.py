@@ -154,3 +154,26 @@ def test_encode_csv():
         test_value += 1.1
 
 
+def test_encode_decode():
+
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 1.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+            val += 1.1
+
+    result = vel.encode()
+
+    vel1 = EarthVelocity(num_bins, num_beams)
+    vel1.decode(bytearray(result))
+
+    for beam in range(vel1.element_multiplier):
+        for bin_num in range(vel1.num_elements):
+            assert vel1.Velocities[bin_num][beam] == pytest.approx(vel1.Velocities[bin_num][beam], 0.1)
+

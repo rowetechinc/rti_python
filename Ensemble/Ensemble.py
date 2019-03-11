@@ -1,6 +1,7 @@
 import struct
 import json
 import datetime
+from PyCRC.CRCCCITT import CRCCCITT
 
 
 class Ensemble:
@@ -64,9 +65,15 @@ class Ensemble:
     CSV_BT_INSTR_GOOD = "BT_InstrGood"
     CSV_BT_EARTH_VEL = "BT_EarthVel"
     CSV_BT_EARTH_GOOD = "BT_EarthGood"
+    CSV_RT_RANGE = "RT_Range"
+    CSV_RT_PINGS = "RT_Pings"
+    CSV_RT_BEAM_VEL = "RT_BeamVel"
+    CSV_RT_INSTR_VEL = "RT_InstrVel"
+    CSV_RT_EARTH_VEL = "RT_EarthVel"
     CSV_GPS_HEADING = "GPS_Heading"
     CSV_GPS_VTG = "GPS_VTG"
     CSV_NMEA = "NMEA"
+    CSV_VOLTAGE = "Voltage"
 
     def __init__(self):
         self.RawData = None
@@ -231,6 +238,8 @@ class Ensemble:
         payload = []
 
         # Generate Payload
+        if self.IsEnsembleData:
+            payload += self.EnsembleData.encode()
         if self.IsAncillaryData:
             payload += self.AncillaryData.encode()
         if self.IsAmplitude:
@@ -247,14 +256,72 @@ class Ensemble:
             payload += self.GoodBeam.encode()
         if self.IsGoodEarth:
             payload += self.GoodEarth.encode()
+        if self.IsBottomTrack:
+            payload += self.BottomTrack.encode()
+        if self.IsRangeTracking:
+            payload += self.RangeTracking.encode()
+        if self.IsSystemSetup:
+            payload += self.SystemSetup.encode()
+        if self.IsNmeaData:
+            payload += self.NmeaData.encode()
 
         # Generate the header
-        header = []
+        # Get the ensemble number
+        ens_num = 0
+        if self.IsEnsembleData:
+            ens_num = self.EnsembleData.EnsembleNumber
+
+        # Get the payload size
+        payload_size = len(payload)
+
+        header = Ensemble.generate_ens_header(ens_num, payload_size)
 
         # Generate the Checksum
-        checksum = []
+        checksum = Ensemble.int32_to_bytes(CRCCCITT().calculate(input_data=bytes(payload)))
 
-        return header + payload + checksum
+        result = []
+        result += header
+        result += payload
+        result += checksum
+
+        return bytearray(result)
+
+    @staticmethod
+    def generate_ens_header(ens_num, payload_size):
+        """
+        Generate the header for an ensemble.  This will include
+        16 0x80 and then the ensemble number and payload size.
+        The inverse of the ensemble number and payload size are included.
+        :param ens_num: Ensemble number.
+        :param payload_size: Payload size.
+        :return: Header for an ensemble.
+        """
+
+        header = []
+
+        # Get the Header ID
+        for cnt in range(0, 16):
+            header.append(0x80)
+
+        # Ensemble Number and inverse
+        header += Ensemble.int32_to_bytes(ens_num)
+        header += Ensemble.int32_to_bytes(Ensemble.invert_int(ens_num))
+
+        # Payload size and inverse
+        header += Ensemble.int32_to_bytes(payload_size)
+        header += Ensemble.int32_to_bytes(Ensemble.invert_int(payload_size))
+
+        return header
+
+    @staticmethod
+    def invert_int(n):
+        """
+        Invert the given integer.
+        :return: Inverse of integer given.
+        """
+        number_bit_len = n.bit_length()
+        max_val = (2 ** number_bit_len) - 1
+        return ~n & max_val
 
     def encode_csv(self):
         result = []
@@ -268,6 +335,12 @@ class Ensemble:
             ss_code = self.EnsembleData.SysFirmwareSubsystemCode
             ss_config = self.EnsembleData.SubsystemConfig
 
+            # Create a new datetime based off ensemble time
+
+            result += self.EnsembleData.encode_csv(dt, ss_code, ss_config)
+
+        if self.IsAncillaryData:
+            result += self.AncillaryData.encode_csv(dt, ss_code, ss_config)
         if self.IsAmplitude:
             result += self.Amplitude.encode_csv(dt, ss_code, ss_config)
         if self.IsCorrelation:
@@ -282,8 +355,12 @@ class Ensemble:
             result += self.GoodBeam.encode_csv(dt, ss_code, ss_config)
         if self.IsGoodEarth:
             result += self.GoodEarth.encode_csv(dt, ss_code, ss_config)
-        if self.IsAncillaryData:
-            result += self.AncillaryData.encode_csv(dt, ss_code, ss_config)
+        if self.IsBottomTrack:
+            result += self.BottomTrack.encode_csv(dt, ss_code, ss_config)
+        if self.IsRangeTracking:
+            result += self.RangeTracking.encode_csv(dt, ss_code, ss_config)
+        if self.IsSystemSetup:
+            result += self.SystemSetup.encode_csv(dt, ss_code, ss_config)
 
         return result
 

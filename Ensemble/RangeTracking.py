@@ -8,8 +8,8 @@ class RangeTracking:
     Values that give details about the wave heights.
     """
 
-    def __init__(self, num_elements=8, element_multiplier=4):
-        self.ds_type = 10
+    def __init__(self, num_elements=8, element_multiplier=1):
+        self.ds_type = 10                   # Float
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
         self.image = 0
@@ -35,6 +35,8 @@ class RangeTracking:
         packet_pointer = Ensemble.GetBaseDataSize(self.name_len)
 
         self.NumBeams = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 0, Ensemble().BytesInFloat, data)
+
+        self.num_elements = (8 * int(self.NumBeams)) + 1
 
         if self.NumBeams == 4.0:
             self.SNR.append(Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 1, Ensemble().BytesInFloat, data))
@@ -160,5 +162,78 @@ class RangeTracking:
         logging.debug(self.InstrumentVelocity)
         logging.debug(self.EarthVelocity)
 
+    def encode(self):
+        """
+        Encode the data into RTB format.
+        :return:
+        """
+        result = []
+
+        self.num_elements = (8 * int(self.NumBeams)) + 1     # 8 is the number of list plus 1 for NumBeams
+
+        # Generate header
+        result += Ensemble.generate_header(self.ds_type,
+                                           self.num_elements,
+                                           self.element_multiplier,
+                                           self.image,
+                                           self.name_len,
+                                           self.Name)
+
+        # Add the data
+        result += Ensemble.float_to_bytes(self.NumBeams)
+
+        for beam in range(len(self.SNR)):
+            result += Ensemble.float_to_bytes(self.SNR[beam])
+
+        for beam in range(len(self.Range)):
+            result += Ensemble.float_to_bytes(self.Range[beam])
+
+        for beam in range(len(self.Pings)):
+            result += Ensemble.float_to_bytes(self.Pings[beam])
+
+        for beam in range(len(self.Amplitude)):
+            result += Ensemble.float_to_bytes(self.Amplitude[beam])
+
+        for beam in range(len(self.Correlation)):
+            result += Ensemble.float_to_bytes(self.Correlation[beam])
+
+        for beam in range(len(self.BeamVelocity)):
+            result += Ensemble.float_to_bytes(self.BeamVelocity[beam])
+
+        for beam in range(len(self.InstrumentVelocity)):
+            result += Ensemble.float_to_bytes(self.InstrumentVelocity[beam])
+
+        for beam in range(len(self.EarthVelocity)):
+            result += Ensemble.float_to_bytes(self.EarthVelocity[beam])
+
+        return result
+
+    def encode_csv(self, dt, ss_code, ss_config):
+        """
+        Encode into CSV format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        str_result = []
+
+        # Create the CSV strings
+        for beams in range(len(self.Range)):
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_RANGE, ss_code, ss_config, 0, beams, self.Range[beams]))
+
+        for beams in range(len(self.Pings)):
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_PINGS, ss_code, ss_config, 0, beams, self.Pings[beams]))
+
+        for beams in range(len(self.BeamVelocity)):
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_BEAM_VEL, ss_code, ss_config, 0, beams, self.BeamVelocity[beams]))
+
+        for beams in range(len(self.InstrumentVelocity)):
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_INSTR_VEL, ss_code, ss_config, 0, beams, self.InstrumentVelocity[beams]))
+
+        for beams in range(len(self.EarthVelocity)):
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_EARTH_VEL, ss_code, ss_config, 0, beams, self.EarthVelocity[beams]))
+
+        return str_result
 
 

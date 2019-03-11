@@ -8,13 +8,13 @@ class SystemSetup:
     Float values that give details about the system setup.
     """
 
-    def __init__(self, num_elements, element_multiplier):
-        self.ds_type = 10
+    def __init__(self, num_elements=21, element_multiplier=1):
+        self.ds_type = 10                       # Float
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
         self.image = 0
         self.name_len = 8
-        self.Name = "E000014"
+        self.Name = "E000014\0"
 
         self.BtSamplesPerSecond = 0.0           # Bottom Track Samples Per Second
         self.BtSystemFreqHz = 0.0               # Bottom Track System Frequency (Hz)
@@ -92,5 +92,58 @@ class SystemSetup:
         logging.debug(self.WpTransmitBandwidth)
         logging.debug(self.WpReceiveBandwidth)
 
+    def encode(self):
+        """
+        Encode the data into RTB format.
+        :return:
+        """
+        result = []
 
+        # Generate header
+        result += Ensemble.generate_header(self.ds_type,
+                                           self.num_elements,
+                                           self.element_multiplier,
+                                           self.image,
+                                           self.name_len,
+                                           self.Name)
+
+        # Add the data
+        result += Ensemble.float_to_bytes(self.BtSamplesPerSecond)
+        result += Ensemble.float_to_bytes(self.BtSystemFreqHz)
+        result += Ensemble.float_to_bytes(self.BtCPCE)
+        result += Ensemble.float_to_bytes(self.BtNCE)
+        result += Ensemble.float_to_bytes(self.BtRepeatN)
+        result += Ensemble.float_to_bytes(self.WpSamplesPerSecond)
+        result += Ensemble.float_to_bytes(self.WpSystemFreqHz)
+        result += Ensemble.float_to_bytes(self.WpCPCE)
+        result += Ensemble.float_to_bytes(self.WpNCE)
+        result += Ensemble.float_to_bytes(self.WpRepeatN)
+        result += Ensemble.float_to_bytes(self.WpLagSamples)
+        result += Ensemble.float_to_bytes(self.Voltage)
+        result += Ensemble.float_to_bytes(self.XmtVoltage)
+        result += Ensemble.float_to_bytes(self.BtBroadband)
+        result += Ensemble.float_to_bytes(self.BtLagLength)
+        result += Ensemble.float_to_bytes(self.BtNarrowband)
+        result += Ensemble.float_to_bytes(self.BtBeamMux)
+        result += Ensemble.float_to_bytes(self.WpBroadband)
+        result += Ensemble.float_to_bytes(self.WpLagLength)
+        result += Ensemble.float_to_bytes(self.WpTransmitBandwidth)
+        result += Ensemble.float_to_bytes(self.WpReceiveBandwidth)
+
+        return result
+
+    def encode_csv(self, dt, ss_code, ss_config):
+        """
+        Encode into CSV format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        str_result = []
+
+        # Create the CSV strings
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_VOLTAGE, ss_code, ss_config, 0, 0, self.Voltage))
+
+        return str_result
 

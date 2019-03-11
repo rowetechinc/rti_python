@@ -1,5 +1,9 @@
 rti_python ChangeLog
 
+rti_python - 2.0.0
+ - Added Encoding, to write an ensemble file.
+ - Added Unittest to test the dataset types.
+
 rti_python - 1.0.1
  - Add PD0 ensemble size calculation to Prediction Model
 

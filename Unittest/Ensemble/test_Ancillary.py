@@ -293,3 +293,49 @@ def test_encode_csv():
         if Ensemble.CSV_SOS in line:
             assert bool(re.search(str(1400.23), line))
             assert bool(re.search(str(0), line))
+
+
+def test_encode_decode():
+    anc = AncillaryData()
+    anc.FirstBinRange = 1.0  # Blank.  Depth to the first bin in meters.
+    anc.BinSize = 3.0  # Size of a bin in meters.
+    anc.FirstPingTime = 1.2  # First Ping Time in seconds.
+    anc.LastPingTime = 2.3  # Last Ping Time in seconds.  (If averaging pings, this will be the last ping)
+    anc.Heading = 23.5  # Heading in degrees.
+    anc.Pitch = 13.6  # Pitch in degrees.
+    anc.Roll = 11.25  # Roll in degrees.
+    anc.WaterTemp = 25.3  # Water Temperature in fahrenheit
+    anc.SystemTemp = 54.6  # System Temperature in fahrenheit
+    anc.Salinity = 35.0  # Water Salinity set by the user in PPT
+    anc.Pressure = 23.78  # Pressure from pressure sensor in Pascals
+    anc.TransducerDepth = 45.69  # Transducer Depth, used by Pressure sensor in meters
+    anc.SpeedOfSound = 1400.23  # Speed of Sound in m/s.
+    anc.RawMagFieldStrength = 3.0  # Raw magnetic field strength
+    anc.PitchGravityVector = 4.0  # Pitch Gravity Vector
+    anc.RollGravityVector = 5.0  # Roll Gravity Vector
+    anc.VerticalGravityVector = 6.0  # Vertical Gravity Vector
+
+    # Populate data
+
+    result = anc.encode()                   # Encode
+
+    anc1 = AncillaryData()
+    anc1.decode(bytearray(result))                     # Decode
+
+    assert anc.FirstBinRange == pytest.approx(anc1.FirstBinRange, 0.1)
+    assert anc.BinSize == pytest.approx(anc1.BinSize, 0.1)
+    assert anc.FirstPingTime == pytest.approx(anc1.FirstPingTime, 0.1)
+    assert anc.LastPingTime == pytest.approx(anc1.LastPingTime, 0.1)
+    assert anc.Heading == pytest.approx(anc1.Heading, 0.1)
+    assert anc.Pitch == pytest.approx(anc1.Pitch, 0.1)
+    assert anc.Roll == pytest.approx(anc1.Roll, 0.1)
+    assert anc.WaterTemp == pytest.approx(anc1.WaterTemp, 0.1)
+    assert anc.SystemTemp == pytest.approx(anc1.SystemTemp, 0.1)
+    assert anc.Salinity == pytest.approx(anc1.Salinity, 0.1)
+    assert anc.Pressure == pytest.approx(anc1.Pressure, 0.1)
+    assert anc.TransducerDepth == pytest.approx(anc1.TransducerDepth, 0.1)
+    assert anc.SpeedOfSound == pytest.approx(anc1.SpeedOfSound, 0.1)
+    assert anc.RawMagFieldStrength == pytest.approx(anc1.RawMagFieldStrength, 0.1)
+    assert anc.PitchGravityVector == pytest.approx(anc1.PitchGravityVector, 0.1)
+    assert anc.RollGravityVector == pytest.approx(anc1.RollGravityVector, 0.1)
+    assert anc.VerticalGravityVector == pytest.approx(anc1.VerticalGravityVector, 0.1)

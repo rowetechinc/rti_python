@@ -154,3 +154,22 @@ def test_amplitude_encode_csv():
         test_value += 1.1
 
 
+def test_encode_decode():
+
+    amp = Amplitude(30, 4)
+
+    # Populate data
+    val = 1.0
+    for beam in range(amp.element_multiplier):
+        for bin_num in range(amp.num_elements):
+            amp.Amplitude[bin_num][beam] = val
+            val += 1.1
+
+    result = amp.encode()
+
+    amp1 = Amplitude(30, 4)
+    amp1.decode(bytearray(result))
+
+    for beam in range(amp.element_multiplier):
+        for bin_num in range(amp.num_elements):
+            assert amp.Amplitude[bin_num][beam] == pytest.approx(amp1.Amplitude[bin_num][beam], 0.1)

@@ -162,108 +162,108 @@ def test_ensembledata():
     assert Ensemble.int32_to_bytes(46)[2] == result[46]
     assert Ensemble.int32_to_bytes(46)[3] == result[47]
 
+    # Status
+    assert Ensemble.int32_to_bytes(288)[0] == result[48]
+    assert Ensemble.int32_to_bytes(288)[1] == result[49]
+    assert Ensemble.int32_to_bytes(288)[2] == result[50]
+    assert Ensemble.int32_to_bytes(288)[3] == result[51]
+
+    # Year
+    assert Ensemble.int32_to_bytes(2019)[0] == result[52]
+    assert Ensemble.int32_to_bytes(2019)[1] == result[53]
+    assert Ensemble.int32_to_bytes(2019)[2] == result[54]
+    assert Ensemble.int32_to_bytes(2019)[3] == result[55]
+
+    # Month
+    assert Ensemble.int32_to_bytes(3)[0] == result[56]
+    assert Ensemble.int32_to_bytes(3)[1] == result[57]
+    assert Ensemble.int32_to_bytes(3)[2] == result[58]
+    assert Ensemble.int32_to_bytes(3)[3] == result[59]
+
+    # Day
+    assert Ensemble.int32_to_bytes(9)[0] == result[60]
+    assert Ensemble.int32_to_bytes(9)[1] == result[61]
+    assert Ensemble.int32_to_bytes(9)[2] == result[62]
+    assert Ensemble.int32_to_bytes(9)[3] == result[63]
+
+    # Hour
+    assert Ensemble.int32_to_bytes(12)[0] == result[64]
+    assert Ensemble.int32_to_bytes(12)[1] == result[65]
+    assert Ensemble.int32_to_bytes(12)[2] == result[66]
+    assert Ensemble.int32_to_bytes(12)[3] == result[67]
+
+    # Minute
+    assert Ensemble.int32_to_bytes(23)[0] == result[68]
+    assert Ensemble.int32_to_bytes(23)[1] == result[69]
+    assert Ensemble.int32_to_bytes(23)[2] == result[70]
+    assert Ensemble.int32_to_bytes(23)[3] == result[71]
+
+    # Second
+    assert Ensemble.int32_to_bytes(24)[0] == result[72]
+    assert Ensemble.int32_to_bytes(24)[1] == result[73]
+    assert Ensemble.int32_to_bytes(24)[2] == result[74]
+    assert Ensemble.int32_to_bytes(24)[3] == result[75]
+
+    # HSecond
+    assert Ensemble.int32_to_bytes(33)[0] == result[76]
+    assert Ensemble.int32_to_bytes(33)[1] == result[77]
+    assert Ensemble.int32_to_bytes(33)[2] == result[78]
+    assert Ensemble.int32_to_bytes(33)[3] == result[79]
+
     # Serial Number
     serial = ens.SerialNumber.encode()
-    assert serial[0] == result[48]
-    assert serial[1] == result[49]
-    assert serial[2] == result[50]
-    assert serial[3] == result[51]
-    assert serial[4] == result[52]
-    assert serial[5] == result[53]
-    assert serial[6] == result[54]
-    assert serial[7] == result[55]
-    assert serial[8] == result[56]
-    assert serial[9] == result[57]
-    assert serial[10] == result[58]
-    assert serial[11] == result[59]
-    assert serial[12] == result[60]
-    assert serial[13] == result[61]
-    assert serial[14] == result[62]
-    assert serial[15] == result[63]
-    assert serial[16] == result[64]
-    assert serial[17] == result[65]
-    assert serial[18] == result[66]
-    assert serial[19] == result[67]
-    assert serial[20] == result[68]
-    assert serial[21] == result[69]
-    assert serial[22] == result[70]
-    assert serial[23] == result[71]
-    assert serial[24] == result[72]
-    assert serial[25] == result[73]
-    assert serial[26] == result[74]
-    assert serial[27] == result[75]
-    assert serial[28] == result[76]
-    assert serial[29] == result[77]
-    assert serial[30] == result[78]
-    assert serial[31] == result[79]
+    assert serial[0] == result[80]
+    assert serial[1] == result[81]
+    assert serial[2] == result[82]
+    assert serial[3] == result[83]
+    assert serial[4] == result[84]
+    assert serial[5] == result[85]
+    assert serial[6] == result[86]
+    assert serial[7] == result[87]
+    assert serial[8] == result[88]
+    assert serial[9] == result[89]
+    assert serial[10] == result[90]
+    assert serial[11] == result[91]
+    assert serial[12] == result[92]
+    assert serial[13] == result[93]
+    assert serial[14] == result[94]
+    assert serial[15] == result[95]
+    assert serial[16] == result[96]
+    assert serial[17] == result[97]
+    assert serial[18] == result[98]
+    assert serial[19] == result[99]
+    assert serial[20] == result[100]
+    assert serial[21] == result[101]
+    assert serial[22] == result[102]
+    assert serial[23] == result[103]
+    assert serial[24] == result[104]
+    assert serial[25] == result[105]
+    assert serial[26] == result[106]
+    assert serial[27] == result[107]
+    assert serial[28] == result[108]
+    assert serial[29] == result[109]
+    assert serial[30] == result[110]
+    assert serial[31] == result[111]
 
-    str_serial = bytes(result[48:80]).decode("UTF-8")
+    str_serial = bytes(result[80:112]).decode("UTF-8")
     assert "01H00000000000000000000000999999" == str_serial
 
-    # Firmware Major
-    assert 2 == result[80]
-    assert 11 == result[81]
-    assert 5 == result[82]
-    assert 65 == result[83]
+    # Firmware
+    assert 5 == result[112]         # Revision
+    assert 11 == result[113]        # Minor
+    assert 2 == result[114]         # Major
+    assert 65 == result[115]        # System Code
 
-    char_ss_code = chr(result[83])
+    char_ss_code = chr(result[115])
     assert 'A' == char_ss_code
-    str_ss_code = bytes(result[83:84]).decode("UTF-8")
+    str_ss_code = bytes(result[115:116]).decode("UTF-8")
     assert 'A' == str_ss_code
 
     # Subsystem Config
-    assert 0 == result[84]
-    assert 0 == result[85]
-    assert 0 == result[86]
-    assert 3 == result[87]
-
-    # Status
-    assert Ensemble.int32_to_bytes(288)[0] == result[88]
-    assert Ensemble.int32_to_bytes(288)[1] == result[89]
-    assert Ensemble.int32_to_bytes(288)[2] == result[90]
-    assert Ensemble.int32_to_bytes(288)[3] == result[91]
-
-    # Year
-    assert Ensemble.int32_to_bytes(2019)[0] == result[92]
-    assert Ensemble.int32_to_bytes(2019)[1] == result[93]
-    assert Ensemble.int32_to_bytes(2019)[2] == result[94]
-    assert Ensemble.int32_to_bytes(2019)[3] == result[95]
-
-    # Month
-    assert Ensemble.int32_to_bytes(3)[0] == result[96]
-    assert Ensemble.int32_to_bytes(3)[1] == result[97]
-    assert Ensemble.int32_to_bytes(3)[2] == result[98]
-    assert Ensemble.int32_to_bytes(3)[3] == result[99]
-
-    # Day
-    assert Ensemble.int32_to_bytes(9)[0] == result[100]
-    assert Ensemble.int32_to_bytes(9)[1] == result[101]
-    assert Ensemble.int32_to_bytes(9)[2] == result[102]
-    assert Ensemble.int32_to_bytes(9)[3] == result[103]
-
-    # Hour
-    assert Ensemble.int32_to_bytes(12)[0] == result[104]
-    assert Ensemble.int32_to_bytes(12)[1] == result[105]
-    assert Ensemble.int32_to_bytes(12)[2] == result[106]
-    assert Ensemble.int32_to_bytes(12)[3] == result[107]
-
-    # Minute
-    assert Ensemble.int32_to_bytes(23)[0] == result[108]
-    assert Ensemble.int32_to_bytes(23)[1] == result[109]
-    assert Ensemble.int32_to_bytes(23)[2] == result[110]
-    assert Ensemble.int32_to_bytes(23)[3] == result[111]
-
-    # Second
-    assert Ensemble.int32_to_bytes(24)[0] == result[112]
-    assert Ensemble.int32_to_bytes(24)[1] == result[113]
-    assert Ensemble.int32_to_bytes(24)[2] == result[114]
-    assert Ensemble.int32_to_bytes(24)[3] == result[115]
-
-    # HSecond
-    assert Ensemble.int32_to_bytes(33)[0] == result[116]
-    assert Ensemble.int32_to_bytes(33)[1] == result[117]
-    assert Ensemble.int32_to_bytes(33)[2] == result[118]
-    assert Ensemble.int32_to_bytes(33)[3] == result[119]
+    assert 0 == result[116]
+    assert 0 == result[117]
+    assert 0 == result[118]
+    assert 3 == result[119]
 
 
 def test_encode_csv():
@@ -301,3 +301,51 @@ def test_encode_csv():
         if Ensemble.CSV_STATUS in line:
             assert bool(re.search(str(288), line))
             assert bool(re.search(str(0), line))
+
+
+def test_encode_decode():
+    ens = EnsembleData()
+    ens.EnsembleNumber = 2668
+    ens.NumBins = 37
+    ens.NumBeams = 4
+    ens.DesiredPingCount = 45
+    ens.ActualPingCount = 46
+    ens.SerialNumber = "01H00000000000000000000000999999"
+    ens.SysFirmwareMajor = 2
+    ens.SysFirmwareMinor = 11
+    ens.SysFirmwareRevision = 5
+    ens.SysFirmwareSubsystemCode = "A"
+    ens.SubsystemConfig = 3
+    ens.Status = 9
+    ens.Year = 2019
+    ens.Month = 3
+    ens.Day = 9
+    ens.Hour = 12
+    ens.Minute = 23
+    ens.Second = 24
+    ens.HSec = 33
+
+    bin_Data = ens.encode()                 # Encode
+
+    ens1 = EnsembleData()
+    ens1.decode(bytearray(bin_Data))        # Decode
+
+    assert ens.EnsembleNumber == ens1.EnsembleNumber
+    assert ens.NumBins == ens1.NumBins
+    assert ens.NumBeams == ens1.NumBeams
+    assert ens.DesiredPingCount == ens1.DesiredPingCount
+    assert ens.ActualPingCount == ens1.ActualPingCount
+    assert ens.SerialNumber == ens1.SerialNumber
+    assert ens.SysFirmwareMajor == ens1.SysFirmwareMajor
+    assert ens.SysFirmwareMinor == ens1.SysFirmwareMinor
+    assert ens.SysFirmwareRevision == ens1.SysFirmwareRevision
+    assert ens.SysFirmwareSubsystemCode == ens1.SysFirmwareSubsystemCode
+    assert ens.SubsystemConfig == ens1.SubsystemConfig
+    assert ens.Status == ens1.Status
+    assert ens.Year == ens1.Year
+    assert ens.Month == ens1.Month
+    assert ens.Day == ens1.Day
+    assert ens.Hour == ens1.Hour
+    assert ens.Minute == ens1.Minute
+    assert ens.Second == ens1.Second
+    assert ens.HSec == ens1.HSec

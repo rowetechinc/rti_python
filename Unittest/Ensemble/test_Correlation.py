@@ -154,3 +154,23 @@ def test_correlation_encode_csv():
         test_value += 1.1
 
 
+def test_encode_decode():
+
+    corr = Correlation(30, 4)
+
+    # Populate data
+    val = 1.0
+    for beam in range(corr.element_multiplier):
+        for bin_num in range(corr.num_elements):
+            corr.Correlation[bin_num][beam] = val
+            val += 1.1
+
+    result = corr.encode()                      # Encode
+
+    corr1 = Correlation(30, 4)
+    corr1.decode(bytearray(result))             # Decode
+
+    for beam in range(corr1.element_multiplier):
+        for bin_num in range(corr1.num_elements):
+            assert corr.Correlation[bin_num][beam] == pytest.approx(corr1.Correlation[bin_num][beam], 0.1)
+

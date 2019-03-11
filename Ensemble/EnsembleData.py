@@ -10,7 +10,7 @@ class EnsembleData:
     Integer values that give details about the ensemble.
     """
 
-    def __init__(self, num_elements=19, element_multiplier=1):
+    def __init__(self, num_elements=23, element_multiplier=1):
         self.ds_type = 20
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
@@ -108,15 +108,6 @@ class EnsembleData:
         result += Ensemble.int32_to_bytes(self.NumBeams)
         result += Ensemble.int32_to_bytes(self.DesiredPingCount)
         result += Ensemble.int32_to_bytes(self.ActualPingCount)
-        result += self.SerialNumber.encode("UTF-8")
-        result += bytes([self.SysFirmwareMajor])
-        result += bytes([self.SysFirmwareMinor])
-        result += bytes([self.SysFirmwareRevision])
-        result += self.SysFirmwareSubsystemCode.encode("UTF-8")
-        result += bytes([0])
-        result += bytes([0])
-        result += bytes([0])
-        result += bytes([self.SubsystemConfig])
         result += Ensemble.int32_to_bytes(self.Status)
         result += Ensemble.int32_to_bytes(self.Year)
         result += Ensemble.int32_to_bytes(self.Month)
@@ -125,6 +116,15 @@ class EnsembleData:
         result += Ensemble.int32_to_bytes(self.Minute)
         result += Ensemble.int32_to_bytes(self.Second)
         result += Ensemble.int32_to_bytes(self.HSec)
+        result += self.SerialNumber.encode("UTF-8")
+        result += bytes([self.SysFirmwareRevision])
+        result += bytes([self.SysFirmwareMinor])
+        result += bytes([self.SysFirmwareMajor])
+        result += self.SysFirmwareSubsystemCode.encode("UTF-8")
+        result += bytes([0])
+        result += bytes([0])
+        result += bytes([0])
+        result += bytes([self.SubsystemConfig])
 
         return result
 

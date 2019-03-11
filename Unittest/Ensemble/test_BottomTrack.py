@@ -8,7 +8,7 @@ from rti_python.Ensemble.BottomTrack import BottomTrack
 def test_generate_header():
 
     value_type = 10             # Float
-    num_elements = 74           # 54 elements
+    num_elements = 74           # 74 elements
     element_multiplier = 1      # no multiplier
     imag = 0                    # NOT USED
     name_length = 8             # Length of name
@@ -687,6 +687,7 @@ def test_BottomTrackdata():
     assert Ensemble.float_to_bytes(4)[3] == result[index]
     index += 1
 
+
 def test_encode_csv():
 
     bt = BottomTrack()
@@ -813,3 +814,73 @@ def test_encode_csv():
                 assert bool(re.search(str(3), line))
             if "0,3" in line:
                 assert bool(re.search(str(4), line))
+
+
+def test_encode_decode():
+    bt = BottomTrack()
+    bt.FirstPingTime = 12.5
+    bt.LastPingTime = 12.8
+    bt.Heading = 152.36
+    bt.Pitch = 12.6
+    bt.Roll = 223.1
+    bt.WaterTemp = 15.23
+    bt.SystemTemp = 78.58
+    bt.Salinity = 35.0
+    bt.Pressure = 23.36
+    bt.TransducerDepth = 156.2
+    bt.SpeedOfSound = 1402.36
+    bt.Status = 9.0
+    bt.NumBeams = 4.0
+    bt.ActualPingCount = 23
+    bt.Range = [1.1, 2.2, 3.3, 4.4]
+    bt.SNR = [1.1, 2.2, 3.3, 4.4]
+    bt.Amplitude = [1.1, 2.2, 3.3, 4.4]
+    bt.Correlation = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamGood = [1, 2, 3, 4]
+    bt.InstrumentVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.InstrumentGood = [1, 2, 3, 4]
+    bt.EarthVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.EarthGood = [1, 2, 3, 4]
+    bt.SNR_PulseCoherent = [1, 2, 3, 4]
+    bt.Amp_PulseCoherent = [1, 2, 3, 4]
+    bt.Vel_PulseCoherent = [1, 2, 3, 4]
+    bt.Noise_PulseCoherent = [1, 2, 3, 4]
+    bt.Corr_PulseCoherent = [1, 2, 3, 4]
+
+    # Populate data
+
+    result = bt.encode()
+
+    bt1 = BottomTrack()
+    bt1.decode(bytearray(result))
+
+    assert bt.FirstPingTime == pytest.approx(bt1.FirstPingTime)
+    assert bt.LastPingTime == pytest.approx(bt1.LastPingTime)
+    assert bt.Heading == pytest.approx(bt1.Heading)
+    assert bt.Pitch == pytest.approx(bt1.Pitch)
+    assert bt.Roll == pytest.approx(bt1.Roll)
+    assert bt.WaterTemp == pytest.approx(bt1.WaterTemp)
+    assert bt.SystemTemp == pytest.approx(bt1.SystemTemp)
+    assert bt.Salinity == pytest.approx(bt1.Salinity)
+    assert bt.Pressure == pytest.approx(bt1.Pressure)
+    assert bt.TransducerDepth == pytest.approx(bt1.TransducerDepth)
+    assert bt.SpeedOfSound == pytest.approx(bt1.SpeedOfSound)
+    assert bt.Status == pytest.approx(bt1.Status)
+    assert bt.NumBeams == pytest.approx(bt1.NumBeams)
+    assert bt.ActualPingCount == pytest.approx(bt1.ActualPingCount)
+    assert bt.Range == pytest.approx(bt1.Range)
+    assert bt.SNR == pytest.approx(bt1.SNR)
+    assert bt.Amplitude == pytest.approx(bt1.Amplitude)
+    assert bt.Correlation == pytest.approx(bt1.Correlation)
+    assert bt.BeamVelocity == pytest.approx(bt1.BeamVelocity)
+    assert bt.BeamGood == pytest.approx(bt1.BeamGood, 0.1)
+    assert bt.InstrumentVelocity == pytest.approx(bt1.InstrumentVelocity)
+    assert bt.InstrumentGood == pytest.approx(bt1.InstrumentGood, 0.1)
+    assert bt.EarthVelocity == pytest.approx(bt1.EarthVelocity)
+    assert bt.EarthGood == pytest.approx(bt1.EarthGood, 0.1)
+    assert bt.SNR_PulseCoherent == pytest.approx(bt1.SNR_PulseCoherent, 0.1)
+    assert bt.Amp_PulseCoherent == pytest.approx(bt1.Amp_PulseCoherent, 0.1)
+    assert bt.Vel_PulseCoherent == pytest.approx(bt1.Vel_PulseCoherent, 0.1)
+    assert bt.Noise_PulseCoherent == pytest.approx(bt1.Noise_PulseCoherent, 0.1)
+    assert bt.Corr_PulseCoherent == pytest.approx(bt1.Corr_PulseCoherent, 0.1)

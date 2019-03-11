@@ -9,7 +9,7 @@ class AncillaryData:
     """
 
     def __init__(self, num_elements=17, element_multiplier=1):
-        self.ds_type = 10
+        self.ds_type = 10                   # Float
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
         self.image = 0

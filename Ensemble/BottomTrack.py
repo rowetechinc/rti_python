@@ -198,6 +198,8 @@ class BottomTrack:
         """
         result = []
 
+        self.num_elements = (15 * int(self.NumBeams)) + 14
+
         # Generate header
         result += Ensemble.generate_header(self.ds_type,
                                            self.num_elements,

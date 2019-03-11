@@ -66,11 +66,11 @@ def test_good_earth():
     gb = GoodEarth(30, 4)
 
     # Populate data
-    val = 1.0
+    val = 1
     for beam in range(gb.element_multiplier):
         for bin_num in range(gb.num_elements):
             gb.GoodEarth[bin_num][beam] = val
-            val += 1.1
+            val += 1
 
     result = gb.encode()
 
@@ -118,13 +118,13 @@ def test_good_earth():
     assert len(result) == 28 + ((gb.element_multiplier * gb.num_elements) * Ensemble.BytesInInt32)
 
     # Data
-    result_val = 1.0
+    result_val = 1
     index = 28                  # 28 = Header size
     for beam in range(gb.element_multiplier):
         for bin_num in range(gb.num_elements):
-            test_val = Ensemble.GetFloat(index, Ensemble().BytesInFloat, bytearray(result))
+            test_val = Ensemble.GetInt32(index, Ensemble().BytesInFloat, bytearray(result))
             assert result_val == pytest.approx(test_val, 0.1)
-            result_val += 1.1
+            result_val += 1
             index += Ensemble().BytesInFloat
 
 
@@ -135,11 +135,11 @@ def test_encode_csv():
     gb = GoodEarth(num_bins, num_beams)
 
     # Populate data
-    val = 1.0
+    val = 1
     for beam in range(gb.element_multiplier):
         for bin_num in range(gb.num_elements):
             gb.GoodEarth[bin_num][beam] = val
-            val += 1.1
+            val += 1
 
     dt = datetime.datetime.now()
 
@@ -147,10 +147,32 @@ def test_encode_csv():
     result = gb.encode_csv(dt, 'A', 1)
 
     # Check the csv data
-    test_value = 1.0
+    test_value = 1
     for line in result:
         assert bool(re.search(str(test_value), line))
         assert bool(re.search(Ensemble.CSV_GOOD_EARTH, line))
-        test_value += 1.1
+        test_value += 1
 
 
+def test_encode_decode():
+
+    num_bins = 30
+    num_beams = 4
+
+    gb = GoodEarth(num_bins, num_beams)
+
+    # Populate data
+    val = 1
+    for beam in range(gb.element_multiplier):
+        for bin_num in range(gb.num_elements):
+            gb.GoodEarth[bin_num][beam] = val
+            val += 1
+
+    result = gb.encode()
+
+    gb1 = GoodEarth(num_bins, num_beams)
+    gb1.decode(bytearray(result))
+
+    for beam in range(gb1.element_multiplier):
+        for bin_num in range(gb1.num_elements):
+            assert gb1.GoodEarth[bin_num][beam] == pytest.approx(gb1.GoodEarth[bin_num][beam], 0.1)
