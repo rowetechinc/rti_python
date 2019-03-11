@@ -331,7 +331,8 @@ class Ensemble:
             ss_code = self.EnsembleData.SysFirmwareSubsystemCode
             ss_config = self.EnsembleData.SubsystemConfig
 
-            # Create a new datetime based off ensemble time
+            # Create a new datetime based off ensemble date and time
+            dt = self.EnsembleData.datetime()
 
             result += self.EnsembleData.encode_csv(dt, ss_code, ss_config)
 

@@ -96,6 +96,8 @@ class AverageWaterColumn:
             return self.avg_vel(self.ens_beam_list)
         except Exception as e:
             logging.error("Error processing data to average Beam water column.  " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
             return None
 
     def avg_instr_data(self):
@@ -107,6 +109,8 @@ class AverageWaterColumn:
             return self.avg_vel(self.ens_instr_list)
         except Exception as e:
             logging.error("Error processing data to average Instrument water column. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
             return None
 
     def avg_earth_data(self):
@@ -118,6 +122,8 @@ class AverageWaterColumn:
             return self.avg_vel(self.ens_earth_list)
         except Exception as e:
             logging.error("Error processing data to average Earth water column. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
             return None
 
     def avg_vel(self, vel):
@@ -137,6 +143,7 @@ class AverageWaterColumn:
         num_beams = 0
         avg_accum = []
         avg_count = []
+        avg_vel = None
 
         # lock the thread when iterating the deque
         self.thread_lock.acquire(True, 1000)
@@ -154,12 +161,14 @@ class AverageWaterColumn:
                 num_beams = temp_num_beams
             elif num_beams != temp_num_beams:
                 logging.error("Number of beams is not consistent between ensembles")
+                self.thread_lock.release()
                 raise Exception("Number of beams is not consistent between ensembles")
 
             if num_bins == 0:
                 num_bins = temp_num_bins
             elif num_bins != temp_num_bins:
                 logging.error("Number of bins is not consistent between ensembles")
+                self.thread_lock.release()
                 raise Exception("Number of bins is not consistent between ensembles")
 
             # Create the average lists
