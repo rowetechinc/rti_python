@@ -95,7 +95,7 @@ def test_ensembledata():
     assert 0x0 == result[3]
 
     # Num Elements
-    assert 0x13 == result[4]
+    assert 0x17 == result[4]
     assert 0x0 == result[5]
     assert 0x0 == result[6]
     assert 0x0 == result[7]

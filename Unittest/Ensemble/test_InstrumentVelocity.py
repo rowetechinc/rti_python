@@ -70,7 +70,7 @@ def test_velocities():
     for beam in range(vels.element_multiplier):
         for bin_num in range(vels.num_elements):
             vels.Velocities[bin_num][beam] = val
-            val += 1.1
+            val += -1.1
 
     result = vels.encode()
 
@@ -124,7 +124,7 @@ def test_velocities():
         for bin_num in range(vels.num_elements):
             test_val = Ensemble.GetFloat(index, Ensemble().BytesInFloat, bytearray(result))
             assert result_val == pytest.approx(test_val, 0.1)
-            result_val += 1.1
+            result_val += -1.1
             index += Ensemble().BytesInFloat
 
 
@@ -139,7 +139,7 @@ def test_encode_csv():
     for beam in range(vel.element_multiplier):
         for bin_num in range(vel.num_elements):
             vel.Velocities[bin_num][beam] = val
-            val += 1.1
+            val += -1.1
 
     dt = datetime.datetime.now()
 
@@ -151,7 +151,7 @@ def test_encode_csv():
     for line in result:
         assert bool(re.search(str(test_value), line))
         assert bool(re.search(Ensemble.CSV_INSTR_VEL, line))
-        test_value += 1.1
+        test_value += -1.1
 
 
 def test_encode_decode():
@@ -166,7 +166,7 @@ def test_encode_decode():
     for beam in range(vel.element_multiplier):
         for bin_num in range(vel.num_elements):
             vel.Velocities[bin_num][beam] = val
-            val += 1.1
+            val += -1.1
 
     result = vel.encode()
 

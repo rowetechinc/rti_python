@@ -2,7 +2,7 @@ import struct
 import json
 import datetime
 from PyCRC.CRCCCITT import CRCCCITT
-
+import math
 
 class Ensemble:
     """
@@ -305,25 +305,21 @@ class Ensemble:
 
         # Ensemble Number and inverse
         header += Ensemble.int32_to_bytes(ens_num)
-        header += Ensemble.int32_to_bytes(Ensemble.invert_int(ens_num))
+        header += struct.pack("i", ~ens_num)
 
         # Payload size and inverse
         header += Ensemble.int32_to_bytes(payload_size)
-        header += Ensemble.int32_to_bytes(Ensemble.invert_int(payload_size))
+        header += struct.pack("i", ~payload_size)
 
         return header
 
-    @staticmethod
-    def invert_int(n):
-        """
-        Invert the given integer.
-        :return: Inverse of integer given.
-        """
-        number_bit_len = n.bit_length()
-        max_val = (2 ** number_bit_len) - 1
-        return ~n & max_val
-
     def encode_csv(self):
+        """
+        Encode the ensemble into CSV data.
+        Each line is a value with a the datetime, KEY, subsystem config, subsystem code,
+        bin and beam number.
+        :return:
+        """
         result = []
 
         dt = datetime.datetime.now()
@@ -440,7 +436,19 @@ class Ensemble:
     @staticmethod
     def GetInt32(start, numBytes, ens):
         """
-        Convert the bytes given into an int32.
+        Convert the bytes given into an Int32.
+        This will look in the ens given.
+        :param start: Start location.
+        :param numBytes: Number of bytes in the int32.
+        :param ens: Buffer containing the bytearray data.
+        :return: Int32 of the data in the buffer.
+        """
+        return struct.unpack("i", ens[start:start + numBytes])[0]
+
+    @staticmethod
+    def GetUInt32(start, numBytes, ens):
+        """
+        Convert the bytes given into an UInt32.
         This will look in the ens given.
         :param start: Start location.
         :param numBytes: Number of bytes in the int32.
@@ -453,6 +461,15 @@ class Ensemble:
     def int32_to_bytes(value):
         """
         Convert the given Int32 value to 4 bytes.
+        :param value: Value to convert.
+        :return: 4 Bytes representing the value.
+        """
+        return struct.pack("i", value)
+
+    @staticmethod
+    def uint32_to_bytes(value):
+        """
+        Convert the given UInt32 value to 4 bytes.
         :param value: Value to convert.
         :return: 4 Bytes representing the value.
         """
@@ -542,8 +559,26 @@ class Ensemble:
         :param val: Values to calculate.
         :return: 1's compliment of value.
         """
-        mask = (1 << val.bit_length()) - 1
-        return int(hex(val ^ mask), 16)
+        #mask = (1 << val.bit_length()) - 1
+        #return int(hex(val ^ mask), 16)
+        b = bin(val)
+        b = b.replace('0', 'x')
+        b = b.replace('1', '0')
+        b = b.replace('x', '1')
+        b = b.replace('1b', '0b')
+        return int(b, 2)
+
+    @staticmethod
+    def oness_complement(val):
+
+        # Find number of bits in
+        # the given integer
+        number_of_bits = (int)(math.floor(math.log(val) /
+                                          math.log(2))) + 1;
+
+        # XOR the given integer with poe(2,
+        # number_of_bits-1 and print the result
+        return ((1 << number_of_bits) - 1) ^ val;
 
     @staticmethod
     def is_float_close(a, b, rel_tol=1e-09, abs_tol=0.0):

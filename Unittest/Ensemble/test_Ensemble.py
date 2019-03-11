@@ -496,3 +496,17 @@ def test_encode_decode():
     assert ss.WpLagLength == pytest.approx(ens1.SystemSetup.WpLagLength, 0.1)
     assert ss.WpTransmitBandwidth == pytest.approx(ens1.SystemSetup.WpTransmitBandwidth, 0.1)
     assert ss.WpReceiveBandwidth == pytest.approx(ens1.SystemSetup.WpReceiveBandwidth, 0.1)
+
+
+def test_ones_compliment():
+    value = 0x9E
+    result = Ensemble.ones_complement(value)
+    assert 0x61 == result
+
+    value = 22
+    result = Ensemble.oness_complement(value)
+    assert 9 == result
+
+
+
+
