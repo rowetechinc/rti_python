@@ -202,6 +202,7 @@ def test_encode_csv():
 
     results = ens.encode_csv()
     total_lines = num_bins * num_beams * 7
+    total_lines += num_bins * 2             # Mag and Direction in EarthVelocity
     total_lines += 6 + (num_beams * 7)      # Bottom Track
     total_lines += 1                        # Ensemble Data
     total_lines += 10                       # Ancillary Data
@@ -210,6 +211,146 @@ def test_encode_csv():
 
     assert len(results) == total_lines
 
+def test_encode_csv_no_bt():
+
+    num_bins = 33
+    num_beams = 4
+
+    ens = Ensemble()
+    amp = Amplitude(num_bins, num_beams)
+    corr = Correlation(num_bins, num_beams)
+    beam_vel = BeamVelocity(num_bins, num_beams)
+    inst_vel = InstrumentVelocity(num_bins, num_beams)
+    earth_vel = EarthVelocity(num_bins, num_beams)
+    gb = GoodBeam(num_bins, num_beams)
+    ge = GoodEarth(num_bins, num_beams)
+    anc = AncillaryData()
+    ensData = EnsembleData()
+    ss = SystemSetup()
+
+    bt = BottomTrack()
+    bt.NumBeams = 4
+    bt.Range = [1.1, 2.2, 3.3, 4.4]
+    bt.SNR = [1.1, 2.2, 3.3, 4.4]
+    bt.Amplitude = [1.1, 2.2, 3.3, 4.4]
+    bt.Correlation = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamGood = [1, 2, 3, 4]
+    bt.InstrumentVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.InstrumentGood = [1, 2, 3, 4]
+    bt.EarthVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.EarthGood = [1, 2, 3, 4]
+    bt.SNR_PulseCoherent = [1, 2, 3, 4]
+    bt.Amp_PulseCoherent = [1, 2, 3, 4]
+    bt.Vel_PulseCoherent = [1, 2, 3, 4]
+    bt.Noise_PulseCoherent = [1, 2, 3, 4]
+    bt.Corr_PulseCoherent = [1, 2, 3, 4]
+
+    rt = RangeTracking()
+    rt.NumBeams = 4.0
+    rt.Range = [1.1, 2.2, 3.3, 4.4]
+    rt.Pings = [1, 2, 3, 4]
+    rt.SNR = [1.1, 2.2, 3.3, 4.4]
+    rt.Amplitude = [1.1, 2.2, 3.3, 4.4]
+    rt.Correlation = [1.1, 2.2, 3.3, 4.4]
+    rt.BeamVelocity = [1.1, 2.2, 3.3, 4.4]
+    rt.InstrumentVelocity = [1.1, 2.2, 3.3, 4.4]
+    rt.EarthVelocity = [1.1, 2.2, 3.3, 4.4]
+
+    ens.AddAmplitude(amp)
+    ens.AddCorrelation(corr)
+    ens.AddBeamVelocity(beam_vel)
+    ens.AddInstrumentVelocity(inst_vel)
+    ens.AddEarthVelocity(earth_vel)
+    ens.AddGoodBeam(gb)
+    ens.AddGoodEarth(ge)
+    ens.AddAncillaryData(anc)
+    ens.AddEnsembleData(ensData)
+    ens.AddBottomTrack(bt)
+    ens.AddRangeTracking(rt)
+    ens.AddSystemSetup(ss)
+
+    results = ens.encode_csv(is_bottom_track=False)
+    total_lines = num_bins * num_beams * 7
+    total_lines += num_bins * 2             # Mag and Direction in EarthVelocity
+    #total_lines += 6 + (num_beams * 7)      # Bottom Track
+    total_lines += 1                        # Ensemble Data
+    total_lines += 10                       # Ancillary Data
+    total_lines += 5 * num_beams            # Range Tracking
+    total_lines += 1                        # System Settings
+
+    assert len(results) == total_lines
+
+
+def test_encode_csv_no_anc():
+
+    num_bins = 33
+    num_beams = 4
+
+    ens = Ensemble()
+    amp = Amplitude(num_bins, num_beams)
+    corr = Correlation(num_bins, num_beams)
+    beam_vel = BeamVelocity(num_bins, num_beams)
+    inst_vel = InstrumentVelocity(num_bins, num_beams)
+    earth_vel = EarthVelocity(num_bins, num_beams)
+    gb = GoodBeam(num_bins, num_beams)
+    ge = GoodEarth(num_bins, num_beams)
+    anc = AncillaryData()
+    ensData = EnsembleData()
+    ss = SystemSetup()
+
+    bt = BottomTrack()
+    bt.NumBeams = 4
+    bt.Range = [1.1, 2.2, 3.3, 4.4]
+    bt.SNR = [1.1, 2.2, 3.3, 4.4]
+    bt.Amplitude = [1.1, 2.2, 3.3, 4.4]
+    bt.Correlation = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.BeamGood = [1, 2, 3, 4]
+    bt.InstrumentVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.InstrumentGood = [1, 2, 3, 4]
+    bt.EarthVelocity = [1.1, 2.2, 3.3, 4.4]
+    bt.EarthGood = [1, 2, 3, 4]
+    bt.SNR_PulseCoherent = [1, 2, 3, 4]
+    bt.Amp_PulseCoherent = [1, 2, 3, 4]
+    bt.Vel_PulseCoherent = [1, 2, 3, 4]
+    bt.Noise_PulseCoherent = [1, 2, 3, 4]
+    bt.Corr_PulseCoherent = [1, 2, 3, 4]
+
+    rt = RangeTracking()
+    rt.NumBeams = 4.0
+    rt.Range = [1.1, 2.2, 3.3, 4.4]
+    rt.Pings = [1, 2, 3, 4]
+    rt.SNR = [1.1, 2.2, 3.3, 4.4]
+    rt.Amplitude = [1.1, 2.2, 3.3, 4.4]
+    rt.Correlation = [1.1, 2.2, 3.3, 4.4]
+    rt.BeamVelocity = [1.1, 2.2, 3.3, 4.4]
+    rt.InstrumentVelocity = [1.1, 2.2, 3.3, 4.4]
+    rt.EarthVelocity = [1.1, 2.2, 3.3, 4.4]
+
+    ens.AddAmplitude(amp)
+    ens.AddCorrelation(corr)
+    ens.AddBeamVelocity(beam_vel)
+    ens.AddInstrumentVelocity(inst_vel)
+    ens.AddEarthVelocity(earth_vel)
+    ens.AddGoodBeam(gb)
+    ens.AddGoodEarth(ge)
+    ens.AddAncillaryData(anc)
+    ens.AddEnsembleData(ensData)
+    ens.AddBottomTrack(bt)
+    ens.AddRangeTracking(rt)
+    ens.AddSystemSetup(ss)
+
+    results = ens.encode_csv(is_ancillary_data=False)
+    total_lines = num_bins * num_beams * 7
+    total_lines += num_bins * 2             # Mag and Direction in EarthVelocity
+    total_lines += 6 + (num_beams * 7)      # Bottom Track
+    total_lines += 1                        # Ensemble Data
+    #total_lines += 10                       # Ancillary Data
+    total_lines += 5 * num_beams            # Range Tracking
+    total_lines += 1                        # System Settings
+
+    assert len(results) == total_lines
 
 def test_encode_decode():
 

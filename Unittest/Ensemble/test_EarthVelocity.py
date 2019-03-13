@@ -140,6 +140,7 @@ def test_encode_csv():
         for bin_num in range(vel.num_elements):
             vel.Velocities[bin_num][beam] = val
             val += 1.1
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
 
     dt = datetime.datetime.now()
 
@@ -149,9 +150,10 @@ def test_encode_csv():
     # Check the csv data
     test_value = 1.0
     for line in result:
-        assert bool(re.search(str(test_value), line))
-        assert bool(re.search(Ensemble.CSV_EARTH_VEL, line))
-        test_value += 1.1
+        if bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+            assert bool(re.search(str(test_value), line))
+            assert bool(re.search(Ensemble.CSV_EARTH_VEL, line))
+            test_value += 1.1
 
 
 def test_encode_decode():
@@ -167,6 +169,7 @@ def test_encode_decode():
         for bin_num in range(vel.num_elements):
             vel.Velocities[bin_num][beam] = val
             val += 1.1
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
 
     result = vel.encode()
 
@@ -175,5 +178,179 @@ def test_encode_decode():
 
     for beam in range(vel1.element_multiplier):
         for bin_num in range(vel1.num_elements):
-            assert vel1.Velocities[bin_num][beam] == pytest.approx(vel1.Velocities[bin_num][beam], 0.1)
+            assert vel.Velocities[bin_num][beam] == pytest.approx(vel1.Velocities[bin_num][beam], 0.1)
+            assert vel.Magnitude[bin_num] == pytest.approx(vel1.Magnitude[bin_num], 0.1)
+            assert vel.Direction[bin_num] == pytest.approx(vel1.Direction[bin_num], 0.1)
 
+
+
+def test_magnitude():
+    east = 1.33
+    north = 1.45
+    vert = 0.3
+    result = EarthVelocity.calculate_magnitude(east, north, vert)
+    assert 1.99 == pytest.approx(result, 0.01)
+
+
+def test_direction():
+    east = 1.33
+    north = 1.45
+    result = EarthVelocity.calculate_direction(east, north)
+    assert 42.52 == pytest.approx(result, 0.01)
+
+
+def test_vectors():
+
+    earth = EarthVelocity(3, 4)
+
+    earth.Velocities.clear()
+    earth.Velocities.append([1.33, 1.45, 0.3, 0.0])
+    earth.Velocities.append([1.33, 1.45, 0.3, 0.0])
+    earth.Velocities.append([1.33, 1.45, 0.3, 0.0])
+
+    earth.remove_vessel_speed(-1.1, -1.2, -0.1)
+
+    mag, dir = EarthVelocity.generate_vectors(earth.Velocities)
+
+    assert 3 == len(mag)
+    assert 3 == len(dir)
+    assert 0.394 == pytest.approx(mag[0], 0.01)
+    assert 42.614 == pytest.approx(dir[0], 0.01)
+    assert 0.394 == pytest.approx(mag[1], 0.01)
+    assert 42.614 == pytest.approx(dir[1], 0.01)
+    assert 0.394 == pytest.approx(mag[2], 0.01)
+    assert 42.614 == pytest.approx(dir[2], 0.01)
+
+
+def test_encode_csv_vector():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 1.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
+
+    dt = datetime.datetime.now()
+
+    # Create CSV lines
+    result = vel.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    test_value = 1.0
+    for line in result:
+        if bool(re.search(Ensemble.CSV_MAG, line)):
+            assert bool(re.search(str(1.73), line))
+            assert bool(re.search(Ensemble.CSV_MAG, line))
+        elif bool(re.search(Ensemble.CSV_DIR, line)):
+            assert bool(re.search(str(45.0), line))
+            assert bool(re.search(Ensemble.CSV_DIR, line))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+            assert True
+        else:
+            assert False
+
+
+def test_encode_csv_vector_bt():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 2.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+
+    vel.remove_vessel_speed(-1.3, -1.4, 0.3)
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
+
+    dt = datetime.datetime.now()
+
+    # Create CSV lines
+    result = vel.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    for line in result:
+        if bool(re.search(Ensemble.CSV_MAG, line)):
+            assert bool(re.search(str(2.477), line))
+            assert bool(re.search(Ensemble.CSV_MAG, line))
+        elif bool(re.search(Ensemble.CSV_DIR, line)):
+            assert bool(re.search(str(49.3987), line))
+            assert bool(re.search(Ensemble.CSV_DIR, line))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+            assert True
+        else:
+            assert False
+
+
+def test_encode_csv_vector_no_remove():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 2.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
+
+    dt = datetime.datetime.now()
+
+    # Create CSV lines
+    result = vel.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    for line in result:
+        if bool(re.search(Ensemble.CSV_MAG, line)):
+            assert bool(re.search(str(3.464), line))
+            assert bool(re.search(Ensemble.CSV_MAG, line))
+        elif bool(re.search(Ensemble.CSV_DIR, line)):
+            assert bool(re.search(str(45.0), line))
+            assert bool(re.search(Ensemble.CSV_DIR, line))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+            assert True
+        else:
+            assert False
+
+def test_encode_csv_vector_no_gen():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 2.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+    vel.Magnitude, vel.Direction = EarthVelocity.generate_vectors(vel.Velocities)
+
+    vel.remove_vessel_speed(-1.3, -1.4, 0.3)
+
+    dt = datetime.datetime.now()
+
+    # Create CSV lines
+    result = vel.encode_csv(dt, 'A', 1)
+
+    # Check the csv data
+    for line in result:
+        if bool(re.search(Ensemble.CSV_MAG, line)):
+            assert bool(re.search(str(2.477), line))
+            assert bool(re.search(Ensemble.CSV_MAG, line))
+        elif bool(re.search(Ensemble.CSV_DIR, line)):
+            assert bool(re.search(str(49.3987), line))
+            assert bool(re.search(Ensemble.CSV_DIR, line))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+            assert True
+        else:
+            assert False

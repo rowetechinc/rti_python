@@ -82,9 +82,22 @@ class EnsembleData:
         return str(self.Year).zfill(4) + "/" + str(self.Month).zfill(2) + "/" + str(self.Day).zfill(2) + " " + str(self.Hour).zfill(2) + ":" + str(self.Minute).zfill(2) + ":" + str(self.Second).zfill(2) + "." + str(self.HSec).zfill(2)
 
     def datetime(self):
-        return datetime(self.Year, self.Month, self.Day, self.Hour, self.Minute, self.Second, self.HSec * 10)
+        """
+        Create a datetime object from the date and time of the ensemble.
+        If an error occurs, use the current date and time.
+        :return: datetime of the ensemble.
+        """
+        try:
+            dt = datetime(self.Year, self.Month, self.Day, self.Hour, self.Minute, self.Second, self.HSec * 10)
+            return dt
+        except Exception:
+            return datetime.now()
 
     def firmware_str(self):
+        """
+        Create a string of the firmware version and subsystem code.
+        :return:
+        """
         return "{0}.{1}.{2} - {3}".format(self.SysFirmwareMajor, self.SysFirmwareMinor, self.SysFirmwareRevision, self.SysFirmwareSubsystemCode)
 
     def encode(self):

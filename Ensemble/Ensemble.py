@@ -74,6 +74,8 @@ class Ensemble:
     CSV_GPS_VTG = "GPS_VTG"
     CSV_NMEA = "NMEA"
     CSV_VOLTAGE = "Voltage"
+    CSV_MAG = "Magnitude"
+    CSV_DIR = "Direction"
 
     def __init__(self):
         self.RawData = None
@@ -313,7 +315,20 @@ class Ensemble:
 
         return header
 
-    def encode_csv(self):
+    def encode_csv(self,
+                   is_ensemble_data=True,
+                   is_ancillary_data=True,
+                   is_amplitude=True,
+                   is_correlation=True,
+                   is_beam_velocity=True,
+                   is_instrument_velocity=True,
+                   is_earth_velocity=True,
+                   is_good_beam=True,
+                   is_good_earth=True,
+                   is_bottom_track=True,
+                   is_range_tracking=True,
+                   is_nmea_data=True,
+                   is_system_setup=True):
         """
         Encode the ensemble into CSV data.
         Each line is a value with a the datetime, KEY, subsystem config, subsystem code,
@@ -324,10 +339,10 @@ class Ensemble:
 
         dt = datetime.datetime.now()
 
-        # Get the subsytem code and config
+        # Get the subsystem code and config
         ss_code = ""
         ss_config = ""
-        if self.IsEnsembleData:
+        if self.IsEnsembleData and is_ensemble_data:
             ss_code = self.EnsembleData.SysFirmwareSubsystemCode
             ss_config = self.EnsembleData.SubsystemConfig
 
@@ -336,27 +351,29 @@ class Ensemble:
 
             result += self.EnsembleData.encode_csv(dt, ss_code, ss_config)
 
-        if self.IsAncillaryData:
+        if self.IsAncillaryData and is_ancillary_data:
             result += self.AncillaryData.encode_csv(dt, ss_code, ss_config)
-        if self.IsAmplitude:
+        if self.IsAmplitude and is_amplitude:
             result += self.Amplitude.encode_csv(dt, ss_code, ss_config)
-        if self.IsCorrelation:
+        if self.IsCorrelation and is_correlation:
             result += self.Correlation.encode_csv(dt, ss_code, ss_config)
-        if self.IsBeamVelocity:
+        if self.IsBeamVelocity and is_beam_velocity:
             result += self.BeamVelocity.encode_csv(dt, ss_code, ss_config)
-        if self.IsInstrumentVelocity:
+        if self.IsInstrumentVelocity and is_instrument_velocity:
             result += self.InstrumentVelocity.encode_csv(dt, ss_code, ss_config)
-        if self.IsEarthVelocity:
+        if self.IsEarthVelocity and is_earth_velocity:
             result += self.EarthVelocity.encode_csv(dt, ss_code, ss_config)
-        if self.IsGoodBeam:
+        if self.IsGoodBeam and is_good_beam:
             result += self.GoodBeam.encode_csv(dt, ss_code, ss_config)
-        if self.IsGoodEarth:
+        if self.IsGoodEarth and is_good_earth:
             result += self.GoodEarth.encode_csv(dt, ss_code, ss_config)
-        if self.IsBottomTrack:
+        if self.IsBottomTrack and is_bottom_track:
             result += self.BottomTrack.encode_csv(dt, ss_code, ss_config)
-        if self.IsRangeTracking:
+        if self.IsRangeTracking and is_range_tracking:
             result += self.RangeTracking.encode_csv(dt, ss_code, ss_config)
-        if self.IsSystemSetup:
+        if self.IsNmeaData and is_nmea_data:
+            result += self.NmeaData.encode_csv(dt, ss_code, ss_config)
+        if self.IsSystemSetup and is_system_setup:
             result += self.SystemSetup.encode_csv(dt, ss_code, ss_config)
 
         return result
