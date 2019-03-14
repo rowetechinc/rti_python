@@ -33,6 +33,8 @@ class AverageWaterColumn:
         self.ens_beam_list = deque([], self.num_ens)
         self.ens_instr_list = deque([], self.num_ens)
         self.ens_earth_list = deque([], self.num_ens)
+        self.ens_magnitude = deque([], self.num_ens)
+        self.ens_direction = deque([], self.num_ens)
 
         self.thread_lock = Lock()
 
@@ -54,6 +56,8 @@ class AverageWaterColumn:
                     self.ens_instr_list.append(ens.InstrumentVelocity.Velocities)
                 if ens.IsEarthVelocity:
                     self.ens_earth_list.append(ens.EarthVelocity.Velocities)
+                    self.ens_magnitude.append(ens.EarthVelocity.Magnitude)
+                    self.ens_direction.append(ens.EarthVelocity.Direction)
 
     def average(self, is_running_avg=False):
         """
@@ -61,11 +65,13 @@ class AverageWaterColumn:
 
         If there were any errors averaging, NONE is returned for the average result.  It no
         data existed, NONE is also returned.  If data type does not exist, NONE is returned.
-        :return: Averaged data [Beam, Instrument, Earth]
+        :return: Averaged data [Beam, Instrument, Earth, Mag, Dir]
         """
         avg_beam_results = []
         avg_instr_results = []
         avg_earth_results = []
+        avg_mag_results = []
+        avg_dir_results = []
 
         # Average the Beam data
         if len(self.ens_beam_list) >= self.num_ens:
@@ -79,13 +85,23 @@ class AverageWaterColumn:
         if len(self.ens_earth_list) >= self.num_ens:
             avg_earth_results = self.avg_earth_data()
 
+        # Average the Magnitude data
+        if len(self.ens_magnitude) >= self.num_ens:
+            avg_mag_results = self.avg_mag_data()
+
+        # Average the Direction data
+        if len(self.ens_direction) >= self.num_ens:
+            avg_dir_results = self.avg_dir_data()
+
         # Clear the lists
         if not is_running_avg:
             self.ens_beam_list.clear()
             self.ens_instr_list.clear()
             self.ens_earth_list.clear()
+            self.ens_magnitude.clear()
+            self.ens_direction.clear()
 
-        return [avg_beam_results, avg_instr_results, avg_earth_results]
+        return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results]
 
     def avg_beam_data(self):
         """
@@ -122,6 +138,32 @@ class AverageWaterColumn:
             return self.avg_vel(self.ens_earth_list)
         except Exception as e:
             logging.error("Error processing data to average Earth water column. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_mag_data(self):
+        """
+        Average the water current magnitude data
+        :return:
+        """
+        try:
+            return self.avg_mag_dir(self.ens_magnitude)
+        except Exception as e:
+            logging.error("Error processing data to average Magnitude water column. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_dir_data(self):
+        """
+        Average the water current direction data
+        :return:
+        """
+        try:
+            return self.avg_mag_dir(self.ens_direction)
+        except Exception as e:
+            logging.error("Error processing data to average Direction water column. " + str(e))
             if self.thread_lock.locked():
                 self.thread_lock.release()
             return None
@@ -192,5 +234,61 @@ class AverageWaterColumn:
             for beam in range(len(avg_accum[0])):
                 if avg_count[ens_bin][beam] > 0:                                # Verify data was accumulated
                     avg_vel[ens_bin][beam] = avg_accum[ens_bin][beam] / avg_count[ens_bin][beam]    # Average data
+
+        return avg_vel
+
+    def avg_mag_dir(self, data):
+        """
+        Average the magnitude or direction data given.
+        This will verify the number of bins
+        is the same between ensembles.  If any ensembles have a different
+        number of bins, then a exception will be thrown.
+
+        This will not average the data if the data is BAD VELOCITY.
+
+        :param vel:  Magnitude or direction data from each ensemble.
+        :return: Average of all the velocities in the all the ensembles.
+        """
+        # Determine number of bins and beams
+        num_bins = 0
+        avg_accum = []
+        avg_count = []
+        avg_vel = None
+
+        # lock the thread when iterating the deque
+        self.thread_lock.acquire(True, 1000)
+
+        # Create a deep copy of the data
+        # This will make it thread safe
+        deep_copy_data = copy.deepcopy(data)
+
+        for ens_data in deep_copy_data:
+            temp_num_bins = len(ens_data)
+            if num_bins == 0:
+                num_bins = temp_num_bins
+            elif num_bins != temp_num_bins:
+                logging.error("Number of bins is not consistent between ensembles")
+                self.thread_lock.release()
+                raise Exception("Number of bins is not consistent between ensembles")
+
+            # Create the average lists
+            if num_bins != 0 and len(avg_accum) == 0:
+                avg_accum = [0 for b in range(num_bins)]
+                avg_count = [0 for b in range(num_bins)]
+                avg_vel = [0 for b in range(num_bins)]
+
+            # Accumulate the data
+            for ens_bin in range(len(ens_data)):
+                if ens_data[ens_bin] != Ensemble.BadVelocity:
+                    avg_accum[ens_bin] += ens_data[ens_bin]           # Accumulate velocity
+                    avg_count[ens_bin] += 1                           # Count good data
+
+        # Unlock thread
+        self.thread_lock.release()
+
+        # Average the data accumulate
+        for ens_bin in range(len(avg_accum)):
+            if avg_count[ens_bin] > 0:                                # Verify data was accumulated
+                avg_vel[ens_bin] = avg_accum[ens_bin] / avg_count[ens_bin]    # Average data
 
         return avg_vel

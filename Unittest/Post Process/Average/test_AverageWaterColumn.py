@@ -893,12 +893,18 @@ def test_AWC_change_ss_code():
     earthVel1.Velocities[2][3] = 121.0
     ens1.AddEarthVelocity(earthVel1)
 
+    ens.EarthVelocity.generate_velocity_vectors()
+    ens1.EarthVelocity.generate_velocity_vectors()
+
+
     awc = AverageWaterColumn(3, '3', '1')
     awc.add_ens(ens)
     awc.add_ens(ens)
     awc.add_ens(ens)
     awc.add_ens(ens1)
     result = awc.average()
+
+    assert 5 == len(result)
 
     # verify not empty list
     assert result[0]
@@ -922,6 +928,16 @@ def test_AWC_change_ss_code():
     assert result[2][0][1] == 10.0
     assert result[2][0][2] == 11.0
     assert result[2][0][3] == 12.0
+
+    # Magnitude
+    assert result[3][0] == pytest.approx(17.378, 0.1)
+    assert result[3][1] == pytest.approx(17.378, 0.1)
+    assert result[3][2] == pytest.approx(17.378, 0.1)
+
+    # Direction
+    assert result[4][0] == pytest.approx(41.98, 0.1)
+    assert result[4][1] == pytest.approx(41.98, 0.1)
+    assert result[4][2] == pytest.approx(41.98, 0.1)
 
 
 def test_AWC_change_ss_config():

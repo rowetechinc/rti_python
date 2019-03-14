@@ -45,7 +45,7 @@ class EarthVelocity:
                 packet_pointer += Ensemble().BytesInFloat
 
         # Generate Water Current Magnitude and Direction
-        self.Magnitude, self.Direction = EarthVelocity.generate_vectors(self.Velocities)
+        self.generate_velocity_vectors()
 
         logging.debug(self.Velocities)
 
@@ -75,6 +75,14 @@ class EarthVelocity:
                 self.Velocities[bin_num][2] = self.Velocities[bin_num][2] + bt_vert            # Remove vessel speed
 
         # Generate the new vectors after removing the vessel speed
+        self.generate_velocity_vectors()
+
+    def generate_velocity_vectors(self):
+        """
+        Generate the velocity vectors for this object.
+        This will set both Magnitude and direction.
+        :return:
+        """
         self.Magnitude, self.Direction = EarthVelocity.generate_vectors(self.Velocities)
 
     @staticmethod
@@ -88,9 +96,6 @@ class EarthVelocity:
         available.
 
         :param earth_vel: Earth Velocities[bin][beam]
-        :param bt_east: Bottom Track East velocity
-        :param bt_north: Bottom Track North velocity
-        :param bt_vert: Bottom Track Vertical velocity
         :return: [magnitude], [direction]  List with a value for each bin
         """
         mag = []
