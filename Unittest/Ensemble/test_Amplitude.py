@@ -144,7 +144,7 @@ def test_amplitude_encode_csv():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = amp.encode_csv(dt, 'A', 1)
+    result = amp.encode_csv(dt, 'A', 1, 1.2, 1)
 
     # Check the csv data
     test_value = 1.0

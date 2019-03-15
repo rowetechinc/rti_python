@@ -106,27 +106,29 @@ class AncillaryData:
 
         return result
 
-    def encode_csv(self, dt, ss_code, ss_config):
+    def encode_csv(self, dt, ss_code, ss_config, blank=0, bin_size=0):
         """
         Encode into CSV format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
         :return: List of CSV lines.
         """
         str_result = []
 
         # Create the CSV strings
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstPingTime))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, self.LastPingTime))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, self.Heading))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, self.Pitch))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, self.Roll))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, self.WaterTemp))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, self.SystemTemp))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, self.Pressure))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, self.TransducerDepth))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, self.SpeedOfSound))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, blank, bin_size, self.FirstPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, blank, bin_size, self.LastPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, blank, bin_size, self.Heading))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, blank, bin_size, self.Pitch))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, blank, bin_size, self.Roll))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, blank, bin_size, self.WaterTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, blank, bin_size, self.SystemTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, blank, bin_size, self.Pressure))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, blank, bin_size, self.TransducerDepth))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, blank, bin_size, self.SpeedOfSound))
 
         return str_result
 

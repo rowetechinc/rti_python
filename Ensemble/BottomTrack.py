@@ -271,43 +271,45 @@ class BottomTrack:
 
         return result
 
-    def encode_csv(self, dt, ss_code, ss_config):
+    def encode_csv(self, dt, ss_code, ss_config, blank=0, bin_size=0):
         """
         Encode into CSV format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
         :return: List of CSV lines.
         """
         str_result = []
 
         # Create the CSV strings
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_HEADING, ss_code, ss_config, 0, 0, self.Heading))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_PITCH, ss_code, ss_config, 0, 0, self.Pitch))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_ROLL, ss_code, ss_config, 0, 0, self.Roll))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_PRESSURE, ss_code, ss_config, 0, 0, self.Pressure))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_XDCR_DEPTH, ss_code, ss_config, 0, 0, self.TransducerDepth))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_STATUS, ss_code, ss_config, 0, 0, self.Status))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_HEADING, ss_code, ss_config, 0, 0, blank, bin_size, self.Heading))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_PITCH, ss_code, ss_config, 0, 0, blank, bin_size, self.Pitch))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_ROLL, ss_code, ss_config, 0, 0, blank, bin_size, self.Roll))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_PRESSURE, ss_code, ss_config, 0, 0, blank, bin_size, self.Pressure))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_XDCR_DEPTH, ss_code, ss_config, 0, 0, blank, bin_size, self.TransducerDepth))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_STATUS, ss_code, ss_config, 0, 0, blank, bin_size, self.Status))
 
         for beams in range(len(self.Range)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_RANGE, ss_code, ss_config, 0, beams, self.Range[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_RANGE, ss_code, ss_config, 0, beams, blank, bin_size, self.Range[beams]))
 
         for beams in range(len(self.BeamVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_BEAM_VEL, ss_code, ss_config, 0, beams, self.BeamVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_BEAM_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.BeamVelocity[beams]))
 
         for beams in range(len(self.BeamGood)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_BEAM_GOOD, ss_code, ss_config, 0, beams, self.BeamGood[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_BEAM_GOOD, ss_code, ss_config, 0, beams, blank, bin_size, self.BeamGood[beams]))
 
         for beams in range(len(self.InstrumentVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_INSTR_VEL, ss_code, ss_config, 0, beams, self.InstrumentVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_INSTR_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.InstrumentVelocity[beams]))
 
         for beams in range(len(self.InstrumentGood)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_INSTR_GOOD, ss_code, ss_config, 0, beams, self.InstrumentGood[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_INSTR_GOOD, ss_code, ss_config, 0, beams, blank, bin_size, self.InstrumentGood[beams]))
 
         for beams in range(len(self.EarthVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_EARTH_VEL, ss_code, ss_config, 0, beams, self.EarthVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_EARTH_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.EarthVelocity[beams]))
 
         for beams in range(len(self.EarthGood)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_EARTH_GOOD, ss_code, ss_config, 0, beams, self.EarthGood[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_EARTH_GOOD, ss_code, ss_config, 0, beams, blank, bin_size, self.EarthGood[beams]))
 
         return str_result

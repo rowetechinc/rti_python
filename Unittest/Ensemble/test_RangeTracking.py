@@ -454,7 +454,7 @@ def test_encode_csv():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = rt.encode_csv(dt, 'A', 1)
+    result = rt.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     for line in result:

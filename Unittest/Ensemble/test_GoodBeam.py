@@ -144,7 +144,7 @@ def test_encode_csv():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = gb.encode_csv(dt, 'A', 1)
+    result = gb.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     test_value = 1

@@ -271,10 +271,10 @@ class WaveForceCodec:
                         if ens_wave.num_beams > 3:
                             beam_3_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][3]))      # Beam 3 Beam Velocity
 
-        # Selected Bin Heights
+        # Selected Bin Heights (WHV)
         if ens_buff[0].IsEnsembleData:
             for sel_bin in range(num_bins):
-                bin_ht = ens_buff[0].AncillaryData.FirstBinRange + (self.selected_bin[sel_bin] * ens_buff[0].AncillaryData.BinSize)
+                bin_ht = round((ens_buff[0].AncillaryData.FirstBinRange + (self.selected_bin[sel_bin] * ens_buff[0].AncillaryData.BinSize)), 2)
                 sel_bins_buff.extend(struct.pack('f', bin_ht))
 
         # Pressure Sensor Depth

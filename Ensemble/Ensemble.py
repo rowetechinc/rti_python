@@ -338,6 +338,11 @@ class Ensemble:
         result = []
 
         dt = datetime.datetime.now()
+        blank = 0
+        bin_size = 0
+        if self.IsAncillaryData:
+            blank = self.AncillaryData.FirstBinRange
+            bin_size = self.AncillaryData.BinSize
 
         # Get the subsystem code and config
         ss_code = ""
@@ -349,32 +354,32 @@ class Ensemble:
             # Create a new datetime based off ensemble date and time
             dt = self.EnsembleData.datetime()
 
-            result += self.EnsembleData.encode_csv(dt, ss_code, ss_config)
+            result += self.EnsembleData.encode_csv(dt, ss_code, ss_config, blank, bin_size)
 
         if self.IsAncillaryData and is_ancillary_data:
-            result += self.AncillaryData.encode_csv(dt, ss_code, ss_config)
+            result += self.AncillaryData.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsAmplitude and is_amplitude:
-            result += self.Amplitude.encode_csv(dt, ss_code, ss_config)
+            result += self.Amplitude.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsCorrelation and is_correlation:
-            result += self.Correlation.encode_csv(dt, ss_code, ss_config)
+            result += self.Correlation.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsBeamVelocity and is_beam_velocity:
-            result += self.BeamVelocity.encode_csv(dt, ss_code, ss_config)
+            result += self.BeamVelocity.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsInstrumentVelocity and is_instrument_velocity:
-            result += self.InstrumentVelocity.encode_csv(dt, ss_code, ss_config)
+            result += self.InstrumentVelocity.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsEarthVelocity and is_earth_velocity:
-            result += self.EarthVelocity.encode_csv(dt, ss_code, ss_config)
+            result += self.EarthVelocity.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsGoodBeam and is_good_beam:
-            result += self.GoodBeam.encode_csv(dt, ss_code, ss_config)
+            result += self.GoodBeam.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsGoodEarth and is_good_earth:
-            result += self.GoodEarth.encode_csv(dt, ss_code, ss_config)
+            result += self.GoodEarth.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsBottomTrack and is_bottom_track:
-            result += self.BottomTrack.encode_csv(dt, ss_code, ss_config)
+            result += self.BottomTrack.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsRangeTracking and is_range_tracking:
-            result += self.RangeTracking.encode_csv(dt, ss_code, ss_config)
+            result += self.RangeTracking.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsNmeaData and is_nmea_data:
-            result += self.NmeaData.encode_csv(dt, ss_code, ss_config)
+            result += self.NmeaData.encode_csv(dt, ss_code, ss_config, blank, bin_size)
         if self.IsSystemSetup and is_system_setup:
-            result += self.SystemSetup.encode_csv(dt, ss_code, ss_config)
+            result += self.SystemSetup.encode_csv(dt, ss_code, ss_config, blank, bin_size)
 
         return result
 
@@ -415,41 +420,43 @@ class Ensemble:
             return json.dumps(self, default=lambda o: o.__dict__) + "\n"
 
     @staticmethod
-    def gen_csv_line(dt, data_type, ss_code, ss_config, bin_num, beam_num, value):
+    def gen_csv_line(dt, data_type, ss_code, ss_config, bin_num, beam_num, blank, bin_size, value):
         """
         Create a csv line.  Use this so all the lines have the same format.
 
-        The data_type options are:
-        Amp = Amplitude
-        Corr = Correlation
-        BeamVel = Beam Velocity
-        InstrVel = Instrument Velocity
-        EarthVel = Earth Velocity
-        Pressure = Pressure Depth
-        Heading = Heading
-        Pitch = Pitch
-        Roll = Roll
-        RT = Range Tracking
-        BT_Range = Bottom Track Range
-        BT_BeamVel = Bottom Track Beam Velocity
-        BT_InstrVel = Bottom Track Instrument Velocity
-        BT_EarthVel = Bottom Track Earth Velocity
-
-
         Ex:
-        2019/03/07 00:51:35:478159, Amp, 1, 3, A, 1, 23.03
+        2019/03/07 00:51:35:478159, Amp, 1, 3, A, 1, 7.4, 23.03
         :param dt:
-        :param data_type:
-        :param ss_code:
-        :param ss_config:
-        :param bin_num:
-        :param beam_num:
-        :param value:
-        :return:
+        :param data_type: Data type.  Names given above starting CSV_
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem configuration number.
+        :param bin_num: Bin Number
+        :param beam_num: Beam Number.
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
+        :param value: Value for this line.
+        :return: CSV line with all the data.
         """
         dt_str = dt.strftime('%Y/%m/%d %H:%M:%S:%f')
 
-        return "{},{},{},{},{},{},{}".format(dt_str, data_type, ss_code, ss_config, bin_num, beam_num, value)
+        bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
+
+        return "{},{},{},{},{},{},{},{}".format(dt_str, data_type, ss_code, ss_config, bin_num, beam_num, bin_depth, value)
+
+    @staticmethod
+    def get_bin_depth(blank, bin_size, bin_num):
+        """
+        Give the depth of the given bin number.
+        Bin number is 0 based. So the first bin is bin_num=0
+
+        The depth is the center of the bin.
+
+        :param blank: Blanking distance of depth of the first bin in meters.
+        :param bin_size: Bin size in meters.
+        :param bin_num: Bin number. Zero starting.
+        :return: The depth of the given bin in meters.
+        """
+        return round(float(blank) + (float(bin_size) * float(bin_num)), 2)
 
     @staticmethod
     def GetInt32(start, numBytes, ens):

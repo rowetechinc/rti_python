@@ -208,31 +208,33 @@ class RangeTracking:
 
         return result
 
-    def encode_csv(self, dt, ss_code, ss_config):
+    def encode_csv(self, dt, ss_code, ss_config, blank=0, bin_size=0):
         """
         Encode into CSV format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
         :return: List of CSV lines.
         """
         str_result = []
 
         # Create the CSV strings
         for beams in range(len(self.Range)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_RANGE, ss_code, ss_config, 0, beams, self.Range[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_RANGE, ss_code, ss_config, 0, beams, blank, bin_size, self.Range[beams]))
 
         for beams in range(len(self.Pings)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_PINGS, ss_code, ss_config, 0, beams, self.Pings[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_PINGS, ss_code, ss_config, 0, beams, blank, bin_size, self.Pings[beams]))
 
         for beams in range(len(self.BeamVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_BEAM_VEL, ss_code, ss_config, 0, beams, self.BeamVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_BEAM_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.BeamVelocity[beams]))
 
         for beams in range(len(self.InstrumentVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_INSTR_VEL, ss_code, ss_config, 0, beams, self.InstrumentVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_INSTR_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.InstrumentVelocity[beams]))
 
         for beams in range(len(self.EarthVelocity)):
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_EARTH_VEL, ss_code, ss_config, 0, beams, self.EarthVelocity[beams]))
+            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_RT_EARTH_VEL, ss_code, ss_config, 0, beams, blank, bin_size, self.EarthVelocity[beams]))
 
         return str_result
 

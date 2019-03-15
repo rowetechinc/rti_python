@@ -21,6 +21,12 @@ class AverageWaterColumn:
     INDEX_BEAM = 0
     INDEX_INSTRUMENT = 1
     INDEX_EARTH = 2
+    INDEX_MAG = 3
+    INDEX_DIR = 4
+    INDEX_PRESSURE = 5
+    INDEX_XDCR_DEPTH = 6
+    INDEX_FIRST_TIME = 7
+    INDEX_LAST_TIME = 8
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -35,6 +41,12 @@ class AverageWaterColumn:
         self.ens_earth_list = deque([], self.num_ens)
         self.ens_magnitude = deque([], self.num_ens)
         self.ens_direction = deque([], self.num_ens)
+        self.pressure = deque([], self.num_ens)
+        self.xdcr_depth = deque([], self.num_ens)
+        self.blank = 0.0
+        self.bin_size = 0.0
+        self.first_time = None
+        self.last_time = None
 
         self.thread_lock = Lock()
 
@@ -50,6 +62,11 @@ class AverageWaterColumn:
             # Check if the subsystem config and code match
             # Then add the velocity data to the list
             if ens.EnsembleData.SubsystemConfig == self.ss_config and ens.EnsembleData.SysFirmwareSubsystemCode == self.ss_code:
+                if ens.IsAncillaryData:
+                    self.blank = ens.AncillaryData.FirstBinRange
+                    self.bin_size = ens.AncillaryData.BinSize
+                    self.pressure.append([ens.AncillaryData.Pressure])
+                    self.xdcr_depth.append([ens.AncillaryData.TransducerDepth])
                 if ens.IsBeamVelocity:
                     self.ens_beam_list.append(ens.BeamVelocity.Velocities)
                 if ens.IsInstrumentVelocity:
@@ -58,6 +75,13 @@ class AverageWaterColumn:
                     self.ens_earth_list.append(ens.EarthVelocity.Velocities)
                     self.ens_magnitude.append(ens.EarthVelocity.Magnitude)
                     self.ens_direction.append(ens.EarthVelocity.Direction)
+
+
+                # Set the times
+                if not self.first_time:
+                    self.first_time = ens.EnsembleData.datetime()
+
+                self.last_time = ens.EnsembleData.datetime()
 
     def average(self, is_running_avg=False):
         """
@@ -72,6 +96,10 @@ class AverageWaterColumn:
         avg_earth_results = []
         avg_mag_results = []
         avg_dir_results = []
+        avg_pressure_results = []
+        avg_xdcr_depth_results = []
+        first_time = self.first_time
+        last_time = self.last_time
 
         # Average the Beam data
         if len(self.ens_beam_list) >= self.num_ens:
@@ -93,6 +121,14 @@ class AverageWaterColumn:
         if len(self.ens_direction) >= self.num_ens:
             avg_dir_results = self.avg_dir_data()
 
+        # Average the Pressure data
+        if len(self.pressure) >= self.num_ens:
+            avg_pressure_results = self.avg_pressure_data()
+
+        # Average the Pressure data
+        if len(self.xdcr_depth) >= self.num_ens:
+            avg_xdcr_depth_results = self.avg_xdcr_depth_data()
+
         # Clear the lists
         if not is_running_avg:
             self.ens_beam_list.clear()
@@ -100,8 +136,12 @@ class AverageWaterColumn:
             self.ens_earth_list.clear()
             self.ens_magnitude.clear()
             self.ens_direction.clear()
+            self.pressure.clear()
+            self.xdcr_depth.clear()
+            self.first_time = None
+            self.last_time = None
 
-        return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results]
+        return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results, avg_pressure_results, avg_xdcr_depth_results, first_time, last_time]
 
     def avg_beam_data(self):
         """
@@ -164,6 +204,32 @@ class AverageWaterColumn:
             return self.avg_mag_dir(self.ens_direction)
         except Exception as e:
             logging.error("Error processing data to average Direction water column. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_pressure_data(self):
+        """
+        Average the water pressure data
+        :return:
+        """
+        try:
+            return self.avg_mag_dir(self.pressure)
+        except Exception as e:
+            logging.error("Error processing data to average Pressure. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_xdcr_depth_data(self):
+        """
+        Average the water Tranducer Depth data
+        :return:
+        """
+        try:
+            return self.avg_mag_dir(self.xdcr_depth)
+        except Exception as e:
+            logging.error("Error processing data to average Transducer Depth. " + str(e))
             if self.thread_lock.locked():
                 self.thread_lock.release()
             return None

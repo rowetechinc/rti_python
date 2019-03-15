@@ -141,17 +141,19 @@ class EnsembleData:
 
         return result
 
-    def encode_csv(self, dt, ss_code, ss_config):
+    def encode_csv(self, dt, ss_code, ss_config, blank=0, bin_size=0):
         """
         Encode into CSV format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
         :return: List of CSV lines.
         """
         str_result = []
 
         # Create the CSV strings
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_STATUS, ss_code, ss_config, 0, 0, self.Status))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_STATUS, ss_code, ss_config, 0, 0, blank, bin_size, self.Status))
 
         return str_result

@@ -145,7 +145,7 @@ def test_encode_csv():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = vel.encode_csv(dt, 'A', 1)
+    result = vel.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     test_value = 1.0
@@ -239,7 +239,7 @@ def test_encode_csv_vector():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = vel.encode_csv(dt, 'A', 1)
+    result = vel.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     test_value = 1.0
@@ -274,7 +274,7 @@ def test_encode_csv_vector_bt():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = vel.encode_csv(dt, 'A', 1)
+    result = vel.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     for line in result:
@@ -307,7 +307,7 @@ def test_encode_csv_vector_no_remove():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = vel.encode_csv(dt, 'A', 1)
+    result = vel.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     for line in result:
@@ -340,7 +340,7 @@ def test_encode_csv_vector_no_gen():
     dt = datetime.datetime.now()
 
     # Create CSV lines
-    result = vel.encode_csv(dt, 'A', 1)
+    result = vel.encode_csv(dt, 'A', 1, 1.3, 1.0)
 
     # Check the csv data
     for line in result:

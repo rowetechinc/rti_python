@@ -64,12 +64,14 @@ class Correlation:
 
         return result
 
-    def encode_csv(self, dt, ss_code, ss_config):
+    def encode_csv(self, dt, ss_code, ss_config, blank, bin_size):
         """
         Encode the Correlation into CSV format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin Size in meters.
         :return: List of CSV lines.
         """
         str_result = []
@@ -80,7 +82,7 @@ class Correlation:
                 val = self.Correlation[bin_num][beam]
 
                 # Create the CSV string
-                str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_CORR, ss_code, ss_config, bin_num, beam, val))
+                str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_CORR, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
 
         return str_result
 
