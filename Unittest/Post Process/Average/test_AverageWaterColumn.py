@@ -5,6 +5,7 @@ from rti_python.Ensemble.BeamVelocity import BeamVelocity
 from rti_python.Ensemble.InstrumentVelocity import InstrumentVelocity
 from rti_python.Ensemble.EarthVelocity import EarthVelocity
 from rti_python.Post_Process.Average.AverageWaterColumn import AverageWaterColumn
+from rti_python.Ensemble.AncillaryData import AncillaryData
 
 def test_AWC_1ens():
 
@@ -66,9 +67,27 @@ def test_AWC_1ens():
     result = awc.average()
 
     # verify empty list
-    assert not result[0]
-    assert not result[1]
-    assert not result[2]
+    assert result[0]
+    assert result[1]
+    assert result[2]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
 
 def test_AWC_2ens():
 
@@ -131,9 +150,27 @@ def test_AWC_2ens():
     result = awc.average()
 
     # verify empty list
-    assert not result[0]
-    assert not result[1]
-    assert not result[2]
+    assert result[0]
+    assert result[1]
+    assert result[2]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
 
 def test_AWC_3ens():
 
@@ -904,7 +941,7 @@ def test_AWC_change_ss_code():
     awc.add_ens(ens1)
     result = awc.average()
 
-    assert 5 == len(result)
+    assert 9 == len(result)
 
     # verify not empty list
     assert result[0]
@@ -1079,5 +1116,502 @@ def test_AWC_change_ss_config():
     assert result[2][0][3] == 12.0
 
 
+def test_AWC_mag_dir():
+
+    ens = Ensemble()
+    ensDS = EnsembleData()
+    ensDS.SysFirmwareSubsystemCode = '3'
+    ensDS.SubsystemConfig = '1'
+    ensDS.NumBeams = 4
+    ensDS.NumBins = 3
+    ens.AddEnsembleData(ensDS)
+
+    beamVel = BeamVelocity(ensDS.NumBins, ensDS.NumBeams)
+    beamVel.Velocities[0][0] = 1.0
+    beamVel.Velocities[0][1] = 2.0
+    beamVel.Velocities[0][2] = 3.0
+    beamVel.Velocities[0][3] = 4.0
+    beamVel.Velocities[1][0] = 1.0
+    beamVel.Velocities[1][1] = 2.0
+    beamVel.Velocities[1][2] = 3.0
+    beamVel.Velocities[1][3] = 4.0
+    beamVel.Velocities[2][0] = 1.0
+    beamVel.Velocities[2][1] = 2.0
+    beamVel.Velocities[2][2] = 3.0
+    beamVel.Velocities[2][3] = 4.0
+    ens.AddBeamVelocity(beamVel)
+
+    instrVel = InstrumentVelocity(ensDS.NumBins, ensDS.NumBeams)
+    instrVel.Velocities[0][0] = 1.0
+    instrVel.Velocities[0][1] = 2.0
+    instrVel.Velocities[0][2] = 3.0
+    instrVel.Velocities[0][3] = 4.0
+    instrVel.Velocities[1][0] = 1.0
+    instrVel.Velocities[1][1] = 2.0
+    instrVel.Velocities[1][2] = 3.0
+    instrVel.Velocities[1][3] = 4.0
+    instrVel.Velocities[2][0] = 1.0
+    instrVel.Velocities[2][1] = 2.0
+    instrVel.Velocities[2][2] = 3.0
+    instrVel.Velocities[2][3] = 4.0
+    ens.AddInstrumentVelocity(instrVel)
+
+    earthVel = EarthVelocity(ensDS.NumBins, ensDS.NumBeams)
+    earthVel.Velocities[0][0] = 1.0
+    earthVel.Velocities[0][1] = 2.0
+    earthVel.Velocities[0][2] = 3.0
+    earthVel.Velocities[0][3] = 4.0
+    earthVel.Velocities[1][0] = 1.0
+    earthVel.Velocities[1][1] = 2.0
+    earthVel.Velocities[1][2] = 3.0
+    earthVel.Velocities[1][3] = 4.0
+    earthVel.Velocities[2][0] = 1.0
+    earthVel.Velocities[2][1] = 2.0
+    earthVel.Velocities[2][2] = 3.0
+    earthVel.Velocities[2][3] = 4.0
+    earthVel.generate_velocity_vectors()
+    ens.AddEarthVelocity(earthVel)
+
+    awc = AverageWaterColumn(3, '3', '1')
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
+
+    # verify empty list
+    assert result[0]
+    assert result[1]
+    assert result[2]
+    assert result[3]
+    assert result[4]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
+
+    # Mag Results
+    assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][1] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][2] == pytest.approx(3.741, 0.01)
+
+    # Dir Result
+    assert result[AverageWaterColumn.INDEX_DIR][0] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][1] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][2] == pytest.approx(26.5650, 0.01)
+
+    # Pressure and Transducer Depth
+    assert not result[AverageWaterColumn.INDEX_PRESSURE]
+    assert not result[AverageWaterColumn.INDEX_XDCR_DEPTH]
 
 
+def test_AWC_pressure_xdcr_depth():
+
+    ens = Ensemble()
+    ensDS = EnsembleData()
+    ensDS.SysFirmwareSubsystemCode = '3'
+    ensDS.SubsystemConfig = '1'
+    ensDS.NumBeams = 4
+    ensDS.NumBins = 3
+    ensDS.Year = 2019
+    ensDS.Month = 3
+    ensDS.Day = 12
+    ensDS.Hour = 14
+    ensDS.Minute = 33
+    ensDS.Second = 45
+    ensDS.HSec = 34
+    ens.AddEnsembleData(ensDS)
+
+    anc = AncillaryData()
+    anc.Pressure = 2.6345
+    anc.TransducerDepth = 26.354
+    ens.AddAncillaryData(anc)
+
+    beamVel = BeamVelocity(ensDS.NumBins, ensDS.NumBeams)
+    beamVel.Velocities[0][0] = 1.0
+    beamVel.Velocities[0][1] = 2.0
+    beamVel.Velocities[0][2] = 3.0
+    beamVel.Velocities[0][3] = 4.0
+    beamVel.Velocities[1][0] = 1.0
+    beamVel.Velocities[1][1] = 2.0
+    beamVel.Velocities[1][2] = 3.0
+    beamVel.Velocities[1][3] = 4.0
+    beamVel.Velocities[2][0] = 1.0
+    beamVel.Velocities[2][1] = 2.0
+    beamVel.Velocities[2][2] = 3.0
+    beamVel.Velocities[2][3] = 4.0
+    ens.AddBeamVelocity(beamVel)
+
+    instrVel = InstrumentVelocity(ensDS.NumBins, ensDS.NumBeams)
+    instrVel.Velocities[0][0] = 1.0
+    instrVel.Velocities[0][1] = 2.0
+    instrVel.Velocities[0][2] = 3.0
+    instrVel.Velocities[0][3] = 4.0
+    instrVel.Velocities[1][0] = 1.0
+    instrVel.Velocities[1][1] = 2.0
+    instrVel.Velocities[1][2] = 3.0
+    instrVel.Velocities[1][3] = 4.0
+    instrVel.Velocities[2][0] = 1.0
+    instrVel.Velocities[2][1] = 2.0
+    instrVel.Velocities[2][2] = 3.0
+    instrVel.Velocities[2][3] = 4.0
+    ens.AddInstrumentVelocity(instrVel)
+
+    earthVel = EarthVelocity(ensDS.NumBins, ensDS.NumBeams)
+    earthVel.Velocities[0][0] = 1.0
+    earthVel.Velocities[0][1] = 2.0
+    earthVel.Velocities[0][2] = 3.0
+    earthVel.Velocities[0][3] = 4.0
+    earthVel.Velocities[1][0] = 1.0
+    earthVel.Velocities[1][1] = 2.0
+    earthVel.Velocities[1][2] = 3.0
+    earthVel.Velocities[1][3] = 4.0
+    earthVel.Velocities[2][0] = 1.0
+    earthVel.Velocities[2][1] = 2.0
+    earthVel.Velocities[2][2] = 3.0
+    earthVel.Velocities[2][3] = 4.0
+    earthVel.generate_velocity_vectors()
+    ens.AddEarthVelocity(earthVel)
+
+    awc = AverageWaterColumn(3, '3', '1')
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
+
+    # verify empty list
+    assert result[0]
+    assert result[1]
+    assert result[2]
+    assert result[3]
+    assert result[4]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
+
+    # Mag Results
+    assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][1] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][2] == pytest.approx(3.741, 0.01)
+
+    # Dir Result
+    assert result[AverageWaterColumn.INDEX_DIR][0] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][1] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][2] == pytest.approx(26.5650, 0.01)
+
+    # Pressure
+    assert result[AverageWaterColumn.INDEX_PRESSURE][0] == pytest.approx(2.6345, 0.01)
+
+    # Transducer Depth
+    assert result[AverageWaterColumn.INDEX_XDCR_DEPTH][0] == pytest.approx(26.354, 0.01)
+
+
+def test_AWC_time():
+
+    ens = Ensemble()
+    ensDS = EnsembleData()
+    ensDS.SysFirmwareSubsystemCode = '3'
+    ensDS.SubsystemConfig = '1'
+    ensDS.NumBeams = 4
+    ensDS.NumBins = 3
+    ensDS.Year = 2019
+    ensDS.Month = 3
+    ensDS.Day = 12
+    ensDS.Hour = 14
+    ensDS.Minute = 33
+    ensDS.Second = 45
+    ensDS.HSec = 34
+    ens.AddEnsembleData(ensDS)
+
+    anc = AncillaryData()
+    anc.Pressure = 2.6345
+    anc.TransducerDepth = 26.354
+    ens.AddAncillaryData(anc)
+
+    beamVel = BeamVelocity(ensDS.NumBins, ensDS.NumBeams)
+    beamVel.Velocities[0][0] = 1.0
+    beamVel.Velocities[0][1] = 2.0
+    beamVel.Velocities[0][2] = 3.0
+    beamVel.Velocities[0][3] = 4.0
+    beamVel.Velocities[1][0] = 1.0
+    beamVel.Velocities[1][1] = 2.0
+    beamVel.Velocities[1][2] = 3.0
+    beamVel.Velocities[1][3] = 4.0
+    beamVel.Velocities[2][0] = 1.0
+    beamVel.Velocities[2][1] = 2.0
+    beamVel.Velocities[2][2] = 3.0
+    beamVel.Velocities[2][3] = 4.0
+    ens.AddBeamVelocity(beamVel)
+
+    instrVel = InstrumentVelocity(ensDS.NumBins, ensDS.NumBeams)
+    instrVel.Velocities[0][0] = 1.0
+    instrVel.Velocities[0][1] = 2.0
+    instrVel.Velocities[0][2] = 3.0
+    instrVel.Velocities[0][3] = 4.0
+    instrVel.Velocities[1][0] = 1.0
+    instrVel.Velocities[1][1] = 2.0
+    instrVel.Velocities[1][2] = 3.0
+    instrVel.Velocities[1][3] = 4.0
+    instrVel.Velocities[2][0] = 1.0
+    instrVel.Velocities[2][1] = 2.0
+    instrVel.Velocities[2][2] = 3.0
+    instrVel.Velocities[2][3] = 4.0
+    ens.AddInstrumentVelocity(instrVel)
+
+    earthVel = EarthVelocity(ensDS.NumBins, ensDS.NumBeams)
+    earthVel.Velocities[0][0] = 1.0
+    earthVel.Velocities[0][1] = 2.0
+    earthVel.Velocities[0][2] = 3.0
+    earthVel.Velocities[0][3] = 4.0
+    earthVel.Velocities[1][0] = 1.0
+    earthVel.Velocities[1][1] = 2.0
+    earthVel.Velocities[1][2] = 3.0
+    earthVel.Velocities[1][3] = 4.0
+    earthVel.Velocities[2][0] = 1.0
+    earthVel.Velocities[2][1] = 2.0
+    earthVel.Velocities[2][2] = 3.0
+    earthVel.Velocities[2][3] = 4.0
+    earthVel.generate_velocity_vectors()
+    ens.AddEarthVelocity(earthVel)
+
+    awc = AverageWaterColumn(3, '3', '1')
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    result = awc.average()
+
+    # verify empty list
+    assert result[0]
+    assert result[1]
+    assert result[2]
+    assert result[3]
+    assert result[4]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
+
+    # Mag Results
+    assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][1] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][2] == pytest.approx(3.741, 0.01)
+
+    # Dir Result
+    assert result[AverageWaterColumn.INDEX_DIR][0] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][1] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][2] == pytest.approx(26.5650, 0.01)
+
+    # Pressure
+    assert result[AverageWaterColumn.INDEX_PRESSURE][0] == pytest.approx(2.6345, 0.01)
+
+    # Transducer Depth
+    assert result[AverageWaterColumn.INDEX_XDCR_DEPTH][0] == pytest.approx(26.354, 0.01)
+
+    # First Time
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].year == pytest.approx(2019, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].month == pytest.approx(3, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].day == pytest.approx(12, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].hour == pytest.approx(14, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].minute == pytest.approx(33, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].second == pytest.approx(45, 0.1)
+
+    # Last Time
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].year == pytest.approx(2019, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].month == pytest.approx(3, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].day == pytest.approx(12, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].hour == pytest.approx(14, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].minute == pytest.approx(33, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].second == pytest.approx(45, 0.1)
+
+
+def test_AWC_last_time():
+
+    ens = Ensemble()
+    ensDS = EnsembleData()
+    ensDS.SysFirmwareSubsystemCode = '3'
+    ensDS.SubsystemConfig = '1'
+    ensDS.NumBeams = 4
+    ensDS.NumBins = 3
+    ensDS.Year = 2019
+    ensDS.Month = 3
+    ensDS.Day = 12
+    ensDS.Hour = 14
+    ensDS.Minute = 33
+    ensDS.Second = 45
+    ensDS.HSec = 34
+    ens.AddEnsembleData(ensDS)
+
+    ens2 = Ensemble()
+    ensDS1 = EnsembleData()
+    ensDS1.SysFirmwareSubsystemCode = '3'
+    ensDS1.SubsystemConfig = '1'
+    ensDS1.NumBeams = 4
+    ensDS1.NumBins = 3
+    ensDS1.Year = 2019
+    ensDS1.Month = 3
+    ensDS1.Day = 12
+    ensDS1.Hour = 15
+    ensDS1.Minute = 33
+    ensDS1.Second = 45
+    ensDS1.HSec = 34
+    ens2.AddEnsembleData(ensDS)
+
+    anc = AncillaryData()
+    anc.Pressure = 2.6345
+    anc.TransducerDepth = 26.354
+    ens.AddAncillaryData(anc)
+    ens2.AddAncillaryData(anc)
+
+    beamVel = BeamVelocity(ensDS.NumBins, ensDS.NumBeams)
+    beamVel.Velocities[0][0] = 1.0
+    beamVel.Velocities[0][1] = 2.0
+    beamVel.Velocities[0][2] = 3.0
+    beamVel.Velocities[0][3] = 4.0
+    beamVel.Velocities[1][0] = 1.0
+    beamVel.Velocities[1][1] = 2.0
+    beamVel.Velocities[1][2] = 3.0
+    beamVel.Velocities[1][3] = 4.0
+    beamVel.Velocities[2][0] = 1.0
+    beamVel.Velocities[2][1] = 2.0
+    beamVel.Velocities[2][2] = 3.0
+    beamVel.Velocities[2][3] = 4.0
+    ens.AddBeamVelocity(beamVel)
+    ens2.AddBeamVelocity(beamVel)
+
+    instrVel = InstrumentVelocity(ensDS.NumBins, ensDS.NumBeams)
+    instrVel.Velocities[0][0] = 1.0
+    instrVel.Velocities[0][1] = 2.0
+    instrVel.Velocities[0][2] = 3.0
+    instrVel.Velocities[0][3] = 4.0
+    instrVel.Velocities[1][0] = 1.0
+    instrVel.Velocities[1][1] = 2.0
+    instrVel.Velocities[1][2] = 3.0
+    instrVel.Velocities[1][3] = 4.0
+    instrVel.Velocities[2][0] = 1.0
+    instrVel.Velocities[2][1] = 2.0
+    instrVel.Velocities[2][2] = 3.0
+    instrVel.Velocities[2][3] = 4.0
+    ens.AddInstrumentVelocity(instrVel)
+    ens2.AddInstrumentVelocity(instrVel)
+
+    earthVel = EarthVelocity(ensDS.NumBins, ensDS.NumBeams)
+    earthVel.Velocities[0][0] = 1.0
+    earthVel.Velocities[0][1] = 2.0
+    earthVel.Velocities[0][2] = 3.0
+    earthVel.Velocities[0][3] = 4.0
+    earthVel.Velocities[1][0] = 1.0
+    earthVel.Velocities[1][1] = 2.0
+    earthVel.Velocities[1][2] = 3.0
+    earthVel.Velocities[1][3] = 4.0
+    earthVel.Velocities[2][0] = 1.0
+    earthVel.Velocities[2][1] = 2.0
+    earthVel.Velocities[2][2] = 3.0
+    earthVel.Velocities[2][3] = 4.0
+    earthVel.generate_velocity_vectors()
+    ens.AddEarthVelocity(earthVel)
+    ens2.AddEarthVelocity(earthVel)
+
+    awc = AverageWaterColumn(3, '3', '1')
+    awc.add_ens(ens)
+    awc.add_ens(ens)
+    awc.add_ens(ens2)
+    result = awc.average()
+
+    # verify empty list
+    assert result[0]
+    assert result[1]
+    assert result[2]
+    assert result[3]
+    assert result[4]
+
+    # Beam Results
+    assert result[0][0][0] == 1.0
+    assert result[0][0][1] == 2.0
+    assert result[0][0][2] == 3.0
+    assert result[0][0][3] == 4.0
+
+    # Instrument Results
+    assert result[1][0][0] == 1.0
+    assert result[1][0][1] == 2.0
+    assert result[1][0][2] == 3.0
+    assert result[1][0][3] == 4.0
+
+    # Earth Results
+    assert result[2][0][0] == 1.0
+    assert result[2][0][1] == 2.0
+    assert result[2][0][2] == 3.0
+    assert result[2][0][3] == 4.0
+
+    # Mag Results
+    assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][1] == pytest.approx(3.741, 0.01)
+    assert result[AverageWaterColumn.INDEX_MAG][2] == pytest.approx(3.741, 0.01)
+
+    # Dir Result
+    assert result[AverageWaterColumn.INDEX_DIR][0] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][1] == pytest.approx(26.5650, 0.01)
+    assert result[AverageWaterColumn.INDEX_DIR][2] == pytest.approx(26.5650, 0.01)
+
+    # Pressure
+    assert result[AverageWaterColumn.INDEX_PRESSURE][0] == pytest.approx(2.6345, 0.01)
+
+    # Transducer Depth
+    assert result[AverageWaterColumn.INDEX_XDCR_DEPTH][0] == pytest.approx(26.354, 0.01)
+
+    # First Time
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].year == pytest.approx(2019, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].month == pytest.approx(3, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].day == pytest.approx(12, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].hour == pytest.approx(14, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].minute == pytest.approx(33, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].second == pytest.approx(45, 0.1)
+
+    # Last Time
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].year == pytest.approx(2019, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].month == pytest.approx(3, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].day == pytest.approx(12, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].hour == pytest.approx(15, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].minute == pytest.approx(33, 0.1)
+    assert result[AverageWaterColumn.INDEX_FIRST_TIME].second == pytest.approx(45, 0.1)

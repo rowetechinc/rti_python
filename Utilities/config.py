@@ -96,6 +96,7 @@ class RtiConfig:
         if 'Waves' not in self.config:
             self.config['Waves'] = {}
             self.config['Waves']['output_dir'] = os.path.expanduser('~')
+            self.config['Waves']['4b_vert_pair'] = 'True'
             self.config['Waves']['ens_in_burst'] = '1024'
             self.config['Waves']['selected_bin_1'] = '1'
             self.config['Waves']['selected_bin_2'] = '3'
@@ -152,6 +153,10 @@ class RtiConfig:
 
         if not self.config.has_option('Waves', 'longitude'):
             self.config['Waves']['longitude'] = '0.0'
+            self.write()
+
+        if not self.config.has_option('Waves', '4b_vert_pair'):
+            self.config['Waves']['4b_vert_pair'] = 'True'
             self.write()
 
     def init_average_waves_config(self):

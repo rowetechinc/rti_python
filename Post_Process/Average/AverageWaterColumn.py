@@ -76,11 +76,11 @@ class AverageWaterColumn:
                     self.ens_magnitude.append(ens.EarthVelocity.Magnitude)
                     self.ens_direction.append(ens.EarthVelocity.Direction)
 
-
                 # Set the times
                 if not self.first_time:
                     self.first_time = ens.EnsembleData.datetime()
 
+                # Always store the last time
                 self.last_time = ens.EnsembleData.datetime()
 
     def average(self, is_running_avg=False):
@@ -91,43 +91,29 @@ class AverageWaterColumn:
         data existed, NONE is also returned.  If data type does not exist, NONE is returned.
         :return: Averaged data [Beam, Instrument, Earth, Mag, Dir]
         """
-        avg_beam_results = []
-        avg_instr_results = []
-        avg_earth_results = []
-        avg_mag_results = []
-        avg_dir_results = []
-        avg_pressure_results = []
-        avg_xdcr_depth_results = []
         first_time = self.first_time
         last_time = self.last_time
 
         # Average the Beam data
-        if len(self.ens_beam_list) >= self.num_ens:
-            avg_beam_results = self.avg_beam_data()
+        avg_beam_results = self.avg_beam_data()
 
         # Average the Instrument data
-        if len(self.ens_instr_list) >= self.num_ens:
-            avg_instr_results = self.avg_instr_data()
+        avg_instr_results = self.avg_instr_data()
 
         # Average the Earth data
-        if len(self.ens_earth_list) >= self.num_ens:
-            avg_earth_results = self.avg_earth_data()
+        avg_earth_results = self.avg_earth_data()
 
         # Average the Magnitude data
-        if len(self.ens_magnitude) >= self.num_ens:
-            avg_mag_results = self.avg_mag_data()
+        avg_mag_results = self.avg_mag_data()
 
         # Average the Direction data
-        if len(self.ens_direction) >= self.num_ens:
-            avg_dir_results = self.avg_dir_data()
+        avg_dir_results = self.avg_dir_data()
 
         # Average the Pressure data
-        if len(self.pressure) >= self.num_ens:
-            avg_pressure_results = self.avg_pressure_data()
+        avg_pressure_results = self.avg_pressure_data()
 
         # Average the Pressure data
-        if len(self.xdcr_depth) >= self.num_ens:
-            avg_xdcr_depth_results = self.avg_xdcr_depth_data()
+        avg_xdcr_depth_results = self.avg_xdcr_depth_data()
 
         # Clear the lists
         if not is_running_avg:
