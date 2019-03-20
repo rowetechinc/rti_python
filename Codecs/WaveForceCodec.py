@@ -131,10 +131,8 @@ class WaveForceCodec:
                 # Get the ensembles from the buffer
                 ens_buff = self.Buffer[0:self.TotalEnsInBurst]
 
-                # Remove the ensembles from the buffer
-                del self.Buffer[0:self.TotalEnsInBurst]
-                self.BufferCount = 0
-                self.TotalEnsInBurst = 0
+                # Reset the codec
+                self.reset()
 
                 # Process the buffer
                 th = threading.Thread(target=self.process, args=[ens_buff])
@@ -143,6 +141,18 @@ class WaveForceCodec:
     @event
     def process_data_event(self, file_name):
         logging.debug("Wave Codec Process Data" + file_name)
+
+    def reset(self):
+        """
+        Reset the codec.  When a burst is processed or
+        if you want to clear the buffer and start over.
+        :return:
+        """
+
+        # Remove the ensembles from the buffer
+        del self.Buffer[0:self.TotalEnsInBurst]
+        self.BufferCount = 0
+        self.TotalEnsInBurst = 0
 
     def process(self, ens_buff):
         """

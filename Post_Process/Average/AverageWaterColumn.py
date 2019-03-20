@@ -117,17 +117,26 @@ class AverageWaterColumn:
 
         # Clear the lists
         if not is_running_avg:
-            self.ens_beam_list.clear()
-            self.ens_instr_list.clear()
-            self.ens_earth_list.clear()
-            self.ens_magnitude.clear()
-            self.ens_direction.clear()
-            self.pressure.clear()
-            self.xdcr_depth.clear()
-            self.first_time = None
-            self.last_time = None
+            self.reset()
 
         return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results, avg_pressure_results, avg_xdcr_depth_results, first_time, last_time]
+
+    def reset(self):
+        """
+        Clear all the list of data.
+        Clear the times.
+        This can also be used to start the averaging over.
+        :return:
+        """
+        self.ens_beam_list.clear()
+        self.ens_instr_list.clear()
+        self.ens_earth_list.clear()
+        self.ens_magnitude.clear()
+        self.ens_direction.clear()
+        self.pressure.clear()
+        self.xdcr_depth.clear()
+        self.first_time = None
+        self.last_time = None
 
     def avg_beam_data(self):
         """

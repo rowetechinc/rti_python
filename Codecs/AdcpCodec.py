@@ -104,6 +104,14 @@ class AdcpCodec:
         self.publish_waves_event(file_name)
         logging.debug("ADCP Wave Codec Process Data" + file_name)
 
+    def reset_waves(self):
+        """
+        Reset the waves codec if you want it
+        clear the buffer and startover.
+        :return:
+        """
+        self.WaveForceCodec.reset()
+
     @event
     def publish_waves_event(self, file_name):
         logging.debug("Publish waves event" + file_name)
