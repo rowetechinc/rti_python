@@ -11,27 +11,18 @@ class WaveForceCodec:
     Decode the ensemble data into a WaveForce Matlab file format.
     """
 
-    def __init__(self):
-        self.Lat = 0.0
-        self.Lon = 0.0
-        self.EnsInBurst = 2048
-        self.FilePath = os.path.expanduser('~')
-        self.Buffer = []
-        self.BufferCount = 0                # Count the number of vertical ens, assumed vertical is after 4 beam
-        self.TotalEnsInBurst = 0            # This will include vertical and 4 beam ens
-        self.RecordCount = 0
-        self.Bin1 = 3
-        self.Bin2 = 4
-        self.Bin3 = 5
-        self.height_source = 4
-        self.CorrThreshold = 0.25
-        self.PressureOffset = 0.0
-        self.PressureSensorDepth = 30
-        self.firstTime = 0
-        self.secondTime = 0         # Used to calculate the sample timing
-        self.selected_bin = []
-
-    def init(self, ens_in_burst=2048, path=os.path.expanduser('~'), lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
+    def __init__(self,
+                 ens_in_burst=2048,
+                 path=os.path.expanduser('~'),
+                 lat=0.0,
+                 lon=0.0,
+                 bin1=3,
+                 bin2=4,
+                 bin3=5,
+                 ps_depth=30,
+                 height_source=4,
+                 corr_thresh=0.25,
+                 pressure_offset=0.0):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -58,7 +49,7 @@ class WaveForceCodec:
         self.PressureSensorDepth = ps_depth
         self.RecordCount = 0
 
-        self.selected_bin.clear()
+        self.selected_bin = []
         if bin1 >= 0:
             self.selected_bin.append(bin1)
         if bin2 >= 0:
@@ -69,7 +60,20 @@ class WaveForceCodec:
         self.firstTime = 0
         self.secondTime = 0         # Used to calculate the sample timing
 
-    def update_settings(self, ens_in_burst=2048, path=os.path.expanduser('~'), lat=0.0, lon=0.0, bin1=3, bin2=4, bin3=5, ps_depth=30, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
+        self.TotalEnsInBurst = 0
+        self.BufferCount = 0
+
+    def update_settings(self, ens_in_burst=2048,
+                        path=os.path.expanduser('~'),
+                        lat=0.0,
+                        lon=0.0,
+                        bin1=3,
+                        bin2=4,
+                        bin3=5,
+                        ps_depth=30,
+                        height_source=4,
+                        corr_thresh=0.25,
+                        pressure_offset=0.0):
         """
         Update the settings for the codec.
         :param ens_in_burst: Number of ensembles in a burst.
