@@ -77,6 +77,8 @@ class Ensemble:
     CSV_MAG = "Magnitude"
     CSV_DIR = "Direction"
 
+    CSV_DATETIME_FORMAT = "%m/%d/%Y %H:%M:%S.%f"
+
     def __init__(self):
         self.RawData = None
         self.IsBeamVelocity = False
@@ -437,7 +439,8 @@ class Ensemble:
         :param value: Value for this line.
         :return: CSV line with all the data.
         """
-        dt_str = dt.strftime('%Y/%m/%d %H:%M:%S:%f')
+        #dt_str = dt.strftime(Ensemble.CSV_DATETIME_FORMAT)
+        dt_str = dt.isoformat()
 
         bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
 

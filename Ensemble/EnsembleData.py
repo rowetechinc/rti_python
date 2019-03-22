@@ -88,7 +88,7 @@ class EnsembleData:
         :return: datetime of the ensemble.
         """
         try:
-            dt = datetime(self.Year, self.Month, self.Day, self.Hour, self.Minute, self.Second, self.HSec * 10)
+            dt = datetime(self.Year, self.Month, self.Day, self.Hour, self.Minute, self.Second, self.HSec * 10000)
             return dt
         except Exception:
             return datetime.now()
