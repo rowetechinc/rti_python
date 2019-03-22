@@ -172,6 +172,7 @@ class RtiConfig:
             self.config['AWC'] = {}
             self.config['AWC']['num_ensembles'] = '600'
             self.config['AWC']['output_dir'] = os.path.expanduser('~')
+            self.config['AWC']['max_file_size'] = '16'
             self.write()
 
         # Verify each value exist
@@ -181,4 +182,8 @@ class RtiConfig:
 
         if not self.config.has_option('AWC', 'output_dir'):
             self.config['AWC']['output_dir'] = os.path.expanduser('~')
+            self.write()
+
+        if not self.config.has_option('AWC', 'max_file_size'):
+            self.config['AWC']['max_file_size'] = '16'
             self.write()
