@@ -1,5 +1,6 @@
 import struct
 import abc
+import copy
 from rti_python.Utilities.events import EventHandler
 
 from rti_python.Ensemble.Ensemble import Ensemble
@@ -18,7 +19,7 @@ from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
 from PyCRC.CRCCCITT import CRCCCITT
 import logging
-from threading import Thread
+from threading import Thread, Condition
 import threading
 
 class WaveBurstInfo:
@@ -46,14 +47,15 @@ class BinaryCodec(Thread):
     def __init__(self):
 
         Thread.__init__(self)
-        self.thread_event = threading.Event()
         self.thread_alive = True
+        self.thread_lock = Condition()
         self.start()
 
         self.buffer = bytearray()
 
         self.MAX_TIMEOUT = 5
         self.timeout = 0
+        self.DELIMITER = b'\x80'*16
 
         self.EnsembleEvent = EventHandler(self)
 
@@ -63,7 +65,9 @@ class BinaryCodec(Thread):
         :return:
         """
         self.thread_alive = False
-        self.thread_event.set()
+        self.thread_lock.acquire()
+        self.thread_lock.notify()
+        self.thread_lock.release()
         self.join()
 
     def add(self, data):
@@ -71,11 +75,10 @@ class BinaryCodec(Thread):
         Add to buffer and Decode
         :param data: Raw byte data.
         """
-        self.buffer.extend(data)
-        #self.find_ensemble()
-
-        # Wakeup the thread to process the ensemble
-        self.thread_event.set()
+        self.thread_lock.acquire()                                      # Lock the buffer
+        self.buffer.extend(data)                                        # Set the data to the buffer
+        self.thread_lock.notify()                                       # Notify to process the buffer
+        self.thread_lock.release()                                      # Unlock buffer
 
     def run(self):
         """
@@ -85,16 +88,51 @@ class BinaryCodec(Thread):
         """
 
         while self.thread_alive:
-            # Wait for the next ensemble
-            self.thread_event.wait()
+            # Lock to look for the data
+            self.thread_lock.acquire()
+
+            # Create a buffer to hold the ensemble
+            bin_ens_list = []
+            timeout = 0
+
+            # Wait for the next ensemble added to the buffer
+            self.thread_lock.wait()
 
             # Look for first 16 bytes of header
-            delimiter = b'\x80'*16
-            ens_start = self.buffer.find(delimiter)
+            ens_start = self.buffer.find(self.DELIMITER)
 
-            if ens_start >= 0 and len(self.buffer) > Ensemble().HeaderSize + ens_start:
+            # Verify enough data is in the buffer for an ensemble header
+            while ens_start >= 0 and len(self.buffer) > Ensemble().HeaderSize + ens_start:
                 # Decode the Ensemble
-                self.decode_ensemble(ens_start)
+                bin_ens = self.decode_ensemble(ens_start)
+
+                # Add the data to the list or count for timeout
+                if len(bin_ens) > 0:
+                    # Add it to the list
+                    bin_ens_list.append(bin_ens)
+                else:
+                    # Timeout if we are only getting bad data
+                    timeout += 1
+                    if timeout > 5:
+                        logging.warning("Find good ensemble timeout")
+                        break
+
+                # Search if there is a new start location
+                ens_start = self.buffer.find(self.DELIMITER)
+
+            self.thread_lock.release()
+
+            # If data was found for an ensemble
+            # Process the ensemble binary data
+            for ens in bin_ens_list:
+                if len(ens) > 0:
+                    # Decode data
+                    ensemble = BinaryCodec.decode_data_sets(ens)
+
+                    # Publish the ensemble
+                    self.process_ensemble(ensemble)
+                else:
+                    logging.debug("No Ensemble data found")
 
     def decode_ensemble(self, ensStart):
         """
@@ -102,58 +140,56 @@ class BinaryCodec(Thread):
         then decode each datasets.  Then remove the data from the buffer.
         :param ensStart: Stare of the ensemble in the buffer.
         """
+        bin_ens = []
 
         # Check Ensemble number
-        ensNum = struct.unpack("I", self.buffer[ensStart+16:ensStart+20])
-        #logger.debug(print(ensNum[0]))
-        #print(self.ones_complement(ensNumInv[0]))
-
+        ens_num = struct.unpack("I", self.buffer[ensStart+16:ensStart+20])
 
         # Check ensemble size
-        payloadSize = struct.unpack("I", self.buffer[ensStart+24:ensStart+28])
-        #print(payloadSize[0])
-        #payloadSizeInv = struct.unpack("I", self.buffer[ensStart+28:ensStart+32])
-        #print(self.ones_complement(payloadSizeInv[0]))
+        payload_size = struct.unpack("I", self.buffer[ensStart+24:ensStart+28])
 
         # Ensure the entire ensemble is in the buffer
-        if len(self.buffer) >= ensStart + Ensemble().HeaderSize + payloadSize[0] + Ensemble().ChecksumSize:
+        if len(self.buffer) >= ensStart + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
             # Reset timeout
             self.timeout = 0
 
             # Check checksum
-            checksumLoc = ensStart + Ensemble().HeaderSize + payloadSize[0]
+            checksumLoc = ensStart + Ensemble().HeaderSize + payload_size[0]
             checksum = struct.unpack("I", self.buffer[checksumLoc:checksumLoc + Ensemble().ChecksumSize])
 
             # Calculate Checksum
             # Use only the payload for the checksum
-            ens = self.buffer[ensStart + Ensemble().HeaderSize:ensStart + Ensemble().HeaderSize + payloadSize[0]]
+            ens = self.buffer[ensStart + Ensemble().HeaderSize:ensStart + Ensemble().HeaderSize + payload_size[0]]
             calcChecksum = CRCCCITT().calculate(input_data=bytes(ens))
             #print("Calc Checksum: ", calcChecksum)
             #print("Checksum: ", checksum[0])
             #print("Checksum good: ", calcChecksum == checksum[0])
 
             if checksum[0] == calcChecksum:
-                logging.debug(ensNum[0])
+                logging.debug(ens_num[0])
                 try:
-                    # Decode data
-                    ensemble = BinaryCodec.decode_data_sets(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payloadSize[0]])
+                    # Make a deep copy of the ensemble data
+                    bin_ens = copy.deepcopy(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payload_size[0]])
 
-                    # ************************
-                    self.process_ensemble(ensemble)
+                    # Remove ensemble from buffer
+                    ens_end = ensStart + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize
+                    del self.buffer[0:ens_end]
+
                 except Exception as e:
                     logging.error("Error decoding ensemble. ", e)
-
-            # Remove ensemble from buffer
-            ensEnd = ensStart + Ensemble().HeaderSize + payloadSize[0] + Ensemble().ChecksumSize
-            del self.buffer[0:ensEnd]
         else:
-            # If the header is bad
-            # give it a couple tries to see if more data will come in to make the header good
+            logging.warning("Not a complete buffer.  Waiting for data")
+
+            # Give it a couple tries to see if more data will come in to make a complete header
             self.timeout += 1
+
+            # Check for timeout
             if self.timeout > self.MAX_TIMEOUT:
                 del self.buffer[0]
-                logging.warning("Bad Ensemble header found")
+                logging.warning("Buffered data did not have a good header.  Header search TIMEOUT")
                 self.timeout = 0
+
+        return bin_ens
 
     @abc.abstractmethod
     def process_ensemble(self, ens):
