@@ -198,9 +198,50 @@ class BinaryCodec(Thread):
         logging.debug("Ensemble Processed")
 
     @staticmethod
+    def verify_ens_data(ens_data, ens_start=0):
+        """
+        This will check the checksum and verify it is correct.
+        :param ens_data: Ensemble data.
+        :param ens_start: Start location in the ens_data
+        """
+
+        # Check Ensemble number
+        ens_num = struct.unpack("I", ens_data[ens_start + 16:ens_start + 20])
+
+        # Check ensemble size
+        payload_size = struct.unpack("I", ens_data[ens_start + 24:ens_start + 28])
+
+        # Ensure the entire ensemble is in the buffer
+        if len(ens_data) >= ens_start + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
+
+            # Check checksum
+            checksum_loc = ens_start + Ensemble().HeaderSize + payload_size[0]
+            checksum = struct.unpack("I", ens_data[checksum_loc:checksum_loc + Ensemble().ChecksumSize])
+
+            # Calculate Checksum
+            # Use only the payload for the checksum
+            ens = ens_data[ens_start + Ensemble().HeaderSize:ens_start + Ensemble().HeaderSize + payload_size[0]]
+            calc_checksum = CRCCCITT().calculate(input_data=bytes(ens))
+
+            # Verify checksum
+            if checksum[0] == calc_checksum:
+                logging.debug(ens_num[0])
+                return True
+            else:
+                return False
+        else:
+            logging.warning("Not a complete ensemble.")
+            return False
+
+        return True
+
+    @staticmethod
     def decode_data_sets(ens):
         """
         Decode the datasets in the ensemble.
+
+        Use verify_ens_data if you are using this
+        as a static method to verify the data is correct.
         :param ens: Ensemble data.  Decode the dataset.
         :return: Return the decoded ensemble.
         """
@@ -220,116 +261,122 @@ class BinaryCodec(Thread):
         # Add the raw data to the ensemble
         #ensemble.AddRawData(ens)
 
-        # Decode the ensemble datasets
-        for x in range(Ensemble().MaxNumDataSets):
-            # Check if we are at the end of the payload
-            if packetPointer >= len(ens):
-                break;
+        try:
 
-            # Get the dataset info
-            ds_type = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 0), Ensemble().BytesInInt32, ens)
-            num_elements = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 1), Ensemble().BytesInInt32, ens)
-            element_multiplier = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 2), Ensemble().BytesInInt32, ens)
-            image = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 3), Ensemble().BytesInInt32, ens)
-            name_len = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 4), Ensemble().BytesInInt32, ens)
-            name = str(ens[packetPointer+(Ensemble.BytesInInt32 * 5):packetPointer+(Ensemble.BytesInInt32 * 5)+8], 'UTF-8')
+            # Decode the ensemble datasets
+            for x in range(Ensemble().MaxNumDataSets):
+                # Check if we are at the end of the payload
+                if packetPointer >= len(ens) - Ensemble().ChecksumSize:
+                    break
 
-            # Calculate the dataset size
-            data_set_size = Ensemble.GetDataSetSize(ds_type, name_len, num_elements, element_multiplier)
+                # Get the dataset info
+                ds_type = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 0), Ensemble().BytesInInt32, ens)
+                num_elements = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 1), Ensemble().BytesInInt32, ens)
+                element_multiplier = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 2), Ensemble().BytesInInt32, ens)
+                image = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 3), Ensemble().BytesInInt32, ens)
+                name_len = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 4), Ensemble().BytesInInt32, ens)
+                name = str(ens[packetPointer+(Ensemble.BytesInInt32 * 5):packetPointer+(Ensemble.BytesInInt32 * 5)+8], 'UTF-8')
 
-            # Beam Velocity
-            if "E000001" in name:
-                logging.debug(name)
-                bv = BeamVelocity(num_elements, element_multiplier)
-                bv.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddBeamVelocity(bv)
+                # Calculate the dataset size
+                data_set_size = Ensemble.GetDataSetSize(ds_type, name_len, num_elements, element_multiplier)
 
-            # Instrument Velocity
-            if "E000002" in name:
-                logging.debug(name)
-                iv = InstrumentVelocity(num_elements, element_multiplier)
-                iv.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddInstrumentVelocity(iv)
+                # Beam Velocity
+                if "E000001" in name:
+                    logging.debug(name)
+                    bv = BeamVelocity(num_elements, element_multiplier)
+                    bv.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddBeamVelocity(bv)
 
-            # Earth Velocity
-            if "E000003" in name:
-                logging.debug(name)
-                ev = EarthVelocity(num_elements, element_multiplier)
-                ev.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddEarthVelocity(ev)
+                # Instrument Velocity
+                if "E000002" in name:
+                    logging.debug(name)
+                    iv = InstrumentVelocity(num_elements, element_multiplier)
+                    iv.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddInstrumentVelocity(iv)
 
-            # Amplitude
-            if "E000004" in name:
-                logging.debug(name)
-                amp = Amplitude(num_elements, element_multiplier)
-                amp.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddAmplitude(amp)
+                # Earth Velocity
+                if "E000003" in name:
+                    logging.debug(name)
+                    ev = EarthVelocity(num_elements, element_multiplier)
+                    ev.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddEarthVelocity(ev)
 
-            # Correlation
-            if "E000005" in name:
-                logging.debug(name)
-                corr = Correlation(num_elements, element_multiplier)
-                corr.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddCorrelation(corr)
+                # Amplitude
+                if "E000004" in name:
+                    logging.debug(name)
+                    amp = Amplitude(num_elements, element_multiplier)
+                    amp.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddAmplitude(amp)
 
-            # Good Beam
-            if "E000006" in name:
-                logging.debug(name)
-                gb = GoodBeam(num_elements, element_multiplier)
-                gb.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddGoodBeam(gb)
+                # Correlation
+                if "E000005" in name:
+                    logging.debug(name)
+                    corr = Correlation(num_elements, element_multiplier)
+                    corr.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddCorrelation(corr)
 
-            # Good Earth
-            if "E000007" in name:
-                logging.debug(name)
-                ge = GoodEarth(num_elements, element_multiplier)
-                ge.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddGoodEarth(ge)
+                # Good Beam
+                if "E000006" in name:
+                    logging.debug(name)
+                    gb = GoodBeam(num_elements, element_multiplier)
+                    gb.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddGoodBeam(gb)
 
-            # Ensemble Data
-            if "E000008" in name:
-                logging.debug(name)
-                ed = EnsembleData(num_elements, element_multiplier)
-                ed.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddEnsembleData(ed)
+                # Good Earth
+                if "E000007" in name:
+                    logging.debug(name)
+                    ge = GoodEarth(num_elements, element_multiplier)
+                    ge.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddGoodEarth(ge)
 
-            # Ancillary Data
-            if "E000009" in name:
-                logging.debug(name)
-                ad = AncillaryData(num_elements, element_multiplier)
-                ad.decode(ens[packetPointer:packetPointer+data_set_size])
-                ensemble.AddAncillaryData(ad)
+                # Ensemble Data
+                if "E000008" in name:
+                    logging.debug(name)
+                    ed = EnsembleData(num_elements, element_multiplier)
+                    ed.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddEnsembleData(ed)
 
-            # Bottom Track
-            if "E000010" in name:
-                logging.debug(name)
-                bt = BottomTrack(num_elements, element_multiplier)
-                bt.decode(ens[packetPointer:packetPointer + data_set_size])
-                ensemble.AddBottomTrack(bt)
+                # Ancillary Data
+                if "E000009" in name:
+                    logging.debug(name)
+                    ad = AncillaryData(num_elements, element_multiplier)
+                    ad.decode(ens[packetPointer:packetPointer+data_set_size])
+                    ensemble.AddAncillaryData(ad)
 
-            # NMEA data
-            if "E000011" in name:
-                logging.debug(name)
-                nd = NmeaData(num_elements, element_multiplier)
-                nd.decode(ens[packetPointer:packetPointer + data_set_size])
-                ensemble.AddNmeaData(nd)
+                # Bottom Track
+                if "E000010" in name:
+                    logging.debug(name)
+                    bt = BottomTrack(num_elements, element_multiplier)
+                    bt.decode(ens[packetPointer:packetPointer + data_set_size])
+                    ensemble.AddBottomTrack(bt)
 
-            # System Setup
-            if "E000014" in name:
-                logging.debug(name)
-                ss = SystemSetup(num_elements, element_multiplier)
-                ss.decode(ens[packetPointer:packetPointer + data_set_size])
-                ensemble.AddSystemSetup(ss)
+                # NMEA data
+                if "E000011" in name:
+                    logging.debug(name)
+                    nd = NmeaData(num_elements, element_multiplier)
+                    nd.decode(ens[packetPointer:packetPointer + data_set_size])
+                    ensemble.AddNmeaData(nd)
 
-            # Range Tracking
-            if "E000015" in name:
-                logging.debug(name)
-                rt = RangeTracking(num_elements, element_multiplier)
-                rt.decode(ens[packetPointer:packetPointer + data_set_size])
-                ensemble.AddRangeTracking(rt)
+                # System Setup
+                if "E000014" in name:
+                    logging.debug(name)
+                    ss = SystemSetup(num_elements, element_multiplier)
+                    ss.decode(ens[packetPointer:packetPointer + data_set_size])
+                    ensemble.AddSystemSetup(ss)
 
-            # Move to the next dataset
-            packetPointer += data_set_size
+                # Range Tracking
+                if "E000015" in name:
+                    logging.debug(name)
+                    rt = RangeTracking(num_elements, element_multiplier)
+                    rt.decode(ens[packetPointer:packetPointer + data_set_size])
+                    ensemble.AddRangeTracking(rt)
+
+                # Move to the next dataset
+                packetPointer += data_set_size
+
+        except Exception as e:
+            logging.warning("Error decoding the ensemble.  " + str(e))
+            return None
 
         return ensemble
 
