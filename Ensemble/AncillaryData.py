@@ -8,7 +8,7 @@ class AncillaryData:
     Float values that give details about the ensemble.
     """
 
-    def __init__(self, num_elements=17, element_multiplier=1):
+    def __init__(self, num_elements=19, element_multiplier=1):
         self.ds_type = 10                   # Float
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
@@ -29,7 +29,9 @@ class AncillaryData:
         self.Pressure = 0.0             # Pressure from pressure sensor in Pascals
         self.TransducerDepth = 0.0      # Transducer Depth, used by Pressure sensor in meters
         self.SpeedOfSound = 0.0         # Speed of Sound in m/s.
-        self.RawMagFieldStrength = 0.0  # Raw magnetic field strength
+        self.RawMagFieldStrength = 0.0  # Raw magnetic field strength (uT) (micro Tesla)
+        self.RawMagFieldStrength2 = 0.0 # Raw magnetic field strength (uT) (micro Tesla)
+        self.RawMagFieldStrength3 = 0.0 # Raw magnetic field strength (uT) (micro Tesla)
         self.PitchGravityVector = 0.0   # Pitch Gravity Vector
         self.RollGravityVector = 0.0    # Roll Gravity Vector
         self.VerticalGravityVector = 0.0 # Vertical Gravity Vector
@@ -58,9 +60,11 @@ class AncillaryData:
 
         if self.num_elements > 13:
             self.RawMagFieldStrength = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 13, Ensemble().BytesInFloat, data)
-            self.PitchGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 14, Ensemble().BytesInFloat, data)
-            self.RollGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 15, Ensemble().BytesInFloat, data)
-            self.VerticalGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 16, Ensemble().BytesInFloat, data)
+            self.RawMagFieldStrength2 = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 14, Ensemble().BytesInFloat, data)
+            self.RawMagFieldStrength3 = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 15, Ensemble().BytesInFloat, data)
+            self.PitchGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 16, Ensemble().BytesInFloat, data)
+            self.RollGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 17, Ensemble().BytesInFloat, data)
+            self.VerticalGravityVector = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 18, Ensemble().BytesInFloat, data)
 
         logging.debug(self.FirstBinRange)
         logging.debug(self.BinSize)
@@ -100,6 +104,8 @@ class AncillaryData:
         result += Ensemble.float_to_bytes(self.TransducerDepth)
         result += Ensemble.float_to_bytes(self.SpeedOfSound)
         result += Ensemble.float_to_bytes(self.RawMagFieldStrength)
+        result += Ensemble.float_to_bytes(self.RawMagFieldStrength2)
+        result += Ensemble.float_to_bytes(self.RawMagFieldStrength3)
         result += Ensemble.float_to_bytes(self.PitchGravityVector)
         result += Ensemble.float_to_bytes(self.RollGravityVector)
         result += Ensemble.float_to_bytes(self.VerticalGravityVector)

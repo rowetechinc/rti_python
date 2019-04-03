@@ -10,3 +10,4 @@ scipy
 pynmea2
 obsub
 configparser
+tqdm

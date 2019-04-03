@@ -8,7 +8,7 @@ from rti_python.Ensemble.AncillaryData import AncillaryData
 def test_generate_header():
 
     value_type = 10             # Float
-    num_elements = 17           # 17 elements
+    num_elements = 19           # 19 elements
     element_multiplier = 1      # no multiplier
     imag = 0                    # NOT USED
     name_length = 8             # Length of name
@@ -28,7 +28,7 @@ def test_generate_header():
     assert 0x0 == header[3]
 
     # Num Elements
-    assert 0x11 == header[4]
+    assert 0x13 == header[4]
     assert 0x0 == header[5]
     assert 0x0 == header[6]
     assert 0x0 == header[7]
@@ -78,6 +78,8 @@ def test_ancillary():
     anc.TransducerDepth = 45.69  # Transducer Depth, used by Pressure sensor in meters
     anc.SpeedOfSound = 1400.23  # Speed of Sound in m/s.
     anc.RawMagFieldStrength = 3.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength2 = 4.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength3 = 5.0  # Raw magnetic field strength
     anc.PitchGravityVector = 4.0  # Pitch Gravity Vector
     anc.RollGravityVector = 5.0  # Roll Gravity Vector
     anc.VerticalGravityVector = 6.0  # Vertical Gravity Vector
@@ -93,7 +95,7 @@ def test_ancillary():
     assert 0x0 == result[3]
 
     # Num Elements
-    assert 0x11 == result[4]
+    assert 0x13 == result[4]
     assert 0x0 == result[5]
     assert 0x0 == result[6]
     assert 0x0 == result[7]
@@ -214,23 +216,35 @@ def test_ancillary():
     assert Ensemble.float_to_bytes(3.0)[2] == result[82]
     assert Ensemble.float_to_bytes(3.0)[3] == result[83]
 
-    # Raw Pitch
+    # Raw Mag 2
     assert Ensemble.float_to_bytes(4.0)[0] == result[84]
     assert Ensemble.float_to_bytes(4.0)[1] == result[85]
     assert Ensemble.float_to_bytes(4.0)[2] == result[86]
     assert Ensemble.float_to_bytes(4.0)[3] == result[87]
 
-    # Raw Roll
+    # Raw Mag 3
     assert Ensemble.float_to_bytes(5.0)[0] == result[88]
     assert Ensemble.float_to_bytes(5.0)[1] == result[89]
     assert Ensemble.float_to_bytes(5.0)[2] == result[90]
     assert Ensemble.float_to_bytes(5.0)[3] == result[91]
 
+    # Raw Pitch
+    assert Ensemble.float_to_bytes(4.0)[0] == result[92]
+    assert Ensemble.float_to_bytes(4.0)[1] == result[93]
+    assert Ensemble.float_to_bytes(4.0)[2] == result[94]
+    assert Ensemble.float_to_bytes(4.0)[3] == result[95]
+
+    # Raw Roll
+    assert Ensemble.float_to_bytes(5.0)[0] == result[96]
+    assert Ensemble.float_to_bytes(5.0)[1] == result[97]
+    assert Ensemble.float_to_bytes(5.0)[2] == result[98]
+    assert Ensemble.float_to_bytes(5.0)[3] == result[99]
+
     # Raw Vert
-    assert Ensemble.float_to_bytes(6.0)[0] == result[92]
-    assert Ensemble.float_to_bytes(6.0)[1] == result[93]
-    assert Ensemble.float_to_bytes(6.0)[2] == result[94]
-    assert Ensemble.float_to_bytes(6.0)[3] == result[95]
+    assert Ensemble.float_to_bytes(6.0)[0] == result[100]
+    assert Ensemble.float_to_bytes(6.0)[1] == result[101]
+    assert Ensemble.float_to_bytes(6.0)[2] == result[102]
+    assert Ensemble.float_to_bytes(6.0)[3] == result[103]
 
 
 def test_encode_csv():
@@ -250,6 +264,8 @@ def test_encode_csv():
     anc.TransducerDepth = 45.69  # Transducer Depth, used by Pressure sensor in meters
     anc.SpeedOfSound = 1400.23  # Speed of Sound in m/s.
     anc.RawMagFieldStrength = 3.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength2 = 4.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength3 = 5.0  # Raw magnetic field strength
     anc.PitchGravityVector = 4.0  # Pitch Gravity Vector
     anc.RollGravityVector = 5.0  # Roll Gravity Vector
     anc.VerticalGravityVector = 6.0  # Vertical Gravity Vector
@@ -311,6 +327,8 @@ def test_encode_decode():
     anc.TransducerDepth = 45.69  # Transducer Depth, used by Pressure sensor in meters
     anc.SpeedOfSound = 1400.23  # Speed of Sound in m/s.
     anc.RawMagFieldStrength = 3.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength2 = 4.0  # Raw magnetic field strength
+    anc.RawMagFieldStrength3 = 5.0  # Raw magnetic field strength
     anc.PitchGravityVector = 4.0  # Pitch Gravity Vector
     anc.RollGravityVector = 5.0  # Roll Gravity Vector
     anc.VerticalGravityVector = 6.0  # Vertical Gravity Vector
@@ -336,6 +354,8 @@ def test_encode_decode():
     assert anc.TransducerDepth == pytest.approx(anc1.TransducerDepth, 0.1)
     assert anc.SpeedOfSound == pytest.approx(anc1.SpeedOfSound, 0.1)
     assert anc.RawMagFieldStrength == pytest.approx(anc1.RawMagFieldStrength, 0.1)
+    assert anc.RawMagFieldStrength2 == pytest.approx(anc1.RawMagFieldStrength2, 0.1)
+    assert anc.RawMagFieldStrength3 == pytest.approx(anc1.RawMagFieldStrength3, 0.1)
     assert anc.PitchGravityVector == pytest.approx(anc1.PitchGravityVector, 0.1)
     assert anc.RollGravityVector == pytest.approx(anc1.RollGravityVector, 0.1)
     assert anc.VerticalGravityVector == pytest.approx(anc1.VerticalGravityVector, 0.1)

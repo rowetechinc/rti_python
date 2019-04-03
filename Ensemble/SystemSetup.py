@@ -8,7 +8,7 @@ class SystemSetup:
     Float values that give details about the system setup.
     """
 
-    def __init__(self, num_elements=21, element_multiplier=1):
+    def __init__(self, num_elements=25, element_multiplier=1):
         self.ds_type = 10                       # Float
         self.num_elements = num_elements
         self.element_multiplier = element_multiplier
@@ -30,13 +30,17 @@ class SystemSetup:
         self.Voltage = 0.0                      # Voltage input to ADCP
         self.XmtVoltage = 0.0                   # Transmit Voltage
         self.BtBroadband = 0.0                  # Bottom Track Broadband
-        self.BtLagLength = 0.0                  # Bottom Track Lag Length
-        self.BtNarrowband = 0.0                 # Bottom Track Narrowband
-        self.BtBeamMux = 0.0                    # Bottom Track Beam MUX
-        self.WpBroadband = 0.0                  # Water Profile Broadband
+        self.BtLagLength = 0.0                  # Bottom Track Pulse to Pulse Lag (m)
+        self.BtNarrowband = 0.0                 # Bottom Track Long Range Switch Depth (m)
+        self.BtBeamMux = 0.0                    # Bottom Track Beam Multiplex
+        self.WpBroadband = 0.0                  # Water Profile Mode
         self.WpLagLength = 0.0                  # Water Profile Lag Length
         self.WpTransmitBandwidth = 0.0          # Water Profile Transmit Bandwidth
         self.WpReceiveBandwidth = 0.0           # Water Profile Receive Bandwidth
+        self.TransmitBoostNegVolt = 0.0         # Transmitter Boost Negative Voltage
+        self.WpBeamMux = 0.0                    # WP Beam Mux
+        self.Reserved = 0.0                     # Reserved
+        self.Reserved1 = 0.0                    # Reserved
 
     def decode(self, data):
         """
@@ -69,6 +73,11 @@ class SystemSetup:
             self.WpLagLength = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 18, Ensemble().BytesInFloat, data)
             self.WpTransmitBandwidth = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 19, Ensemble().BytesInFloat, data)
             self.WpReceiveBandwidth = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 20, Ensemble().BytesInFloat, data)
+            self.TransmitBoostNegVolt = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 21, Ensemble().BytesInFloat, data)
+            self.WpBeamMux = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 22, Ensemble().BytesInFloat, data)
+            self.Reserved = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 23, Ensemble().BytesInFloat, data)
+            self.Reserved1 = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 24, Ensemble().BytesInFloat, data)
+
 
         logging.debug(self.BtSamplesPerSecond)
         logging.debug(self.BtSystemFreqHz)
@@ -129,6 +138,10 @@ class SystemSetup:
         result += Ensemble.float_to_bytes(self.WpLagLength)
         result += Ensemble.float_to_bytes(self.WpTransmitBandwidth)
         result += Ensemble.float_to_bytes(self.WpReceiveBandwidth)
+        result += Ensemble.float_to_bytes(self.TransmitBoostNegVolt)
+        result += Ensemble.float_to_bytes(self.WpBeamMux)
+        result += Ensemble.float_to_bytes(self.Reserved)
+        result += Ensemble.float_to_bytes(self.Reserved1)
 
         return result
 

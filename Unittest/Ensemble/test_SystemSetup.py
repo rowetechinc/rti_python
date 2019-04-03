@@ -8,7 +8,7 @@ from rti_python.Ensemble.SystemSetup import SystemSetup
 def test_generate_header():
 
     value_type = 10             # Float
-    num_elements = 21           # 21 elements
+    num_elements = 25           # 25 elements
     element_multiplier = 1      # no multiplier
     imag = 0                    # NOT USED
     name_length = 8             # Length of name
@@ -28,7 +28,7 @@ def test_generate_header():
     assert 0x0 == header[3]
 
     # Num Elements
-    assert 0x15 == header[4]
+    assert 0x19 == header[4]
     assert 0x0 == header[5]
     assert 0x0 == header[6]
     assert 0x0 == header[7]
@@ -86,6 +86,10 @@ def test_ancillary():
     ss.WpLagLength = 6.0
     ss.WpTransmitBandwidth = 6.0
     ss.WpReceiveBandwidth = 6.0
+    ss.TransmitBoostNegVolt = 6.0
+    ss.WpBeamMux = 6.0
+    ss.Reserved = 6.0
+    ss.Reserved1 = 6.0
 
     # Populate data
 
@@ -98,7 +102,7 @@ def test_ancillary():
     assert 0x0 == result[3]
 
     # Num Elements
-    assert 0x15 == result[4]
+    assert 0x19 == result[4]
     assert 0x0 == result[5]
     assert 0x0 == result[6]
     assert 0x0 == result[7]
@@ -132,7 +136,7 @@ def test_ancillary():
     assert ord('\0') == result[27]
 
     # Length
-    assert len(result) == 28 + (21 * Ensemble.BytesInFloat)
+    assert len(result) == 28 + (25 * Ensemble.BytesInFloat)
 
     # Data
     # Bottom Track Samples Per Second
@@ -261,6 +265,30 @@ def test_ancillary():
     assert Ensemble.float_to_bytes(6.0)[2] == result[110]
     assert Ensemble.float_to_bytes(6.0)[3] == result[111]
 
+    # Transmit Boost Negative Voltage
+    assert Ensemble.float_to_bytes(6.0)[0] == result[112]
+    assert Ensemble.float_to_bytes(6.0)[1] == result[113]
+    assert Ensemble.float_to_bytes(6.0)[2] == result[114]
+    assert Ensemble.float_to_bytes(6.0)[3] == result[115]
+
+    # WP Beam Mux
+    assert Ensemble.float_to_bytes(6.0)[0] == result[116]
+    assert Ensemble.float_to_bytes(6.0)[1] == result[117]
+    assert Ensemble.float_to_bytes(6.0)[2] == result[118]
+    assert Ensemble.float_to_bytes(6.0)[3] == result[119]
+
+    # Reserved
+    assert Ensemble.float_to_bytes(6.0)[0] == result[120]
+    assert Ensemble.float_to_bytes(6.0)[1] == result[121]
+    assert Ensemble.float_to_bytes(6.0)[2] == result[122]
+    assert Ensemble.float_to_bytes(6.0)[3] == result[123]
+
+    # Reserved 1
+    assert Ensemble.float_to_bytes(6.0)[0] == result[124]
+    assert Ensemble.float_to_bytes(6.0)[1] == result[125]
+    assert Ensemble.float_to_bytes(6.0)[2] == result[126]
+    assert Ensemble.float_to_bytes(6.0)[3] == result[127]
+
 
 def test_encode_csv():
     ss = SystemSetup()
@@ -286,6 +314,10 @@ def test_encode_csv():
     ss.WpLagLength = 6.0
     ss.WpTransmitBandwidth = 6.0
     ss.WpReceiveBandwidth = 6.0
+    ss.TransmitBoostNegVolt = 6.0
+    ss.WpBeamMux = 6.0
+    ss.Reserved = 6.0
+    ss.Reserved1 = 6.0
 
     # Populate data
 
@@ -324,6 +356,10 @@ def test_encode_decode():
     ss.WpLagLength = 6.0
     ss.WpTransmitBandwidth = 6.0
     ss.WpReceiveBandwidth = 6.0
+    ss.TransmitBoostNegVolt = 6.0
+    ss.WpBeamMux = 6.0
+    ss.Reserved = 6.0
+    ss.Reserved1 = 6.0
 
     # Populate data
 
@@ -353,3 +389,7 @@ def test_encode_decode():
     assert ss.WpLagLength == pytest.approx(ss1.WpLagLength, 0.1)
     assert ss.WpTransmitBandwidth == pytest.approx(ss1.WpTransmitBandwidth, 0.1)
     assert ss.WpReceiveBandwidth == pytest.approx(ss1.WpReceiveBandwidth, 0.1)
+    assert ss.TransmitBoostNegVolt == pytest.approx(ss1.TransmitBoostNegVolt, 0.1)
+    assert ss.WpBeamMux == pytest.approx(ss1.WpBeamMux, 0.1)
+    assert ss.Reserved == pytest.approx(ss1.Reserved, 0.1)
+    assert ss.Reserved1 == pytest.approx(ss1.Reserved1, 0.1)

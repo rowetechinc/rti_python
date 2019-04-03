@@ -204,36 +204,44 @@ class BinaryCodec(Thread):
         :param ens_data: Ensemble data.
         :param ens_start: Start location in the ens_data
         """
-
-        # Check Ensemble number
-        ens_num = struct.unpack("I", ens_data[ens_start + 16:ens_start + 20])
-
-        # Check ensemble size
-        payload_size = struct.unpack("I", ens_data[ens_start + 24:ens_start + 28])
-
-        # Ensure the entire ensemble is in the buffer
-        if len(ens_data) >= ens_start + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
-
-            # Check checksum
-            checksum_loc = ens_start + Ensemble().HeaderSize + payload_size[0]
-            checksum = struct.unpack("I", ens_data[checksum_loc:checksum_loc + Ensemble().ChecksumSize])
-
-            # Calculate Checksum
-            # Use only the payload for the checksum
-            ens = ens_data[ens_start + Ensemble().HeaderSize:ens_start + Ensemble().HeaderSize + payload_size[0]]
-            calc_checksum = CRCCCITT().calculate(input_data=bytes(ens))
-
-            # Verify checksum
-            if checksum[0] == calc_checksum:
-                logging.debug(ens_num[0])
-                return True
-            else:
+        try:
+            # Verify at least the minimum number of bytes are available to verify the ensemble
+            if len(ens_data) <= Ensemble().HeaderSize + Ensemble().ChecksumSize:
                 return False
-        else:
-            logging.warning("Not a complete ensemble.")
+
+            # Check Ensemble number
+            ens_num = struct.unpack("I", ens_data[ens_start + 16:ens_start + 20])
+
+            # Check ensemble size
+            payload_size = struct.unpack("I", ens_data[ens_start + 24:ens_start + 28])
+
+            # Ensure the entire ensemble is in the buffer
+            if len(ens_data) >= ens_start + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
+
+                # Check checksum
+                checksum_loc = ens_start + Ensemble().HeaderSize + payload_size[0]
+                checksum = struct.unpack("I", ens_data[checksum_loc:checksum_loc + Ensemble().ChecksumSize])
+
+                # Calculate Checksum
+                # Use only the payload for the checksum
+                ens = ens_data[ens_start + Ensemble().HeaderSize:ens_start + Ensemble().HeaderSize + payload_size[0]]
+                calc_checksum = CRCCCITT().calculate(input_data=bytes(ens))
+
+                # Verify checksum
+                if checksum[0] == calc_checksum:
+                    logging.debug(ens_num[0])
+                    return True
+                else:
+                    return False
+            else:
+                logging.warning("Not a complete ensemble.")
+                return False
+
+        except Exception as e:
+            logging.error("Error verifying Ensemble.  " + str(e))
             return False
 
-        return True
+        return False
 
     @staticmethod
     def decode_data_sets(ens):

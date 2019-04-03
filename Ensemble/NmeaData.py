@@ -54,6 +54,9 @@ class NmeaData:
 
     def add_nmea(self, msg):
         try:
+            # Increment the number of elements
+            self.num_elements += len(msg)
+
             # Parse the NMEA data
             nmea_msg = pynmea2.parse(msg)
 
