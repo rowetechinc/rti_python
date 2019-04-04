@@ -11,9 +11,28 @@ import pandas as pd
 from rti_python.Codecs.BinaryCodec import BinaryCodec
 from rti_python.Ensemble.NmeaData import NmeaData
 
+
 class MergeAdcpGps:
+    """
+    Merage the ADCP and GPS data.
+    Put the ADCP data in a folder.
+    Put the GPS data in a separate folder.
+    Give to the two folder paths.
+    It will then map all the GPS data to a time.
+    It will then read in the ADCP and match the time from the GPS and the ADCP.
+
+    """
 
     def __init__(self, gps_folder_path, adcp_folder_path):
+        """
+        Give the GPS folder and ADCP folder paths.
+        It will then read in all the GPS data and map it to a time.
+        It will then read in all the ADCP data and add the GPS data to the ADCP data.
+        :param self:
+        :param gps_folder_path: GPS Folder
+        :param adcp_folder_path: ADCP Folder
+        :return:
+        """
         # Usually GPS messages come in blocks
         # List the last GPS message in the block
         # Then the GPS file will be divided by this message
@@ -89,7 +108,7 @@ class MergeAdcpGps:
         # Close the file
         f.close()
 
-        # Move all the datetime to the index
+        # Move datetime column to the index
         self.gps_df['datetime'] = pd.to_datetime(self.gps_df['dt'])
         self.gps_df = self.gps_df.set_index('datetime')
         self.gps_df.drop(['dt'], axis=1, inplace=True)
@@ -127,6 +146,8 @@ class MergeAdcpGps:
 
         # Create a buffer
         buff = bytes()
+
+        print("Processing ADCP Data: " + file_path)
 
         with tqdm(total=os.path.getsize(file_path)) as pbar:
 
@@ -207,13 +228,12 @@ class MergeAdcpGps:
 
 if __name__ == '__main__':
 
-    #FORMAT = '%(asctime)s - %(levelname)s - %(module)s - (%(threadName)-10s) - %(message)s'
-    #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-
-    gps_folder = "G:\\RTI\\data\\uw\\gps_min"
-    adcp_folder = "G:\\RTI\\data\\uw\\ADCP_min"
-    #gps_folder = "C:\\RTI\\Data\\uw\\gps_min"
-    #adcp_folder = "C:\\RTI\\Data\\uw\\ADCP_min"
+    # Separate all the GPS and ADCP into 2 folders
+    # Give the folders for the GPS and ADCP data.
+    #gps_folder = "G:\\RTI\\data\\uw\\gps_min"
+    #adcp_folder = "G:\\RTI\\data\\uw\\ADCP_min"
+    gps_folder = "C:\\RTI\\Data\\uw\\gps_min"
+    adcp_folder = "C:\\RTI\\Data\\uw\\ADCP_min"
 
 
     MergeAdcpGps(gps_folder, adcp_folder)
