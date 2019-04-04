@@ -49,7 +49,7 @@ class BinaryCodec(Thread):
         Thread.__init__(self)
         self.thread_alive = True
         self.thread_lock = Condition()
-        self.start()
+        #self.start()
 
         self.buffer = bytearray()
 
@@ -77,7 +77,11 @@ class BinaryCodec(Thread):
         """
         self.thread_lock.acquire()                                      # Lock the buffer
         self.buffer.extend(data)                                        # Set the data to the buffer
-        self.thread_lock.notify()                                       # Notify to process the buffer
+
+        # Check if enough data is in the buffer to process
+        if len(self.buffer) > Ensemble.HeaderSize + Ensemble.ChecksumSize + 200:
+            self.thread_lock.notify()                                   # Notify to process the buffer
+
         self.thread_lock.release()                                      # Unlock buffer
 
     def run(self):
@@ -206,8 +210,11 @@ class BinaryCodec(Thread):
         :param ens_start: Start location in the ens_data
         """
         try:
+            # Ensemble Length
+            ens_len = len(ens_data)
+
             # Verify at least the minimum number of bytes are available to verify the ensemble
-            if len(ens_data) <= Ensemble().HeaderSize + Ensemble().ChecksumSize:
+            if ens_len <= Ensemble().HeaderSize + Ensemble().ChecksumSize:
                 return False
 
             # Check Ensemble number
@@ -217,7 +224,7 @@ class BinaryCodec(Thread):
             payload_size = struct.unpack("I", ens_data[ens_start + 24:ens_start + 28])
 
             # Ensure the entire ensemble is in the buffer
-            if len(ens_data) >= ens_start + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
+            if ens_len >= ens_start + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
 
                 # Check checksum
                 checksum_loc = ens_start + Ensemble().HeaderSize + payload_size[0]
@@ -235,7 +242,7 @@ class BinaryCodec(Thread):
                 else:
                     return False
             else:
-                logging.warning("Not a complete ensemble.")
+                #logging.warning("Not a complete ensemble.")
                 return False
 
         except Exception as e:
@@ -279,13 +286,17 @@ class BinaryCodec(Thread):
                 if packetPointer >= ens_len - Ensemble.ChecksumSize - Ensemble.HeaderSize:
                     break
 
-                # Get the dataset info
-                ds_type = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 0), Ensemble().BytesInInt32, ens)
-                num_elements = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 1), Ensemble().BytesInInt32, ens)
-                element_multiplier = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 2), Ensemble().BytesInInt32, ens)
-                image = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 3), Ensemble().BytesInInt32, ens)
-                name_len = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 4), Ensemble().BytesInInt32, ens)
-                name = str(ens[packetPointer+(Ensemble.BytesInInt32 * 5):packetPointer+(Ensemble.BytesInInt32 * 5)+8], 'UTF-8')
+                try:
+                    # Get the dataset info
+                    ds_type = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 0), Ensemble().BytesInInt32, ens)
+                    num_elements = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 1), Ensemble().BytesInInt32, ens)
+                    element_multiplier = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 2), Ensemble().BytesInInt32, ens)
+                    image = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 3), Ensemble().BytesInInt32, ens)
+                    name_len = Ensemble.GetInt32(packetPointer + (Ensemble.BytesInInt32 * 4), Ensemble().BytesInInt32, ens)
+                    name = str(ens[packetPointer+(Ensemble.BytesInInt32 * 5):packetPointer+(Ensemble.BytesInInt32 * 5)+8], 'UTF-8')
+                except Exception as e:
+                    logging.warning("Bad Ensemble header" + str(e))
+                    break
 
                 # Calculate the dataset size
                 data_set_size = Ensemble.GetDataSetSize(ds_type, name_len, num_elements, element_multiplier)
