@@ -75,9 +75,9 @@ class SystemSetup:
             self.WpReceiveBandwidth = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 20, Ensemble().BytesInFloat, data)
             self.TransmitBoostNegVolt = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 21, Ensemble().BytesInFloat, data)
             self.WpBeamMux = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 22, Ensemble().BytesInFloat, data)
+        if self.num_elements > 23:
             self.Reserved = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 23, Ensemble().BytesInFloat, data)
             self.Reserved1 = Ensemble.GetFloat(packet_pointer + Ensemble().BytesInFloat * 24, Ensemble().BytesInFloat, data)
-
 
         logging.debug(self.BtSamplesPerSecond)
         logging.debug(self.BtSystemFreqHz)

@@ -111,36 +111,37 @@ class WaveForceCodec:
         process the buffer and output the data to a matlab file.
         :param ens: Ensemble to buffer.
         """
+        if ens:
 
-        if self.EnsInBurst > 0:
-            logging.debug("Added Ensemble to burst")
+            if self.EnsInBurst > 0:
+                logging.debug("Added Ensemble to burst")
 
-            # Add to the buffer
-            self.Buffer.append(ens)
+                # Add to the buffer
+                self.Buffer.append(ens)
 
-            # Increment the buffer count for every vertical data
-            # 3 or 4 beam data will be combined with vertical beam data.
-            # It is assumed that a vertical beam will be after a 4 beam
-            if ens.EnsembleData.NumBeams == 1:  # Check for vertical beam
-                self.BufferCount += 1           # Keep count of vertical beam ens
-                self.TotalEnsInBurst += 1       # Keep count of all ens
-            else:
-                self.TotalEnsInBurst += 1       # Keep count of all ens (4 or 3 beam ens)
+                # Increment the buffer count for every vertical data
+                # 3 or 4 beam data will be combined with vertical beam data.
+                # It is assumed that a vertical beam will be after a 4 beam
+                if ens.IsEnsembleData and ens.EnsembleData.NumBeams == 1:  # Check for vertical beam
+                    self.BufferCount += 1           # Keep count of vertical beam ens
+                    self.TotalEnsInBurst += 1       # Keep count of all ens
+                else:
+                    self.TotalEnsInBurst += 1       # Keep count of all ens (4 or 3 beam ens)
 
-            # Process the buffer when a burst is complete
-            # If BufferCount is 0, then no vertical beam
-            # Check if the total ensembles then is the total number of ensembles in burst
-            # or check if the total number of vertical beam ensembles is found
-            if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst) or self.BufferCount >= self.EnsInBurst:
-                # Get the ensembles from the buffer
-                ens_buff = self.Buffer[0:self.TotalEnsInBurst]
+                # Process the buffer when a burst is complete
+                # If BufferCount is 0, then no vertical beam
+                # Check if the total ensembles then is the total number of ensembles in burst
+                # or check if the total number of vertical beam ensembles is found
+                if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst) or self.BufferCount >= self.EnsInBurst:
+                    # Get the ensembles from the buffer
+                    ens_buff = self.Buffer[0:self.TotalEnsInBurst]
 
-                # Reset the codec
-                self.reset()
+                    # Reset the codec
+                    self.reset()
 
-                # Process the buffer
-                th = threading.Thread(target=self.process, args=[ens_buff])
-                th.start()
+                    # Process the buffer
+                    th = threading.Thread(target=self.process, args=[ens_buff])
+                    th.start()
 
     @event
     def process_data_event(self, file_name):

@@ -171,6 +171,10 @@ class MergeAdcpGps:
                     data = file.read(4096)                              # Read the next batch of data
                     pbar.update(len(data))                              # Update the progressbar
 
+                # Process whatever is remaining in the buffer
+
+
+
                 # Close the input files
                 file.close()
 

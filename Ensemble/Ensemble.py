@@ -3,6 +3,8 @@ import json
 import datetime
 from PyCRC.CRCCCITT import CRCCCITT
 import math
+import logging
+
 
 class Ensemble:
     """
@@ -471,7 +473,11 @@ class Ensemble:
         :param ens: Buffer containing the bytearray data.
         :return: Int32 of the data in the buffer.
         """
-        return struct.unpack("i", ens[start:start + numBytes])[0]
+        try:
+            return struct.unpack("i", ens[start:start + numBytes])[0]
+        except Exception as e:
+            logging.error("Error creating a Int32 from bytes. " + str(e))
+            return 0
 
     @staticmethod
     def GetUInt32(start, numBytes, ens):
@@ -483,7 +489,11 @@ class Ensemble:
         :param ens: Buffer containing the bytearray data.
         :return: Int32 of the data in the buffer.
         """
-        return struct.unpack("I", ens[start:start + numBytes])[0]
+        try:
+            return struct.unpack("I", ens[start:start + numBytes])[0]
+        except Exception as e:
+            logging.error("Error creating a UInt32 from bytes. " + str(e))
+            return 0
 
     @staticmethod
     def int32_to_bytes(value):
@@ -513,7 +523,11 @@ class Ensemble:
         :param ens: Buffer containing the bytearray data.
         :return: uint16 of the data in the buffer.
         """
-        return struct.unpack("b", ens[start:start + numBytes])[0]
+        try:
+            return struct.unpack("b", ens[start:start + numBytes])[0]
+        except Exception as e:
+            logging.error("Error creating a UInt16 from bytes. " + str(e))
+            return 0
 
     @staticmethod
     def uint16_to_bytes(value):
@@ -534,7 +548,11 @@ class Ensemble:
         :param ens: Buffer containing the bytearray data.
         :return: Int32 of the data in the buffer.
         """
-        return struct.unpack("f", ens[start:start + numBytes])[0]
+        try:
+            return struct.unpack("f", ens[start:start + numBytes])[0]
+        except Exception as e:
+            logging.debug("Error creating a float from bytes. " + str(e))
+            return 0.0
 
     @staticmethod
     def float_to_bytes(value):

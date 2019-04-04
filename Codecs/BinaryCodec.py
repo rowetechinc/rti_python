@@ -129,8 +129,9 @@ class BinaryCodec(Thread):
                     # Decode data
                     ensemble = BinaryCodec.decode_data_sets(ens)
 
-                    # Publish the ensemble
-                    self.process_ensemble(ensemble)
+                    if ensemble:
+                        # Publish the ensemble
+                        self.process_ensemble(ensemble)
                 else:
                     logging.debug("No Ensemble data found")
 
@@ -176,7 +177,7 @@ class BinaryCodec(Thread):
                     del self.buffer[0:ens_end]
 
                 except Exception as e:
-                    logging.error("Error decoding ensemble. ", e)
+                    logging.error("Error processing ensemble. ", e)
         else:
             logging.warning("Not a complete buffer.  Waiting for data")
 
@@ -262,6 +263,7 @@ class BinaryCodec(Thread):
         nameLen = 0
         name = ""
         dataSetSize = 0
+        ens_len = len(ens)
 
         # Create the ensemble
         ensemble = Ensemble()
@@ -274,7 +276,7 @@ class BinaryCodec(Thread):
             # Decode the ensemble datasets
             for x in range(Ensemble().MaxNumDataSets):
                 # Check if we are at the end of the payload
-                if packetPointer >= len(ens) - Ensemble().ChecksumSize:
+                if packetPointer >= ens_len - Ensemble.ChecksumSize - Ensemble.HeaderSize:
                     break
 
                 # Get the dataset info
