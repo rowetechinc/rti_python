@@ -1,7 +1,8 @@
-import logging
-from obsub import event
-from threading import Thread, Condition
 import struct
+import abc
+import copy
+from rti_python.Utilities.events import EventHandler
+
 from rti_python.Ensemble.Ensemble import Ensemble
 from rti_python.Ensemble.BeamVelocity import BeamVelocity
 from rti_python.Ensemble.InstrumentVelocity import InstrumentVelocity
@@ -17,78 +18,190 @@ from rti_python.Ensemble.NmeaData import NmeaData
 from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
 from PyCRC.CRCCCITT import CRCCCITT
+import logging
+from threading import Thread, Condition
+import threading
 
-# Buffer to hold the incoming data
-buffer = bytearray()
-
-# Condition to protect the buffer and make the threads sleep.
-condition = Condition()
-
-
-class BinaryCodec:
+class WaveBurstInfo:
     """
-    Use the 2 threads, AddDataThread and ProcessDataThread
-    to buffer the streaming data and decode it.
-
-    Subscribe to ensemble_event to receive the latest
-    decoded data.
-    bin_codec.ensemble_event += event_handler
-
-    event_handler(self, sender, ens)
-
-     AddDataThread will buffer the data.
-     ProcessDataThread will decode the buffer.
+    Information about the waves burst setup.
     """
 
     def __init__(self):
-        """
-        Start the two threads.
-        """
-        # Start the Add Data Thread
-        self.add_data_thread = AddDataThread()
-        self.add_data_thread.start()
+        self.SamplesPerBurst = 0
+        self.Lat = ""
+        self.Lon = ""
+        self.Bin1 = 0
+        self.Bin2 = 0
+        self.Bin3 = 0
 
-        # Start the Processing Data Thread
-        self.process_data_thread = ProcessDataThread()
-        self.process_data_thread.ensemble_event += self.receive_ens
-        self.process_data_thread.start()
+
+class BinaryCodecOld(Thread):
+    """
+    Decode RoweTech ADCP Binary data.
+    """
+
+    # Use for publish and subscribe event
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self):
+
+        Thread.__init__(self)
+        self.thread_alive = True
+        self.thread_lock = Condition()
+        #self.start()
+
+        self.buffer = bytearray()
+
+        self.MAX_TIMEOUT = 5
+        self.timeout = 0
+        self.DELIMITER = b'\x80'*16
+
+        self.EnsembleEvent = EventHandler(self)
 
     def shutdown(self):
         """
-        Shutdown the two threads.
+        Shutdown the thread.
         :return:
         """
-        self.add_data_thread.shutdown()
-        self.process_data_thread.shutdown()
-
-    @event
-    def ensemble_event(self, ens):
-        """
-        Event to subscribe to receive the latest ensemble data.
-        :param ens: Ensemble object
-        :return:
-        """
-        if ens.IsEnsembleData:
-            logging.debug(str(ens.EnsembleData.EnsembleNumber))
-
-    def receive_ens(self, sender, ens):
-        """
-        Event handler for ProcessDataThread to receive the latest ensembles.
-        :param sender: Not Used
-        :param ens: Ensemble data
-        :return:
-        """
-        # Pass to the ensemble to subscribers of this object
-        self.ensemble_event(ens)
+        self.thread_alive = False
+        self.thread_lock.acquire()
+        self.thread_lock.notify()
+        self.thread_lock.release()
+        if self.is_alive():
+            self.join()
 
     def add(self, data):
         """
-        Add data to the AddDataThread.  This will start the
-        processing of the data.
-        :param data: Data to start decoding.
+        Add to buffer and Decode
+        :param data: Raw byte data.
+        """
+        self.thread_lock.acquire()                                      # Lock the buffer
+        self.buffer.extend(data)                                        # Set the data to the buffer
+
+        # Check if enough data is in the buffer to process
+        if len(self.buffer) > Ensemble.HeaderSize + Ensemble.ChecksumSize + 200:
+            self.thread_lock.notify()                                   # Notify to process the buffer
+
+        self.thread_lock.release()                                      # Unlock buffer
+
+    def run(self):
+        """
+        Find the start of an ensemble.  Then find the end of the ensemble.
+        Then remove the ensemble from the buffer and process the raw data.
         :return:
         """
-        self.add_data_thread.add(data)
+
+        while self.thread_alive:
+            # Lock to look for the data
+            self.thread_lock.acquire()
+
+            # Create a buffer to hold the ensemble
+            bin_ens_list = []
+            timeout = 0
+
+            # Wait for the next ensemble added to the buffer
+            self.thread_lock.wait()
+
+            # Look for first 16 bytes of header
+            ens_start = self.buffer.find(self.DELIMITER)
+
+            # Verify enough data is in the buffer for an ensemble header
+            while ens_start >= 0 and len(self.buffer) > Ensemble().HeaderSize + ens_start:
+                # Decode the Ensemble
+                bin_ens = self.decode_ensemble(ens_start)
+
+                # Add the data to the list or count for timeout
+                if len(bin_ens) > 0:
+                    # Add it to the list
+                    bin_ens_list.append(bin_ens)
+                else:
+                    # Timeout if we are only getting bad data
+                    timeout += 1
+                    if timeout > 5:
+                        logging.warning("Find good ensemble timeout")
+                        break
+
+                # Search if there is a new start location
+                ens_start = self.buffer.find(self.DELIMITER)
+
+            self.thread_lock.release()
+
+            # If data was found for an ensemble
+            # Process the ensemble binary data
+            for ens in bin_ens_list:
+                if len(ens) > 0:
+                    # Decode data
+                    ensemble = BinaryCodec.decode_data_sets(ens)
+
+                    if ensemble:
+                        # Publish the ensemble
+                        self.process_ensemble(ensemble)
+                else:
+                    logging.debug("No Ensemble data found")
+
+    def decode_ensemble(self, ensStart):
+        """
+        Decode the raw ensemble data.  This will check the checksum and verify it is correct,
+        then decode each datasets.  Then remove the data from the buffer.
+        :param ensStart: Stare of the ensemble in the buffer.
+        """
+        bin_ens = []
+
+        # Check Ensemble number
+        ens_num = struct.unpack("I", self.buffer[ensStart+16:ensStart+20])
+
+        # Check ensemble size
+        payload_size = struct.unpack("I", self.buffer[ensStart+24:ensStart+28])
+
+        # Ensure the entire ensemble is in the buffer
+        if len(self.buffer) >= ensStart + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize:
+            # Reset timeout
+            self.timeout = 0
+
+            # Check checksum
+            checksumLoc = ensStart + Ensemble().HeaderSize + payload_size[0]
+            checksum = struct.unpack("I", self.buffer[checksumLoc:checksumLoc + Ensemble().ChecksumSize])
+
+            # Calculate Checksum
+            # Use only the payload for the checksum
+            ens = self.buffer[ensStart + Ensemble().HeaderSize:ensStart + Ensemble().HeaderSize + payload_size[0]]
+            calcChecksum = CRCCCITT().calculate(input_data=bytes(ens))
+            #print("Calc Checksum: ", calcChecksum)
+            #print("Checksum: ", checksum[0])
+            #print("Checksum good: ", calcChecksum == checksum[0])
+
+            if checksum[0] == calcChecksum:
+                logging.debug(ens_num[0])
+                try:
+                    # Make a deep copy of the ensemble data
+                    bin_ens = copy.deepcopy(self.buffer[ensStart:ensStart + Ensemble().HeaderSize + payload_size[0]])
+
+                    # Remove ensemble from buffer
+                    ens_end = ensStart + Ensemble().HeaderSize + payload_size[0] + Ensemble().ChecksumSize
+                    del self.buffer[0:ens_end]
+
+                except Exception as e:
+                    logging.error("Error processing ensemble. ", e)
+        else:
+            logging.warning("Not a complete buffer.  Waiting for data")
+
+            # Give it a couple tries to see if more data will come in to make a complete header
+            self.timeout += 1
+
+            # Check for timeout
+            if self.timeout > self.MAX_TIMEOUT:
+                del self.buffer[0]
+                logging.warning("Buffered data did not have a good header.  Header search TIMEOUT")
+                self.timeout = 0
+
+        return bin_ens
+
+    @abc.abstractmethod
+    def process_ensemble(self, ens):
+        # Pass to event handler
+        self.EnsembleEvent(ens)
+        logging.debug("Ensemble Processed")
 
     @staticmethod
     def verify_ens_data(ens_data, ens_start=0):
@@ -290,145 +403,6 @@ class BinaryCodec:
         return ensemble
 
 
-class AddDataThread(Thread):
-    """
-    Receive all incoming data.  Buffer the data
-    and wakeup ProcessDataThread with "condition".
-    """
-
-    def __init__(self):
-        """
-        Initialize the thread.
-        """
-        Thread.__init__(self)
-        self.internal_condition = Condition()
-        self.alive = True
-        self.temp_data = bytes()
-
-    def shutdown(self):
-        """
-        Shutdown the object.  Stop the thread.
-        :return:
-        """
-        self.alive = False
-        with self.internal_condition:
-            self.internal_condition.notify()
-
-        if self.is_alive():
-            self.join()
-
-    def add(self, data):
-        """
-        Add data to the buffer.  Then wakeup the internal thread with the "internal_condition".
-        :param data: Data to buffer.
-        :return:
-        """
-        # Store the data to be buffered
-        self.temp_data = data
-
-        # Wakeup the thread
-        with self.internal_condition:
-            self.internal_condition.notify()
-
-    def run(self):
-        """
-        Take the data from the temp location and place it the buffer.
-        Then wakeup the ProcessDataThread with "condition".
-        :return:
-        """
-        # Get the global buffer
-        # It is shared with the 2 threads
-        global buffer
-
-        # Verify the thread is still alive
-        while self.alive:
-
-            with self.internal_condition:
-                # Wait to wakeup when data arrives
-                self.internal_condition.wait()
-
-            with condition:
-                buffer += self.temp_data             # Set the data to the buffer
-
-                # Check if enough data is in the buffer to process
-                if len(buffer) > Ensemble.HeaderSize + Ensemble.ChecksumSize + 200:
-                    condition.notify()          # Notify to process the buffer
 
 
-class ProcessDataThread(Thread):
-    """
-    Process the incoming data.  This will take the shared buffer.
-    The AddDataThread will wakeup this thread with "condition".  It
-    will then process the incoming data in the buffer and look for
-    ensemble data.  When ensemble data is decoded it will passed to the
-    subscribers of the event "ensemble_event".
-    """
-
-    def __init__(self):
-        """
-        Initialize this object as a thread.
-        """
-        Thread.__init__(self)
-        self.alive = True
-        self.MAX_TIMEOUT = 5
-        self.timeout = 0
-        self.DELIMITER = b'\x80' * 16
-
-    def shutdown(self):
-        """
-        Shutdown this object.
-        :return:
-        """
-        self.alive = False
-        with condition:
-            condition.notify()
-
-        if self.is_alive():
-            self.join()
-
-    @event
-    def ensemble_event(self, ens):
-        """
-        Event to subscribe to receive decoded ensembles.
-        :param ens: Ensemble object.
-        :return:
-        """
-        if ens.IsEnsembleData:
-            logging.debug(str(ens.EnsembleData.EnsembleNumber))
-
-    def run(self):
-        """
-        Get the global buffer that is shared with the AddDataThread.
-
-        When data is received, the this thread will be unblocked with "condition".
-        Process the incoming data.  Look for ensemble data. Verify and decode the binary data.
-        Once an ensemble is processed, pass it to event.  All subscribers of the event will
-        receive the ensemble.
-        :return:
-        """
-        # Get the global buffer
-        # It is shared with the 2 threads
-        global buffer
-
-        # Verify the thread is still alive
-        while self.alive:
-            # Wait for data
-            with condition:
-                if self.DELIMITER in buffer:                        # Check for the delimiter
-                    chunks = buffer.split(self.DELIMITER)           # If delimiter found, split to get the remaining buffer data
-                    buffer = chunks.pop()                           # Put the remaining data back in the buffer
-
-                    for chunk in chunks:                            # Take out the ens data
-                        self.verify_and_decode(self.DELIMITER + chunk)    # Process the binary ensemble data
-
-    def verify_and_decode(self, ens_bin):
-        # Verify the ENS data is good
-        # This will check that all the data is there and the checksum is good
-        if BinaryCodec.verify_ens_data(ens_bin):
-            # Decode the ens binary data
-            ens = BinaryCodec.decode_data_sets(ens_bin)
-
-            # Pass the ensemble
-            if ens:
-                self.ensemble_event(ens)
 

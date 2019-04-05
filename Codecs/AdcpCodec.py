@@ -1,8 +1,6 @@
 import logging
 from rti_python.Codecs.BinaryCodec import BinaryCodec
 from rti_python.Codecs.BinaryCodecUdp import BinaryCodecUdp
-from rti_python.Codecs.WaveForceCodec import WaveForceCodec
-from rti_python.Utilities.events import EventHandler
 from obsub import event
 
 
@@ -18,14 +16,9 @@ class AdcpCodec:
             self.binary_codec = BinaryCodec()
         else:
             self.binary_codec = BinaryCodecUdp(udp_port)
-        self.binary_codec.EnsembleEvent += self.process_ensemble
 
-        # WaveForce codec
-        #self.WaveForceCodec = WaveForceCodec()
-        #self.IsWfcEnabled = False
-
-        # Event to receive the ensembles
-        self.EnsembleEvent = EventHandler(self)
+        # Setup the event handler
+        self.binary_codec.ensemble_event += self.process_ensemble
 
     def shutdown(self):
         """
@@ -51,4 +44,13 @@ class AdcpCodec:
         logging.debug("Received processed ensemble")
 
         # Pass ensemble to all subscribers of the ensemble data.
-        self.EnsembleEvent(ens)
+        self.ensemble_event(ens)
+
+    @event
+    def ensemble_event(self, ens):
+        """
+        Event to subscribe to this object to receive the latest ensemble data.
+        :param ens: Ensemble object.
+        :return:
+        """
+        logging.debug("Ensemble received")

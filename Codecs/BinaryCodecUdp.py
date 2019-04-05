@@ -68,7 +68,7 @@ class BinaryCodecUdp(BinaryCodec):
 
     def process_ens(self, ensemble):
         # Pass to event handler
-        self.EnsembleEvent(ensemble)
+        self.ensemble_event(ensemble)
 
         try:
             # Stream data
