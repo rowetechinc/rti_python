@@ -173,6 +173,7 @@ class RtiConfig:
             self.config['AWC']['num_ensembles'] = '600'
             self.config['AWC']['output_dir'] = os.path.expanduser('~')
             self.config['AWC']['max_file_size'] = '16'
+            self.config['AWC']['csv_max_hours'] = '24'
             self.write()
 
         # Verify each value exist
@@ -186,4 +187,8 @@ class RtiConfig:
 
         if not self.config.has_option('AWC', 'max_file_size'):
             self.config['AWC']['max_file_size'] = '16'
+            self.write()
+
+        if not self.config.has_option('AWC', 'csv_max_hours'):
+            self.config['AWC']['csv_max_hours'] = '24'
             self.write()

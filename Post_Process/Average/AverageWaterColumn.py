@@ -249,13 +249,13 @@ class AverageWaterColumn:
         avg_vel = None
 
         # lock the thread when iterating the deque
-        self.thread_lock.acquire(True, 1000)
+        #self.thread_lock.acquire(True, 1000)
 
         # Create a deep copy of the data
         # This will make it thread safe
-        deep_copy_vel = copy.deepcopy(vel)
+        #deep_copy_vel = copy.deepcopy(vel)
 
-        for ens_vel in deep_copy_vel:
+        for ens_vel in vel:
             temp_num_bins = len(ens_vel)
             temp_num_beams = len(ens_vel[0])
 
@@ -288,7 +288,7 @@ class AverageWaterColumn:
                         avg_count[ens_bin][beam] += 1                           # Count good data
 
         # Unlock thread
-        self.thread_lock.release()
+        #self.thread_lock.release()
 
         # Average the data accumulate
         for ens_bin in range(len(avg_accum)):
@@ -317,13 +317,13 @@ class AverageWaterColumn:
         avg_vel = None
 
         # lock the thread when iterating the deque
-        self.thread_lock.acquire(True, 1000)
+        #self.thread_lock.acquire(True, 1000)
 
         # Create a deep copy of the data
         # This will make it thread safe
-        deep_copy_data = copy.deepcopy(data)
+        #deep_copy_data = copy.deepcopy(data)
 
-        for ens_data in deep_copy_data:
+        for ens_data in data:
             temp_num_bins = len(ens_data)
             if num_bins == 0:
                 num_bins = temp_num_bins
@@ -345,7 +345,7 @@ class AverageWaterColumn:
                     avg_count[ens_bin] += 1                           # Count good data
 
         # Unlock thread
-        self.thread_lock.release()
+        #self.thread_lock.release()
 
         # Average the data accumulate
         for ens_bin in range(len(avg_accum)):

@@ -233,7 +233,8 @@ class WaveForceCodec:
                         beam_vert_vel.extend(struct.pack('f', ens_wave.vert_beam_vel[sel_bin]))
 
                 # Range Tracking (WZR)
-                rt_vert.extend(struct.pack('f', ens_wave.range_tracking[0]))
+                if len(ens_wave.range_tracking) > 0:
+                    rt_vert.extend(struct.pack('f', ens_wave.range_tracking[0]))
 
             else:
                 # 4 Beam Data
