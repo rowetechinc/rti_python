@@ -301,6 +301,7 @@ class AddDataThread(Thread):
         Initialize the thread.
         """
         Thread.__init__(self)
+        self.name = "Binary Codec Add Data Thread"
         self.internal_condition = Condition()
         self.alive = True
         self.temp_data = bytes()
@@ -369,6 +370,7 @@ class ProcessDataThread(Thread):
         Initialize this object as a thread.
         """
         Thread.__init__(self)
+        self.name = "Binary Codec Process Data Thread"
         self.alive = True
         self.MAX_TIMEOUT = 5
         self.timeout = 0
