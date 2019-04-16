@@ -4,6 +4,7 @@ import struct
 import threading
 from rti_python.Waves.WaveEnsemble import WaveEnsemble
 from obsub import event
+import collections
 
 
 class WaveForceCodec:
@@ -38,7 +39,7 @@ class WaveForceCodec:
         self.FilePath = path
         self.Lat = lat
         self.Lon = lon
-        self.Buffer = []
+        self.Buffer = collections.deque()
         self.BufferCount = 0
         self.Bin1 = bin1
         self.Bin2 = bin2
@@ -122,25 +123,19 @@ class WaveForceCodec:
                 # Increment the buffer count for every vertical data
                 # 3 or 4 beam data will be combined with vertical beam data.
                 # It is assumed that a vertical beam will be after a 4 beam
-                if ens.IsEnsembleData and ens.EnsembleData.NumBeams == 1:  # Check for vertical beam
-                    self.BufferCount += 1           # Keep count of vertical beam ens
-                    self.TotalEnsInBurst += 1       # Keep count of all ens
+                if ens.IsEnsembleData and ens.EnsembleData.NumBeams == 1:   # Check for vertical beam
+                    self.BufferCount += 1                                   # Keep count of vertical beam ens
+                    self.TotalEnsInBurst += 1                               # Keep count of all ens
                 else:
-                    self.TotalEnsInBurst += 1       # Keep count of all ens (4 or 3 beam ens)
+                    self.TotalEnsInBurst += 1                               # Keep count of all ens (4 or 3 beam ens)
 
                 # Process the buffer when a burst is complete
                 # If BufferCount is 0, then no vertical beam
                 # Check if the total ensembles then is the total number of ensembles in burst
                 # or check if the total number of vertical beam ensembles is found
-                if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst) or self.BufferCount >= self.EnsInBurst:
-                    # Get the ensembles from the buffer
-                    ens_buff = self.Buffer[0:self.TotalEnsInBurst]
-
-                    # Reset the codec
-                    self.reset()
-
+                if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst) or (self.BufferCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst):
                     # Process the buffer
-                    th = threading.Thread(target=self.process, args=[ens_buff])
+                    th = threading.Thread(target=self.process, args=[self.Buffer])
                     th.start()
 
     @event
@@ -155,16 +150,26 @@ class WaveForceCodec:
         """
 
         # Remove the ensembles from the buffer
-        del self.Buffer[0:self.TotalEnsInBurst]
-        self.BufferCount = 0
-        self.TotalEnsInBurst = 0
+        if self.BufferCount > self.EnsInBurst:
+            self.BufferCount = self.BufferCount - self.EnsInBurst
 
-    def process(self, ens_buff):
+        if self.TotalEnsInBurst > self.EnsInBurst:
+            self.TotalEnsInBurst = self.TotalEnsInBurst - self.EnsInBurst
+
+    def process(self, buffer):
         """
         Process all the data in the ensemble buffer.
-        :param ens_buff: Ensemble data buffer.
+        :param buffer: Ensemble data buffer.
         """
         logging.debug("Process Waves Burst")
+
+        # Get the ensembles from the buffer
+        ens_buff = []
+        for idx in range(self.EnsInBurst):
+            ens_buff.append(buffer.popleft())
+
+        # Reset the codec
+        self.reset()
 
         # Local variables
         num_bins = len(self.selected_bin)
