@@ -5,6 +5,7 @@ import threading
 from rti_python.Waves.WaveEnsemble import WaveEnsemble
 from obsub import event
 import collections
+import datetime
 
 
 class WaveForceCodec:
@@ -1232,7 +1233,17 @@ class WaveForceCodec:
 
             ts = (24.0 * 3600.0 * jdn) + (3600.0 * hour) + (60.0 * minute) + second + (hsec / 100.0)
 
-        return ts
+            #epoch = datetime.datetime.fromtimestamp(0)
+            #ts = (ens.EnsembleData.datetime() - epoch).total_seconds()
+
+            first_sample_time = ts
+            first_sample_time /= (24.0 * 3600.0)                    # Convert to days
+            first_sample_time -= 1721059.0                          # Adjust for matlab serial date numbers
+            first_sample_time += 0.000011574
+
+            #ts = WaveForceCodec.datetime2matlabdn(ens.EnsembleData.datetime())
+
+        return first_sample_time
 
     @staticmethod
     def julian_day_number(year, month, day):
@@ -1248,4 +1259,11 @@ class WaveForceCodec:
         y = year + 4800 - a
         m = month - 12 * a - 3
 
-        return day + (153 * m + 2) / 5 + (365 * y) + y / 4 - y / 100 + y / 400 - 32045
+        return int(day + (153 * m + 2) / 5 + (365 * y) + y / 4 - y / 100 + y / 400 - 32045)
+
+    @staticmethod
+    def datetime2matlabdn(dt):
+        ord = dt.toordinal()
+        mdn = dt + datetime.timedelta(days=366)
+        frac = (dt - datetime.datetime(dt.year, dt.month, dt.day, 0, 0, 0)).seconds / (24.0 * 60.0 * 60.0)
+        return mdn.toordinal() + frac
