@@ -98,9 +98,9 @@ class RtiConfig:
             self.config['Waves']['output_dir'] = os.path.expanduser('~')
             self.config['Waves']['4b_vert_pair'] = 'True'
             self.config['Waves']['ens_in_burst'] = '1024'
-            self.config['Waves']['selected_bin_1'] = '1'
-            self.config['Waves']['selected_bin_2'] = '3'
-            self.config['Waves']['selected_bin_3'] = '5'
+            self.config['Waves']['selected_bin_1'] = '8'
+            self.config['Waves']['selected_bin_2'] = '9'
+            self.config['Waves']['selected_bin_3'] = '10'
             self.config['Waves']['corr_thresh'] = '0.25'
             self.config['Waves']['height_source'] = 'vertical'
             self.config['Waves']['pressure_sensor_height'] = '0.0'
@@ -120,15 +120,15 @@ class RtiConfig:
             self.write()
 
         if not self.config.has_option('Waves', 'selected_bin_1'):
-            self.config['Waves']['selected_bin_1'] = '1'
+            self.config['Waves']['selected_bin_1'] = '8'
             self.write()
 
         if not self.config.has_option('Waves', 'selected_bin_2'):
-            self.config['Waves']['selected_bin_2'] = '3'
+            self.config['Waves']['selected_bin_2'] = '9'
             self.write()
 
         if not self.config.has_option('Waves', 'selected_bin_3'):
-            self.config['Waves']['selected_bin_3'] = '5'
+            self.config['Waves']['selected_bin_3'] = '10'
             self.write()
 
         if not self.config.has_option('Waves', 'corr_thresh'):

@@ -50,6 +50,7 @@ class WaveForceCodec:
         self.PressureOffset = pressure_offset
         self.PressureSensorDepth = ps_depth
         self.RecordCount = 0
+        self.buffer_check_lock = threading.Lock()
 
         self.selected_bin = []
         if bin1 >= 0:
@@ -125,19 +126,53 @@ class WaveForceCodec:
                 # 3 or 4 beam data will be combined with vertical beam data.
                 # It is assumed that a vertical beam will be after a 4 beam
                 if ens.IsEnsembleData and ens.EnsembleData.NumBeams == 1:   # Check for vertical beam
+                    self.buffer_check_lock.acquire()
                     self.BufferCount += 1                                   # Keep count of vertical beam ens
                     self.TotalEnsInBurst += 1                               # Keep count of all ens
+                    self.buffer_check_lock.release()
                 else:
+                    self.buffer_check_lock.acquire()
                     self.TotalEnsInBurst += 1                               # Keep count of all ens (4 or 3 beam ens)
+                    self.buffer_check_lock.release()
 
                 # Process the buffer when a burst is complete
                 # If BufferCount is 0, then no vertical beam
                 # Check if the total ensembles then is the total number of ensembles in burst
                 # or check if the total number of vertical beam ensembles is found
-                if (self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst) or (self.BufferCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst):
+                if self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
+                    logging.debug("Begin Process " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
+
+                    # Get the ensembles from the buffer
+                    ens_buff = []
+                    for idx in range(self.EnsInBurst):
+                        ens_buff.append(self.Buffer.popleft())
+                    logging.debug("Get Buffer Data.  New Buffer count: " + str(len(self.Buffer)))
+
+                    # Reset the codec
+                    self.reset()
+                    logging.debug("Reset counts")
+
                     # Process the buffer
-                    th = threading.Thread(target=self.process, args=[self.Buffer])
+                    th = threading.Thread(target=self.processs, args=[ens_buff, ])
                     th.start()
+                    logging.debug("Start WaveForceCodec processing thread")
+
+                elif self.BufferCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
+                    logging.debug("Begin Process1 " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
+                    # Get the ensembles from the buffer
+                    ens_buff = []
+                    for idx in range(self.EnsInBurst):
+                        ens_buff.append(self.Buffer.popleft())
+                    logging.debug("Get Buffer Data1.  New Buffer count: " + str(len(self.Buffer)))
+
+                    # Reset the codec
+                    self.reset()
+                    logging.debug("Reset counts1")
+
+                    # Process the buffer
+                    th = threading.Thread(target=self.processs, args=[ens_buff, ])
+                    th.start()
+                    logging.debug("Start1 WaveForceCodec processing thread")
 
     @event
     def process_data_event(self, file_name):
@@ -150,27 +185,27 @@ class WaveForceCodec:
         :return:
         """
 
+        self.buffer_check_lock.acquire()
         # Remove the ensembles from the buffer
-        if self.BufferCount > self.EnsInBurst:
+        if self.BufferCount >= self.EnsInBurst:
             self.BufferCount = self.BufferCount - self.EnsInBurst
+            logging.debug("Reset BufferCount: " + str(self.BufferCount))
 
-        if self.TotalEnsInBurst > self.EnsInBurst:
+        # Check if 4b and vert or 4b only data
+        if self.TotalEnsInBurst >= (self.EnsInBurst * 2):
+            self.TotalEnsInBurst = self.TotalEnsInBurst - (self.EnsInBurst * 2)
+            logging.debug("4B and Vert Reset TotalEnsInBurst: " + str(self.TotalEnsInBurst))
+        elif self.TotalEnsInBurst >= self.EnsInBurst:                                           # Only 4b data
             self.TotalEnsInBurst = self.TotalEnsInBurst - self.EnsInBurst
+            logging.debug("4B Reset TotalEnsInBurst: " + str(self.TotalEnsInBurst))
+        self.buffer_check_lock.release()
 
-    def process(self, buffer):
+    def processs(self, ens_buff):
         """
         Process all the data in the ensemble buffer.
         :param buffer: Ensemble data buffer.
         """
-        logging.debug("Process Waves Burst")
-
-        # Get the ensembles from the buffer
-        ens_buff = []
-        for idx in range(self.EnsInBurst):
-            ens_buff.append(buffer.popleft())
-
-        # Reset the codec
-        self.reset()
+        logging.debug("Process Waves Burst " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
 
         # Local variables
         num_bins = len(self.selected_bin)
