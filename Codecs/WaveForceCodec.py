@@ -18,9 +18,9 @@ class WaveForceCodec:
                  path=os.path.expanduser('~'),
                  lat=0.0,
                  lon=0.0,
-                 bin1=3,
-                 bin2=4,
-                 bin3=5,
+                 bin1=8,
+                 bin2=9,
+                 bin3=10,
                  ps_depth=30,
                  height_source=4,
                  corr_thresh=0.25,
@@ -41,7 +41,7 @@ class WaveForceCodec:
         self.Lat = lat
         self.Lon = lon
         self.Buffer = collections.deque()
-        self.BufferCount = 0
+        self.VertEnsCount = 0
         self.Bin1 = bin1
         self.Bin2 = bin2
         self.Bin3 = bin3
@@ -64,15 +64,15 @@ class WaveForceCodec:
         self.secondTime = 0         # Used to calculate the sample timing
 
         self.TotalEnsInBurst = 0
-        self.BufferCount = 0
+        self.VertEnsCount = 0
 
     def update_settings(self, ens_in_burst=2048,
                         path=os.path.expanduser('~'),
                         lat=0.0,
                         lon=0.0,
-                        bin1=3,
-                        bin2=4,
-                        bin3=5,
+                        bin1=8,
+                        bin2=9,
+                        bin3=10,
                         ps_depth=30,
                         height_source=4,
                         corr_thresh=0.25,
@@ -127,7 +127,7 @@ class WaveForceCodec:
                 # It is assumed that a vertical beam will be after a 4 beam
                 if ens.IsEnsembleData and ens.EnsembleData.NumBeams == 1:   # Check for vertical beam
                     self.buffer_check_lock.acquire()
-                    self.BufferCount += 1                                   # Keep count of vertical beam ens
+                    self.VertEnsCount += 1                                  # Keep count of vertical beam ens
                     self.TotalEnsInBurst += 1                               # Keep count of all ens
                     self.buffer_check_lock.release()
                 else:
@@ -139,8 +139,8 @@ class WaveForceCodec:
                 # If BufferCount is 0, then no vertical beam
                 # Check if the total ensembles then is the total number of ensembles in burst
                 # or check if the total number of vertical beam ensembles is found
-                if self.BufferCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
-                    logging.debug("Begin Process " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
+                if self.VertEnsCount == 0 and self.TotalEnsInBurst >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
+                    logging.debug("Begin Process " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
 
                     # Get the ensembles from the buffer
                     ens_buff = []
@@ -157,11 +157,11 @@ class WaveForceCodec:
                     th.start()
                     logging.debug("Start WaveForceCodec processing thread")
 
-                elif self.BufferCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
-                    logging.debug("Begin Process1 " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
+                elif self.VertEnsCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
+                    logging.debug("Begin Process1 " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
                     # Get the ensembles from the buffer
                     ens_buff = []
-                    for idx in range(self.EnsInBurst):
+                    for idx in range(self.EnsInBurst * 2):                                              # Multiple by 2 to include the 4b and vert ensembles
                         ens_buff.append(self.Buffer.popleft())
                     logging.debug("Get Buffer Data1.  New Buffer count: " + str(len(self.Buffer)))
 
@@ -187,9 +187,9 @@ class WaveForceCodec:
 
         self.buffer_check_lock.acquire()
         # Remove the ensembles from the buffer
-        if self.BufferCount >= self.EnsInBurst:
-            self.BufferCount = self.BufferCount - self.EnsInBurst
-            logging.debug("Reset BufferCount: " + str(self.BufferCount))
+        if self.VertEnsCount >= self.EnsInBurst:
+            self.VertEnsCount = self.VertEnsCount - self.EnsInBurst
+            logging.debug("Reset BufferCount: " + str(self.VertEnsCount))
 
         # Check if 4b and vert or 4b only data
         if self.TotalEnsInBurst >= (self.EnsInBurst * 2):
@@ -205,7 +205,7 @@ class WaveForceCodec:
         Process all the data in the ensemble buffer.
         :param buffer: Ensemble data buffer.
         """
-        logging.debug("Process Waves Burst " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.BufferCount))
+        logging.debug("Process Waves Burst " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
 
         # Local variables
         num_bins = len(self.selected_bin)
@@ -521,7 +521,7 @@ class WaveForceCodec:
         wft = 7.3545e+05
         :param ens: Ensemble data.
         """
-        self.firstTime = self.time_stamp_seconds(ens)
+        first_time = self.time_stamp_seconds(ens)
 
         ba = bytearray()
         ba.extend(struct.pack('i', 0))      # Indicate double
@@ -534,7 +534,7 @@ class WaveForceCodec:
             ba.extend([code])
         ba.extend(bytearray(1))
 
-        ba.extend(struct.pack("d", self.firstTime))    # WFT Value
+        ba.extend(struct.pack("d", first_time))    # WFT Value
 
         return ba
 
@@ -558,20 +558,20 @@ class WaveForceCodec:
             # Get the first 4 Beam sample
             if ens_buff[0].IsEnsembleData:
                 subcfg = ens_buff[0].EnsembleData.SubsystemConfig
-                subcode =ens_buff[0].EnsembleData.SysFirmwareSubsystemCode
-                self.firstTime = self.time_stamp_seconds(ens_buff[0])
+                subcode = ens_buff[0].EnsembleData.SysFirmwareSubsystemCode
+                self.firstTime = ens_buff[0].EnsembleData.datetime()
 
                 # Check if both subsystems match
                 # If they do match, then there is no interleaving and we can take the next sample
                 # If there is interleaving, then we have to wait for the next sample, because the first 2 go together
                 if ens_buff[1].EnsembleData.SubsystemConfig == subcfg and ens_buff[1].EnsembleData.SysFirmwareSubsystemCode == subcode:
-                    self.secondTime = WaveForceCodec.time_stamp_seconds(ens_buff[1])
+                    self.secondTime = ens_buff[1].EnsembleData.datetime()
                 else:
-                    self.secondTime = WaveForceCodec.time_stamp_seconds(ens_buff[2])
+                    self.secondTime = ens_buff[2].EnsembleData.datetime()
 
-            wdt = self.secondTime - self.firstTime
+            wdt = float(abs((self.secondTime - self.firstTime).seconds))
 
-            ba.extend(struct.pack('i', 0))      # Indicate double
+            ba.extend(struct.pack('i', 10))     # Indicate Floating Point
             ba.extend(struct.pack('i', 1))      # Rows - 1 per record
             ba.extend(struct.pack("i", 1))      # Columns - 1 per record
             ba.extend(struct.pack("i", 0))      # Imaginary
@@ -581,7 +581,7 @@ class WaveForceCodec:
                 ba.extend([code])
             ba.extend(bytearray(1))
 
-            ba.extend(struct.pack("d", wdt))    # WDT Value
+            ba.extend(struct.pack("f", wdt))    # WDT Value
 
         return ba
 
@@ -599,7 +599,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', 1))                  # Rows - 1 per burst
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - 1 each selected bin
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -626,7 +626,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', 1))                  # Rows - 1 per burst
         ba.extend(struct.pack("i", 1))                  # Columns - 1 per burst
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -656,7 +656,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -686,7 +686,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -716,7 +716,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -746,7 +746,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -776,7 +776,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -806,7 +806,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -836,7 +836,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -864,7 +864,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -892,7 +892,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -920,7 +920,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -948,7 +948,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -976,7 +976,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1005,7 +1005,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1034,7 +1034,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1062,7 +1062,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1090,7 +1090,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1118,7 +1118,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1146,7 +1146,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_4beam_ens))      # Rows - Number of 4 Beam ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1175,7 +1175,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_vert_ens))       # Rows - Number of Vertical ensembles
         ba.extend(struct.pack("i", num_selected_bins))  # Columns - Number of selected bins
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1203,7 +1203,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                 # Indicate Floating Point
         ba.extend(struct.pack('i', num_vert_ens))       # Rows - Number of Vertical ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1231,7 +1231,7 @@ class WaveForceCodec:
         """
 
         ba = bytearray()
-        ba.extend(struct.pack('i', 10))                 # Indicate double
+        ba.extend(struct.pack('i', 10))                # Indicate Floating Point
         ba.extend(struct.pack('i', num_vert_ens))      # Rows - Number of Vertical ensembles
         ba.extend(struct.pack("i", 1))                  # Columns - 1
         ba.extend(struct.pack("i", 0))                  # Imaginary
@@ -1264,19 +1264,39 @@ class WaveForceCodec:
             minute = ens.EnsembleData.Minute
             second = ens.EnsembleData.Second
             hsec = ens.EnsembleData.HSec
-            jdn = WaveForceCodec.julian_day_number(year, month, day)
 
-            ts = (24.0 * 3600.0 * jdn) + (3600.0 * hour) + (60.0 * minute) + second + (hsec / 100.0)
+            #return WaveForceCodec.python_time_to_matlab(year, month, day, hour, minute, second, hsec)
+            return WaveForceCodec.datetime_to_matlab(ens.EnsembleData.datetime())
 
-            #epoch = datetime.datetime.fromtimestamp(0)
-            #ts = (ens.EnsembleData.datetime() - epoch).total_seconds()
+        return WaveForceCodec.datetime_to_matlab(datetime.datetime.now())
 
-            first_sample_time = ts
-            first_sample_time /= (24.0 * 3600.0)                    # Convert to days
-            first_sample_time -= 1721059.0                          # Adjust for matlab serial date numbers
-            first_sample_time += 0.000011574
+    @staticmethod
+    def python_time_to_matlab_DO_NOT_USE(year, month, day, hour, minute, second, hsec):
+        """
+        Convert the python date time to matlab date time.
 
-            #ts = WaveForceCodec.datetime2matlabdn(ens.EnsembleData.datetime())
+        MATLAB stores the date since January 1, 0000.
+        Python/Posix stores the datetime since January 1, 1970. (Epoch)
+        :param year: Year
+        :param month: Month
+        :param day: Day
+        :param hour: Hour
+        :param minute: Minute
+        :param second: Second
+        :param hsec: Hundredth of second
+        :return: Return datetime as serial date time
+        """
+
+        jdn = WaveForceCodec.julian_day_number(year, month, day)
+
+        ts = (24.0 * 3600.0 * jdn) + (3600.0 * hour) + (60.0 * minute) + second + (hsec / 100.0)
+
+        # MATLAB serial date which uses seconds since January 1, 0000.
+        # Python/Posix uses seconds since January 1, 1970
+        first_sample_time = ts
+        first_sample_time /= (24.0 * 3600.0)                    # Convert to days
+        first_sample_time -= 1721059.0                          # Remove 1970-01-01
+        first_sample_time += 0.000011574
 
         return first_sample_time
 
@@ -1297,8 +1317,29 @@ class WaveForceCodec:
         return int(day + (153 * m + 2) / 5 + (365 * y) + y / 4 - y / 100 + y / 400 - 32045)
 
     @staticmethod
-    def datetime2matlabdn(dt):
+    def datetime_to_matlab(dt):
+        """
+        Convert the python date time to matlab date time.
+
+        MATLAB stores the date since January 1, 0000.
+        Python/Posix stores the datetime since January 1, 1970. (Epoch)
+        :param dt: Python datetime
+        :return: MATLAB Datenum serial date.
+        """
         ord = dt.toordinal()
         mdn = dt + datetime.timedelta(days=366)
         frac = (dt - datetime.datetime(dt.year, dt.month, dt.day, 0, 0, 0)).seconds / (24.0 * 60.0 * 60.0)
         return mdn.toordinal() + frac
+
+    @staticmethod
+    def matlab_to_python_datetime(matlab_datenum):
+        """
+        Convert MATLAB serial datenum to python datetime.
+        MATLAB stores the date since January 1, 0000.
+        Python/Posix stores the datetime since January 1, 1970. (Epoch)
+        :param matlab_datenum: MATLAB datenum as a float.
+        :return: Datetime based off MATLAB float value
+        """
+        day = datetime.datetime.fromordinal(int(matlab_datenum))
+        dayfrac = datetime.timedelta(days=matlab_datenum % 1) - datetime.timedelta(days=366)
+        return day + dayfrac

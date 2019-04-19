@@ -1,6 +1,7 @@
 import pytest
 import os
 import scipy.io as sio
+import datetime
 import rti_python.Codecs.WaveForceCodec as wfc
 import rti_python.Ensemble.AncillaryData as AncillaryData
 import rti_python.Ensemble.EnsembleData as EnsembleData
@@ -15,28 +16,27 @@ def test_constructor():
     codec = wfc.WaveForceCodec()
 
     assert codec.height_source == pytest.approx(4, 0, False)
-    assert codec.Bin1 == pytest.approx(3, 0, False)
-    assert codec.Bin2 == pytest.approx(4, 0, False)
-    assert codec.Bin3 == pytest.approx(5, 0, False)
+    assert codec.Bin1 == pytest.approx(8, 0, False)
+    assert codec.Bin2 == pytest.approx(9, 0, False)
+    assert codec.Bin3 == pytest.approx(10, 0, False)
     assert codec.PressureSensorDepth == pytest.approx(30, 0, False)
     assert codec.EnsInBurst == pytest.approx(2048, 0, False)
-    assert len(codec.selected_bin) == pytest.approx(0, 0, False)
+    assert len(codec.selected_bin) == pytest.approx(3, 0, False)
     assert codec.CorrThreshold == pytest.approx(0.25, 0.0, False)
     assert codec.PressureOffset == pytest.approx(0.0, 0.0, False)
 
 
 def test_init():
     codec = wfc.WaveForceCodec()
-    codec.init()
 
     assert codec.EnsInBurst == pytest.approx(2048, 0, False)
     assert codec.FilePath == os.path.expanduser('~')
     assert codec.Lat == pytest.approx(0.0, 0.1, False)
     assert codec.Lon == pytest.approx(0.0, 0.1, False)
     assert codec.height_source == pytest.approx(4, 0, False)
-    assert codec.Bin1 == pytest.approx(3, 0, False)
-    assert codec.Bin2 == pytest.approx(4, 0, False)
-    assert codec.Bin3 == pytest.approx(5, 0, False)
+    assert codec.Bin1 == pytest.approx(8, 0, False)
+    assert codec.Bin2 == pytest.approx(9, 0, False)
+    assert codec.Bin3 == pytest.approx(10, 0, False)
     assert codec.CorrThreshold == pytest.approx(0.25, 0.0, False)
     assert codec.PressureOffset == pytest.approx(0.0, 0.0, False)
     assert codec.PressureSensorDepth == pytest.approx(30, 0, False)
@@ -45,8 +45,7 @@ def test_init():
 
 
 def test_init_1():
-    codec = wfc.WaveForceCodec()
-    codec.init(1024, os.path.expanduser('~'), 31.0, 118.5, 5, 6, 7, 22, 1, 0.84, 1.3)
+    codec = wfc.WaveForceCodec(1024, os.path.expanduser('~'), 31.0, 118.5, 5, 6, 7, 22, 1, 0.84, 1.3)
 
     assert codec.EnsInBurst == pytest.approx(1024, 0, False)
     assert codec.FilePath == os.path.expanduser('~')
@@ -80,13 +79,23 @@ def test_update():
     assert codec.PressureSensorDepth == pytest.approx(22, 0, False)
     assert len(codec.selected_bin) == pytest.approx(3, 0, False)
 
+def test_first_time():
+    #assert 736740.4324085647 == wfc.WaveForceCodec.python_time_to_matlab(2019, 2, 19, 10, 22, 39, 10)
+    assert 737475.4323958333 == wfc.WaveForceCodec.datetime_to_matlab(datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000))
+    assert wfc.WaveForceCodec.matlab_to_python_datetime(737475.4323958333) == datetime.datetime(2019, 2, 19, 10, 22, 38, 999998)
+    #assert datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000) == wfc.WaveForceCodec.matlab_to_python_time(736740.4324085647)
+    #assert datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000) == wfc.WaveForceCodec.matlab_to_python_time(wfc.WaveForceCodec.datetime_to_matlab(datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000)))
+    #assert datetime.datetime(2019, 2, 19, 10, 22, 39, 10 * 10000) == wfc.WaveForceCodec.matlab_to_python_time(wfc.WaveForceCodec.python_time_to_matlab(2019, 2, 19, 10, 22, 39, 10))
+    #assert wfc.WaveForceCodec.datetime2matlabdn(datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000)) == wfc.WaveForceCodec.python_time_to_matlab(2019, 2, 19, 10, 22, 39, 10)
+    #assert datetime.datetime(2019, 2, 19, 10, 22, 39, 10*10000) == wfc.WaveForceCodec.matlab_to_python_time(736740.4324085647 - 0.000011574)
+
+
 
 def test_add_ens():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4)
     codec.process_data_event += waves_rcv
 
     # Create Ensembles
@@ -212,7 +221,7 @@ def waves_rcv(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -282,8 +291,7 @@ def test_add_ens_with_vert():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
     codec.process_data_event += waves_rcv_with_vert
 
     # Create Ensembles
@@ -499,7 +507,7 @@ def waves_rcv_with_vert(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -579,8 +587,7 @@ def test_add_ens_ENU_short():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
     codec.process_data_event += waves_rcv_with_ENU_short
 
     # Create Ensembles
@@ -867,7 +874,7 @@ def waves_rcv_with_ENU_short(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -965,8 +972,7 @@ def test_add_ens_ENU():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
     codec.process_data_event += waves_rcv_with_ENU
 
     # Create Ensembles
@@ -1253,7 +1259,7 @@ def waves_rcv_with_ENU(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -1366,8 +1372,7 @@ def test_add_ens_ENU1():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
     codec.process_data_event += waves_rcv_with_ENU1
 
     # Create Ensembles
@@ -1666,7 +1671,7 @@ def waves_rcv_with_ENU1(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -1779,8 +1784,7 @@ def test_add_ens_Beam():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0)
     codec.process_data_event += waves_rcv_with_Beam
 
     # Create Ensembles
@@ -2161,7 +2165,7 @@ def waves_rcv_with_Beam(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -2318,8 +2322,7 @@ def test_add_ens_VertBeam():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 25.0, 0.0)
     codec.process_data_event += waves_rcv_with_VertBeam
 
     # Create Ensembles
@@ -2727,7 +2730,7 @@ def waves_rcv_with_VertBeam(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]
@@ -2895,8 +2898,7 @@ def test_add_ens_Corr():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec()
-    codec.init(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0)
     codec.process_data_event += waves_rcv_ens_Corr
 
     # Create Ensembles
@@ -3325,7 +3327,7 @@ def waves_rcv_ens_Corr(self, file_name):
     assert 8.0 == mat_data['whv'][0][2]
 
     # First Ensemble Time
-    assert 212353954335.1 == mat_data['wft'][0][0]
+    assert 737475.4323958333 == mat_data['wft'][0][0]
 
     # Time between Ensembles
     assert 60.0 == mat_data['wdt'][0][0]

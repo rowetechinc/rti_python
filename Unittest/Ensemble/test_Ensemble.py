@@ -13,7 +13,7 @@ from rti_python.Ensemble.EnsembleData import EnsembleData
 from rti_python.Ensemble.BottomTrack import BottomTrack
 from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
-from rti_python.Codecs.BinaryCodec_old import BinaryCodec
+from rti_python.Codecs.BinaryCodec import BinaryCodec
 from rti_python.Ensemble.NmeaData import NmeaData
 
 
