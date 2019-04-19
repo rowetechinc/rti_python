@@ -6,6 +6,7 @@ from rti_python.Waves.WaveEnsemble import WaveEnsemble
 from obsub import event
 import collections
 import datetime
+import copy
 
 
 class WaveForceCodec:
@@ -60,8 +61,8 @@ class WaveForceCodec:
         if bin3 >= 0:
             self.selected_bin.append(bin3)
 
-        self.firstTime = 0
-        self.secondTime = 0         # Used to calculate the sample timing
+        self.firstTime = datetime.datetime.now()
+        self.secondTime = datetime.datetime.now()         # Used to calculate the sample timing
 
         self.TotalEnsInBurst = 0
         self.VertEnsCount = 0
@@ -117,7 +118,7 @@ class WaveForceCodec:
         if ens:
 
             if self.EnsInBurst > 0:
-                logging.debug("Added Ensemble to burst")
+                logging.debug("Added Ensemble to burst: " + str(ens.EnsembleData.datetime()))
 
                 # Add to the buffer
                 self.Buffer.append(ens)
@@ -145,7 +146,15 @@ class WaveForceCodec:
                     # Get the ensembles from the buffer
                     ens_buff = []
                     for idx in range(self.EnsInBurst):
-                        ens_buff.append(self.Buffer.popleft())
+                        ens = self.Buffer.popleft()
+                        # Create a waves ensemble
+                        ens_wave = WaveEnsemble(ens,
+                                                self.selected_bin,
+                                                height_source=self.height_source,
+                                                corr_thresh=self.CorrThreshold,
+                                                pressure_offset=self.PressureOffset)
+
+                        ens_buff.append(ens_wave)
                     logging.debug("Get Buffer Data.  New Buffer count: " + str(len(self.Buffer)))
 
                     # Reset the codec
@@ -153,7 +162,7 @@ class WaveForceCodec:
                     logging.debug("Reset counts")
 
                     # Process the buffer
-                    th = threading.Thread(target=self.processs, args=[ens_buff, ])
+                    th = threading.Thread(target=self.process, args=[ens_buff, ])
                     th.start()
                     logging.debug("Start WaveForceCodec processing thread")
 
@@ -162,7 +171,15 @@ class WaveForceCodec:
                     # Get the ensembles from the buffer
                     ens_buff = []
                     for idx in range(self.EnsInBurst * 2):                                              # Multiple by 2 to include the 4b and vert ensembles
-                        ens_buff.append(self.Buffer.popleft())
+                        ens = self.Buffer.popleft()
+                        # Create a waves ensemble
+                        ens_wave = WaveEnsemble(ens,
+                                                self.selected_bin,
+                                                height_source=self.height_source,
+                                                corr_thresh=self.CorrThreshold,
+                                                pressure_offset=self.PressureOffset)
+
+                        ens_buff.append(ens_wave)
                     logging.debug("Get Buffer Data1.  New Buffer count: " + str(len(self.Buffer)))
 
                     # Reset the codec
@@ -170,7 +187,7 @@ class WaveForceCodec:
                     logging.debug("Reset counts1")
 
                     # Process the buffer
-                    th = threading.Thread(target=self.processs, args=[ens_buff, ])
+                    th = threading.Thread(target=self.process, args=[ens_buff, ])
                     th.start()
                     logging.debug("Start1 WaveForceCodec processing thread")
 
@@ -200,12 +217,12 @@ class WaveForceCodec:
             logging.debug("4B Reset TotalEnsInBurst: " + str(self.TotalEnsInBurst))
         self.buffer_check_lock.release()
 
-    def processs(self, ens_buff):
+    def process(self, ens_buff):
         """
         Process all the data in the ensemble buffer.
         :param buffer: Ensemble data buffer.
         """
-        logging.debug("Process Waves Burst " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
+        logging.debug("Process Waves Burst " + str(self.RecordCount) + " " + str(len(ens_buff)) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
 
         # Local variables
         num_bins = len(self.selected_bin)
@@ -249,17 +266,23 @@ class WaveForceCodec:
 
         ps_depth_buff = bytearray()
 
-        ens_waves_buff = []
+        #ens_waves_buff = []
 
         # Convert the buffer to wave ensembles
         # Process the data for each waves ensemble
         for ens in ens_buff:
+            #if ens.IsEnsembleData:
+            #    logging.warning("Wave Ens Datetime: " + str(ens.EnsembleData.datetime()))
+
             # Create a waves ensemble
-            ens_wave = WaveEnsemble()
-            ens_wave.add(ens, self.selected_bin, height_source=self.height_source, corr_thresh=self.CorrThreshold, pressure_offset=self.PressureOffset)
+            #ens_wave = WaveEnsemble(ens, self.selected_bin, height_source=self.height_source, corr_thresh=self.CorrThreshold, pressure_offset=self.PressureOffset)
 
             # Add the waves ensemble to the list
-            ens_waves_buff.append(ens_wave)
+            #ens_waves_buff.append(ens_wave)
+
+            ens_wave = ens
+
+            logging.debug("Waves Ens DateTime: " + str(ens_wave.ens_datetime))
 
             if ens_wave.is_vertical_ens:
                 # Vertical Beam data
@@ -268,8 +291,8 @@ class WaveForceCodec:
                 # Pressure (WZP)
                 vert_pressure.extend(struct.pack('f', ens_wave.pressure))
 
+                # Beam Velocity (WZ0)
                 for sel_bin in range(num_bins):
-                    # Beam Velocity (WZ0)
                     if len(ens_wave.vert_beam_vel) > sel_bin:
                         beam_vert_vel.extend(struct.pack('f', ens_wave.vert_beam_vel[sel_bin]))
 
@@ -290,13 +313,13 @@ class WaveForceCodec:
                 avg_range_track.extend(struct.pack('f', ens_wave.avg_range_tracking))   # Avg Range Tracking (WAH)
 
                 # Range Tracking (WR0, WR1, WR2, WR3)
-                rt_0.extend(struct.pack('f', ens_wave.range_tracking[0]))       # Beam 0 RT
+                rt_0.extend(struct.pack('f', ens_wave.range_tracking[0]))               # Beam 0 RT
                 if ens_wave.num_beams > 1:
-                    rt_1.extend(struct.pack('f', ens_wave.range_tracking[1]))   # Beam 1 RT
+                    rt_1.extend(struct.pack('f', ens_wave.range_tracking[1]))           # Beam 1 RT
                 if ens_wave.num_beams > 2:
-                    rt_2.extend(struct.pack('f', ens_wave.range_tracking[2]))   # Beam 2 RT
+                    rt_2.extend(struct.pack('f', ens_wave.range_tracking[2]))           # Beam 2 RT
                 if ens_wave.num_beams > 3:
-                    rt_3.extend(struct.pack('f', ens_wave.range_tracking[3]))   # Beam 3 RT
+                    rt_3.extend(struct.pack('f', ens_wave.range_tracking[3]))           # Beam 3 RT
 
                 # Count the good Earth Velocity and Beam Velocity
                 if len(ens_wave.east_vel) > 0:
@@ -329,10 +352,9 @@ class WaveForceCodec:
                             beam_3_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][3]))      # Beam 3 Beam Velocity
 
         # Selected Bin Heights (WHV)
-        if ens_buff[0].IsEnsembleData:
-            for sel_bin in range(num_bins):
-                bin_ht = round((ens_buff[0].AncillaryData.FirstBinRange + (self.selected_bin[sel_bin] * ens_buff[0].AncillaryData.BinSize)), 2)
-                sel_bins_buff.extend(struct.pack('f', bin_ht))
+        for sel_bin in range(num_bins):
+            bin_ht = round((ens_buff[0].blank + (self.selected_bin[sel_bin] * ens_buff[0].bin_size)), 2)
+            sel_bins_buff.extend(struct.pack('f', bin_ht))
 
         # Pressure Sensor Depth
         ps_depth_buff.extend(struct.pack('f', self.PressureSensorDepth))
@@ -386,6 +408,8 @@ class WaveForceCodec:
         # Send event that file process complete
         self.process_data_event(filename)
 
+        logging.debug("WaveForce Codec data processing complete: " + str(self.RecordCount) + " " + str(len(ens_buff)) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
+
     def write_file(self, ba):
         """
         Write the Bytearray to a file.  Save it with the record number
@@ -424,14 +448,18 @@ class WaveForceCodec:
 
         Data Type: Text
         Rows: 1
-        Columns: Text Length
+        Columns: Text Length 2013/07/30 21:00:00.00
         txt = 2013/07/30 21:00:00.00, Record No. 7, SN013B0000000000000000000000000000
         :param ens: Ensemble data.
         :return: Byte array of the data in MATLAB format.
         """
-        txt = ens.EnsembleData.datetime_str() + ", "
+        #txt = ens.EnsembleData.datetime_str() + ", "
+        txt = ens.ens_datetime.strftime("%m/%d/%Y %H:%M:%S.%f") + ", "
         txt += "Record No. " + str(self.RecordCount) + ", "
-        txt += "SN" + ens.EnsembleData.SerialNumber
+        #txt += "SN" + ens.EnsembleData.SerialNumber
+        txt += "SN" + ens.serial_number
+
+        logging.debug("Process Text: " + txt)
 
         ba = bytearray()
         ba.extend(struct.pack('i', 11))         # Indicate float string
@@ -459,11 +487,11 @@ class WaveForceCodec:
         lat = 32.865
         :param ens: Ensemble data.
         """
-        lat = 0.0
-        if ens.IsWavesInfo:
-            lat = ens.WavesInfo.Lat
-        else:
-            lat = self.Lat
+        #lat = 0.0
+        #if ens.IsWavesInfo:
+        #    lat = ens.WavesInfo.Lat
+        #else:
+        lat = self.Lat
 
         ba = bytearray()
         ba.extend(struct.pack('i', 0))      # Indicate double
@@ -490,11 +518,11 @@ class WaveForceCodec:
         lon = -117.26
         :param ens: Ensemble data.
         """
-        lon = 0.0
-        if ens.IsWavesInfo:
-            lon = ens.WavesInfo.Lat
-        else:
-            lon = self.Lon
+        #lon = 0.0
+        #if ens.IsWavesInfo:
+        #    lon = ens.WavesInfo.Lat
+        #else:
+        lon = self.Lon
 
         ba = bytearray()
         ba.extend(struct.pack('I', 0))      # Indicate double
@@ -521,7 +549,10 @@ class WaveForceCodec:
         wft = 7.3545e+05
         :param ens: Ensemble data.
         """
-        first_time = self.time_stamp_seconds(ens)
+        #first_time = self.time_stamp_seconds(ens)
+        #if ens.IsEnsembleData:
+        #    logging.warning("Wave Codec First Time: " + str(ens.EnsembleData.datetime()))
+        first_time = WaveForceCodec.datetime_to_matlab(ens.ens_datetime)
 
         ba = bytearray()
         ba.extend(struct.pack('i', 0))      # Indicate double
@@ -553,21 +584,25 @@ class WaveForceCodec:
         # that we take the next sample that is like the original subsystem config
 
         ba = bytearray()
+        sub_cfg = 0
+        sub_code = 0
 
-        if len(ens_buff) >= 3:
+        if len(ens_buff) >= 1:
             # Get the first 4 Beam sample
-            if ens_buff[0].IsEnsembleData:
-                subcfg = ens_buff[0].EnsembleData.SubsystemConfig
-                subcode = ens_buff[0].EnsembleData.SysFirmwareSubsystemCode
-                self.firstTime = ens_buff[0].EnsembleData.datetime()
-
-                # Check if both subsystems match
-                # If they do match, then there is no interleaving and we can take the next sample
-                # If there is interleaving, then we have to wait for the next sample, because the first 2 go together
-                if ens_buff[1].EnsembleData.SubsystemConfig == subcfg and ens_buff[1].EnsembleData.SysFirmwareSubsystemCode == subcode:
-                    self.secondTime = ens_buff[1].EnsembleData.datetime()
-                else:
-                    self.secondTime = ens_buff[2].EnsembleData.datetime()
+            sub_cfg = ens_buff[0].ss_config
+            sub_code = ens_buff[0].ss_code
+            self.firstTime = ens_buff[0].ens_datetime
+            logging.debug("Wave Codec Diff Time First Time: " + str(self.firstTime) + " " + str(ens_buff[0].ens_datetime))
+        if len(ens_buff) >= 3:
+            # Check if both subsystems match
+            # If they do match, then there is no interleaving and we can take the next sample
+            # If there is interleaving, then we have to wait for the next sample, because the first 2 go together
+            if ens_buff[1].ss_config == sub_cfg and ens_buff[1].EnsembleData.ss_code == sub_code:
+                self.secondTime = ens_buff[1].ens_datetime
+                logging.debug("Wave Codec Diff Time Second Time [1]: " + str(self.secondTime) + " " + str(ens_buff[1].ens_datetime))
+            else:
+                self.secondTime = ens_buff[2].ens_datetime
+                logging.debug("Wave Codec Diff Time Second Time [2]: " + str(self.secondTime) + " " + str(ens_buff[2].ens_datetime))
 
             wdt = float(abs((self.secondTime - self.firstTime).seconds))
 
@@ -1254,6 +1289,7 @@ class WaveForceCodec:
         :return: Timestamp in seconds.
         """
 
+        """
         ts = 0.0
 
         if ens.IsEnsembleData:
@@ -1269,6 +1305,8 @@ class WaveForceCodec:
             return WaveForceCodec.datetime_to_matlab(ens.EnsembleData.datetime())
 
         return WaveForceCodec.datetime_to_matlab(datetime.datetime.now())
+        """
+        return WaveForceCodec.datetime_to_matlab(ens.ens_datetime)
 
     @staticmethod
     def python_time_to_matlab_DO_NOT_USE(year, month, day, hour, minute, second, hsec):

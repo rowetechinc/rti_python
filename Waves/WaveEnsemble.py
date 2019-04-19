@@ -1,4 +1,5 @@
 import struct
+import datetime
 from rti_python.Ensemble.Ensemble import Ensemble
 
 
@@ -9,9 +10,16 @@ class WaveEnsemble:
     The float values will be converted to a byte array.
     """
 
-    def __init__(self):
+    def __init__(self, ens, selected_bins, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
         """
-        Initialize the variables.
+        Use the ensemble data to create a wave ensemble.  This will take only the data needed
+        for waves processing.  It will also do some screening on the data.  The user can select
+        how many bins that will be processed.
+        :param ens: Ensemble to get the data.
+        :param selected_bins: The bins selected to process.
+        :param height_source: The height source.  Default: 4.  The default is to used vert_beam_height which is average of range tracking.
+        :param corr_thresh: Correlation threshold.  Used to verify the data is good.  Default: 0.25
+        :param pressure_offset: Pressure offset added to the depth measured from the pressure sensor in meters.  Default: 0
         """
 
         """
@@ -108,6 +116,26 @@ class WaveEnsemble:
         self.ensemble_number = 0
 
         """
+        Serial number
+        """
+        self.serial_number = ""
+
+        """
+        Subsystem Code.
+        """
+        self.ss_code = ""
+
+        """
+        Subsystem Configuration.
+        """
+        self.ss_config = 0
+
+        """
+        Date and time of ensemble
+        """
+        self.ens_datetime = datetime.datetime.now()
+
+        """
         Number of beams.
         """
         self.num_beams = 1
@@ -161,18 +189,6 @@ class WaveEnsemble:
         """
         self.height_source = 4
 
-    def add(self, ens, selected_bins, height_source=4, corr_thresh=0.25, pressure_offset=0.0):
-        """
-        Use the ensemble data to create a wave ensemble.  This will take only the data needed
-        for waves processing.  It will also do some screening on the data.  The user can select
-        how many bins that will be processed.
-        :param ens: Ensemble to get the data.
-        :param selected_bins: The bins selected to process.
-        :param height_source: The height source.  Default: 4.  The default is to used vert_beam_height which is average of range tracking.
-        :param corr_thresh: Correlation threshold.  Used to verify the data is good.  Default: 0.25
-        :param pressure_offset: Pressure offset added to the depth measured from the pressure sensor in meters.  Default: 0
-        """
-
         self.height_source = height_source
         self.corr_thresh = corr_thresh
         self.pressure_offset = pressure_offset
@@ -189,6 +205,10 @@ class WaveEnsemble:
 
         if ens.IsEnsembleData:
             self.ensemble_number = ens.EnsembleData.EnsembleNumber
+            self.ens_datetime = ens.EnsembleData.datetime()
+            self.serial_number = ens.EnsembleData.SerialNumber
+            self.ss_code = ens.EnsembleData.SysFirmwareSubsystemCode
+            self.ss_config = ens.EnsembleData.SubsystemConfig
 
         if ens.IsAncillaryData:
             #self.pressure = ens.AncillaryData.Pressure + pressure_offset
@@ -197,6 +217,8 @@ class WaveEnsemble:
             self.heading = ens.AncillaryData.Heading
             self.pitch = ens.AncillaryData.Pitch
             self.roll = ens.AncillaryData.Roll
+            self.blank = ens.AncillaryData.FirstBinRange
+            self.bin_size = ens.AncillaryData.BinSize
 
         # Add the data based off the number of beams
         if self.num_beams == 1:
@@ -244,16 +266,16 @@ class WaveEnsemble:
         # Cleanup
         # Check Vertical beam height data (avg range)
         # and use pressure as backup
-        #if self.pressure != 0:
-        #    if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
-        #        self.vert_beam_height = self.pressure
+        if self.pressure != 0:
+            if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
+                self.vert_beam_height = self.pressure
 
         # Check for slant height data
         # Check Range tracking and use pressure as backup
-        #if ens.IsRangeTracking:
-        #    if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
-        #        if self.range_tracking[0] > 1.2 * self.pressure or self.range_tracking[0] < 0.8 * self.pressure:
-        #            self.range_tracking[0] = self.pressure
+        if ens.IsRangeTracking:
+            if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
+                if self.range_tracking[0] > 1.2 * self.pressure or self.range_tracking[0] < 0.8 * self.pressure:
+                    self.range_tracking[0] = self.pressure
 
         # Height source
         if self.height_source == 0 or self.height_source == 1 or self.height_source == 2 or self.height_source == 3 or self.height_source == 4:
