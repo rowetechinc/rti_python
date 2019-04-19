@@ -238,4 +238,25 @@ class RangeTracking:
 
         return str_result
 
+    def avg_range(self):
+        """
+        Average the range values.
+        Only accumulate the good values.
+        :return: Average of the range values.
+        """
+
+        # Accumulate the data
+        avg = 0.0
+        cnt = 0
+        for rng in self.Range:
+            if rng > 0.0:
+                avg += rng
+                cnt += 1
+
+        # Average the data and return it
+        if cnt >= 1:
+            return avg / cnt
+
+        return 0.0
+
 

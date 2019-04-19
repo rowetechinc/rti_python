@@ -336,17 +336,17 @@ class WaveEnsemble:
         # Cleanup
         # Check Vertical beam height data (avg range)
         # and use pressure as backup
-        #if self.pressure != 0:
-        #    if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
-        #        self.vert_beam_height = self.pressure
+        if self.pressure != 0:
+            if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
+                self.vert_beam_height = self.pressure
 
         # Check for slant height data
         # Check Range tracking and use pressure as backup
-        #if ens.IsRangeTracking:
-        #    if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
-        #        for beam in range(num_beams):
-        #            if self.range_tracking[beam] > 1.2 * self.pressure or self.range_tracking[beam] < 0.8 * self.pressure:
-        #                self.range_tracking[beam] = self.pressure
+        if ens.IsRangeTracking:
+            if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
+                for beam in range(num_beams):
+                    if self.range_tracking[beam] > 1.2 * self.pressure or self.range_tracking[beam] < 0.8 * self.pressure:
+                        self.range_tracking[beam] = self.pressure
 
         # Height Source
         if self.height_source == 0:
