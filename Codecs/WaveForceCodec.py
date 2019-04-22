@@ -597,7 +597,7 @@ class WaveForceCodec:
             # Check if both subsystems match
             # If they do match, then there is no interleaving and we can take the next sample
             # If there is interleaving, then we have to wait for the next sample, because the first 2 go together
-            if ens_buff[1].ss_config == sub_cfg and ens_buff[1].EnsembleData.ss_code == sub_code:
+            if ens_buff[1].ss_config == sub_cfg and ens_buff[1].ss_code == sub_code:
                 self.secondTime = ens_buff[1].ens_datetime
                 logging.debug("Wave Codec Diff Time Second Time [1]: " + str(self.secondTime) + " " + str(ens_buff[1].ens_datetime))
             else:
