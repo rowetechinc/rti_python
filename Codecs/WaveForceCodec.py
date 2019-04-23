@@ -604,7 +604,8 @@ class WaveForceCodec:
                 self.secondTime = ens_buff[2].ens_datetime
                 logging.debug("Wave Codec Diff Time Second Time [2]: " + str(self.secondTime) + " " + str(ens_buff[2].ens_datetime))
 
-            wdt = float(abs((self.secondTime - self.firstTime).seconds))
+            wdt_timedelta = self.secondTime - self.firstTime
+            wdt = wdt_timedelta.total_seconds()
 
             ba.extend(struct.pack('i', 10))     # Indicate Floating Point
             ba.extend(struct.pack('i', 1))      # Rows - 1 per record
