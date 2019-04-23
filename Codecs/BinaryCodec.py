@@ -22,7 +22,7 @@ from PyCRC.CRCCCITT import CRCCCITT
 buffer = bytearray()
 
 # Condition to protect the buffer and make the threads sleep.
-condition = Condition()
+global_condition = Condition()
 
 
 class BinaryCodec:
@@ -348,12 +348,12 @@ class AddDataThread(Thread):
                 # Wait to wakeup when data arrives
                 self.internal_condition.wait()
 
-            with condition:
+            with global_condition:
                 buffer += self.temp_data             # Set the data to the buffer
 
                 # Check if enough data is in the buffer to process
                 if len(buffer) > Ensemble.HeaderSize + Ensemble.ChecksumSize + 200:
-                    condition.notify()          # Notify to process the buffer
+                    global_condition.notify()          # Notify to process the buffer
 
 
 class ProcessDataThread(Thread):
@@ -382,8 +382,8 @@ class ProcessDataThread(Thread):
         :return:
         """
         self.alive = False
-        with condition:
-            condition.notify()
+        with global_condition:
+            global_condition.notify()
 
         if self.is_alive():
             self.join()
@@ -415,7 +415,7 @@ class ProcessDataThread(Thread):
         # Verify the thread is still alive
         while self.alive:
             # Wait for data
-            with condition:
+            with global_condition:
                 if self.DELIMITER in buffer:                        # Check for the delimiter
                     chunks = buffer.split(self.DELIMITER)           # If delimiter found, split to get the remaining buffer data
                     buffer = chunks.pop()                           # Put the remaining data back in the buffer
