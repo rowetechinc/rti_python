@@ -22,6 +22,11 @@ python -m pip install -r requirements.txt -UI --user
 ```
 
 
+### Upgrade Dependcies to Latest Version
+```term
+pip install -r requirements.txt --upgrade
+```
+
 ## ADCP
 All the available commands and subsystem types.  This also contains the prediction model
 
