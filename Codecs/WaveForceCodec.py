@@ -118,7 +118,7 @@ class WaveForceCodec:
         if ens:
 
             if self.EnsInBurst > 0:
-                logging.debug("Added Ensemble to burst: " + str(ens.EnsembleData.datetime()))
+                #logging.debug("Added Ensemble to burst: " + str(ens.EnsembleData.datetime()))
 
                 # Add to the buffer
                 self.Buffer.append(ens)
