@@ -103,7 +103,7 @@ class RtiConfig:
             self.config['Waves']['selected_bin_3'] = '10'
             self.config['Waves']['corr_thresh'] = '0.25'
             self.config['Waves']['height_source'] = 'vertical'
-            self.config['Waves']['pressure_sensor_height'] = '0.0'
+            self.config['Waves']['pressure_sensor_height'] = '30.0'
             self.config['Waves']['pressure_sensor_offset'] = '0.0'
             self.config['Waves']['latitude'] = '0.0'
             self.config['Waves']['longitude'] = '0.0'
@@ -140,7 +140,7 @@ class RtiConfig:
             self.write()
 
         if not self.config.has_option('Waves', 'pressure_sensor_height'):
-            self.config['Waves']['pressure_sensor_height'] = '0.0'
+            self.config['Waves']['pressure_sensor_height'] = '30.0'
             self.write()
 
         if not self.config.has_option('Waves', 'pressure_sensor_offset'):
