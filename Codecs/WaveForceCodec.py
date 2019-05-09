@@ -166,8 +166,8 @@ class WaveForceCodec:
                     th.start()
                     logging.debug("Start WaveForceCodec processing thread")
 
-                elif self.VertEnsCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst:
-                    logging.debug("Begin Process1 " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount))
+                elif self.VertEnsCount >= self.EnsInBurst and len(self.Buffer) >= self.EnsInBurst * 2:
+                    logging.debug("Begin Process1 " + str(self.RecordCount) + " " + str(len(self.Buffer)) + " " + str(self.TotalEnsInBurst) + " " + str(self.VertEnsCount) + " " + str(self.EnsInBurst))
                     # Get the ensembles from the buffer
                     ens_buff = []
                     for idx in range(self.EnsInBurst * 2):                                              # Multiple by 2 to include the 4b and vert ensembles
