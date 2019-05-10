@@ -3,6 +3,7 @@ rti_python ChangeLog
 rti_python - 2.1.0
  - Recoded the WaveForceCodec
  - Made all the codecs a thread
+ - Added PLOT section to config.
 
 rti_python - 2.0.0
  - Added Encoding, to write an ensemble file.

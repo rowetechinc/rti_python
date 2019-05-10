@@ -1,6 +1,7 @@
 import configparser
 import os
 import logging
+import socket
 import rti_python.Comm.adcp_serial_port as adcp_serial
 
 
@@ -192,3 +193,44 @@ class RtiConfig:
         if not self.config.has_option('AWC', 'csv_max_hours'):
             self.config['AWC']['csv_max_hours'] = '24'
             self.write()
+
+    def init_plot_server_config(self):
+        """
+        Default configuration for the Bokeh Plot server.
+        Call this to add the Bokeh Plot Server (PLOT) sections to the config.
+        You can later add more to this section here or in your own code.
+        :return:
+        """
+
+        # Verify the section exist
+        if 'PLOT' not in self.config:
+            self.config['PLOT'] = {}
+            self.config['PLOT']['IP'] = RtiConfig.get_ip()
+            self.config['PLOT']['PORT'] = '5001'
+            self.write()
+
+        # Verify each value exist
+        if not self.config.has_option('PLOT', 'IP'):
+            self.config['PLOT']['IP'] = RtiConfig.get_ip()
+            self.write()
+
+        if not self.config.has_option('PLOT', 'PORT'):
+            self.config['PLOT']['PORT'] = '5001'
+            self.write()
+
+    @staticmethod
+    def get_ip():
+        """
+        Get the computers IP address.
+        :return:
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
