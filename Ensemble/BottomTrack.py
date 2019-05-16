@@ -250,7 +250,7 @@ class BottomTrack:
             result_str += "Receiver Data Error, "
         if self.Status & ERR_RCVR_TIMEOUT:
             result_str += "Receiver Timeout, "
-        if self.Status & ERR_LOW_VOLTAGE:
+        if self.Status == ERR_LOW_VOLTAGE:
             result_str += "Low Voltage, "
 
         return result_str
