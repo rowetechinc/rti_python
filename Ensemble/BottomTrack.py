@@ -191,6 +191,70 @@ class BottomTrack:
         else:
             return 0.0
 
+    def status_str(self):
+        """
+        Convert the status value to a string.
+        :return: Status value as a string.
+        """
+        BT_LONG_LAG = 0x0001;
+        BT_BT_3BEAM_SOLUTION = 0x0002;
+        BT_HOLD = 0x0004;
+        BT_SEARCHING = 0x0008;
+        BT_LR = 0x0010;
+        BT_COAST = 0x0020;
+        BT_PROOF = 0x0040;
+        OVERTEMP = 0x0020;
+        BT_LOWGAIN = 0x0080;
+        ERR_HEADING_SENSOR = 0x0100;
+        ERR_PRESSURE_SENSOR = 0x0200;
+        ERR_POWER_DOWN_FAILURE = 0x0400;
+        ERR_NONVOLATILE_DATA = 0x0800;
+        ERR_RTC = 0x1000;
+        ERR_TEMPERATURE = 0x2000;
+        ERR_RCVR_DATA = 0x4000;
+        ERR_RCVR_TIMEOUT = 0x8000;
+        ERR_LOW_VOLTAGE = 0xFFFF;
+
+        result_str = ""
+        if self.Status & BT_LONG_LAG:
+            result_str += "Bottom Track Long Lag, "
+        if self.Status & BT_BT_3BEAM_SOLUTION:
+            result_str += "Bottom Track 3 Beam Solution"
+        if self.Status & BT_HOLD:
+            result_str += "Bottom Track Search: HOLD, "
+        if self.Status & BT_SEARCHING:
+            result_str += "Bottom Track Search: SEARCHING, "
+        if self.Status & BT_LR:
+            result_str += "Bottom Track Long Range [Narrowband Mode], "
+        if self.Status & BT_COAST:
+            result_str += "Bottom Track Coast, "
+        if self.Status & BT_PROOF:
+            result_str += "Bottom Track Search: PROOF, "
+        if self.Status & OVERTEMP:
+            result_str += "Over Temperature, "
+        if self.Status & BT_LOWGAIN:
+            result_str += "Bottom Track Low Gain (Shallow Water Mode), "
+        if self.Status & ERR_HEADING_SENSOR:
+            result_str += "Heading Sensor Error, "
+        if self.Status & ERR_PRESSURE_SENSOR:
+            result_str += "Pressure Sensor Error, "
+        if self.Status & ERR_POWER_DOWN_FAILURE:
+            result_str += "Error Powering Down, "
+        if self.Status & ERR_NONVOLATILE_DATA:
+            result_str += "Error in NonVolatile Data: "
+        if self.Status & ERR_RTC:
+            result_str += "RTC Error, "
+        if self.Status & ERR_TEMPERATURE:
+            result_str += "Temperature Error, "
+        if self.Status & ERR_RCVR_DATA:
+            result_str += "Receiver Data Error, "
+        if self.Status & ERR_RCVR_TIMEOUT:
+            result_str += "Receiver Timeout, "
+        if self.Status & ERR_LOW_VOLTAGE:
+            result_str += "Low Voltage, "
+
+        return result_str
+
     def encode(self):
         """
         Encode the data into RTB format.

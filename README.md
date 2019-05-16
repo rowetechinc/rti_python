@@ -51,7 +51,7 @@ Edit the log.py file to turn on or off some logging options.
 
 ## Read in a File and decode the data
 ```python
-from rti_python.Codecs import BinaryCodec
+from rti_python.ADCP.ReadBinaryFile import ReadBinaryFile
 
 
 CHUNKSIZE = 1024
@@ -62,15 +62,7 @@ def ens_handler(sender, ens):
     print("ens number %s" % ens.EnsembleData.EnsembleNumber)
 
 
-codec = BinaryCodec.BinaryCodec()
-codec.EnsembleEvent += ens_handler
-
-with open(FILE_PATH, "rb") as f:
-    bytes_read = f.read(CHUNKSIZE)
-    while bytes_read:
-        #for b in bytes_read:
-        codec.add(bytes_read)
-
-        # Read again
-        bytes_read = f.read(CHUNKSIZE)
+reader = ReadBinaryFile()
+reader.ensemble_event += ens_handler
+reader.playback(FILE_PATH)
 ```
