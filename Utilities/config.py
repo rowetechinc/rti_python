@@ -208,6 +208,7 @@ class RtiConfig:
             self.config['PLOT']['IP'] = RtiConfig.get_ip()
             self.config['PLOT']['PORT'] = '5001'
             self.config['PLOT']['LIVE'] = 'True'
+            self.config['PLOT']['RATE'] = '2500'
             self.write()
 
         # Verify each value exist
@@ -221,6 +222,10 @@ class RtiConfig:
 
         if not self.config.has_option('PLOT', 'LIVE'):
             self.config['PLOT']['LIVE'] = 'True'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'RATE'):
+            self.config['PLOT']['RATE'] = '2500'
             self.write()
 
     @staticmethod
