@@ -209,6 +209,7 @@ class RtiConfig:
             self.config['PLOT']['PORT'] = '5001'
             self.config['PLOT']['LIVE'] = 'True'
             self.config['PLOT']['RATE'] = '2500'
+            self.config['PLOT']["BUFF_SIZE"] = '1000'
             self.write()
 
         # Verify each value exist
@@ -226,6 +227,10 @@ class RtiConfig:
 
         if not self.config.has_option('PLOT', 'RATE'):
             self.config['PLOT']['RATE'] = '2500'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'BUFF_SIZE'):
+            self.config['PLOT']['BUFF_SIZE'] = '1000'
             self.write()
 
     @staticmethod

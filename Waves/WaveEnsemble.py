@@ -307,7 +307,7 @@ class WaveEnsemble:
             beam_data = []
             for beam in range(num_beams):
                 # Check Correlation to use Beam velocity
-                if ens.IsBeamVelocity and ens.IsCorrelation and selected_bin < len(ens.Correlation.Correlation):
+                if ens.IsBeamVelocity and ens.IsCorrelation and selected_bin < len(ens.Correlation.Correlation) and beam < ens.Correlation.element_multiplier:
                     # Check the correlation against the correlation threshold
                     if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
                         beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
