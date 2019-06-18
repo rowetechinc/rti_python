@@ -1,5 +1,9 @@
 rti_python ChangeLog
 
+rti_python - 2.1.1
+  -  Added encode_df to EarthVelocity.
+  - Fixed bug in encode_csv in EarthVelocity
+
 rti_python - 2.1.0
  - Recoded the WaveForceCodec
  - Made all the codecs a thread

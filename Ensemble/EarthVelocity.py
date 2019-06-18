@@ -183,13 +183,42 @@ class EarthVelocity:
                 val = self.Velocities[bin_num][beam]
 
                 # Create the CSV string
-                str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
+                str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val)])
 
         # Generate Magnitude and Direction CSV
         for bin_num in range(self.num_elements):
             mag = self.Magnitude[bin_num]
             dir = self.Direction[bin_num]
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, 0, blank, bin_size, mag))
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, 0, blank, bin_size, dir))
+            str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, 0, blank, bin_size, mag)])
+            str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, 0, blank, bin_size, dir)])
 
         return str_result
+
+    def encode_df(self, dt, ss_code, ss_config, blank, bin_size):
+        """
+        Encode into Dataframe array format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
+        :return: List of CSV lines.
+        """
+        df_result = []
+
+        for beam in range(self.element_multiplier):
+            for bin_num in range(self.num_elements):
+                # Get the value
+                val = self.Velocities[bin_num][beam]
+
+                # Create the Dataframe array
+                df_result.append([dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val])
+
+        # Generate Magnitude and Direction CSV
+        for bin_num in range(self.num_elements):
+            mag = self.Magnitude[bin_num]
+            dir = self.Direction[bin_num]
+            df_result.append([dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, beam, blank, bin_size, mag])
+            df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, blank, bin_size, dir])
+
+        return df_result
