@@ -66,3 +66,12 @@ reader = ReadBinaryFile()
 reader.ensemble_event += ens_handler
 reader.playback(FILE_PATH)
 ```
+
+
+## Check for Bad Velocity in data
+```python
+if Ensemble.is_bad_velocity(vel_value):
+    print("Bad Velocity Value")
+else:
+    print("Good Velocity Value")
+```

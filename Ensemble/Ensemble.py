@@ -627,7 +627,7 @@ class Ensemble:
         return ((1 << number_of_bits) - 1) ^ val;
 
     @staticmethod
-    def is_float_close(a, b, rel_tol=1e-09, abs_tol=0.0):
+    def is_float_close(a, b, rel_tol=1e-06, abs_tol=0.0):
         """
         Check if the float values are the same.
         :param a: First float value
@@ -637,3 +637,17 @@ class Ensemble:
         :return:
         """
         return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+    @staticmethod
+    def is_bad_velocity(vel):
+        """
+        Check if the velocity given is good or bad.
+        :param vel: Velocity value to check.
+        :return: True if Bad Velocity.
+        """
+        if vel == Ensemble.BadVelocity:
+            return True
+        if Ensemble.is_float_close(vel, Ensemble.BadVelocity):
+            return True
+
+        return False

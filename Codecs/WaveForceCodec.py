@@ -382,10 +382,12 @@ class WaveForceCodec:
             ba.extend(self.process_wb2(beam_2_vel, num_4beam_ens, num_bins))    # [WB2] Beam 2 Beam Velocity
         if len(beam_3_vel) > 0:
             ba.extend(self.process_wb3(beam_3_vel, num_4beam_ens, num_bins))    # [WB3] Beam 3 Beam Velocity
-        ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
-        ba.extend(self.process_wr1(rt_1, num_4beam_ens))                    # [WR1] Beam 1 Range Tracking
-        ba.extend(self.process_wr2(rt_2, num_4beam_ens))                    # [WR2] Beam 2 Range Tracking
-        ba.extend(self.process_wr3(rt_3, num_4beam_ens))                    # [WR3] Beam 3 Range Tracking
+        ba.extend(self.process_wr0(rt_0, num_4beam_ens))                        # [WR0] Beam 0 Range Tracking
+        ba.extend(self.process_wr1(rt_1, num_4beam_ens))                        # [WR1] Beam 1 Range Tracking
+        ba.extend(self.process_wr2(rt_2, num_4beam_ens))                        # [WR2] Beam 2 Range Tracking
+        # Check if it is 3 beam or 4 beam data
+        if len(rt_3) > 0:
+            ba.extend(self.process_wr3(rt_3, num_4beam_ens))                        # [WR3] Beam 3 Range Tracking
         ba.extend(self.process_wps(pressure, num_4beam_ens))                # [WPS] Pressure
         ba.extend(self.process_whg(heading, num_4beam_ens))                 # [WHG] Heading
         ba.extend(self.process_wph(pitch, num_4beam_ens))                   # [WPH] Pitch

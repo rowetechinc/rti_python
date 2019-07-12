@@ -283,7 +283,7 @@ class AverageWaterColumn:
             # Accumulate the data
             for ens_bin in range(len(ens_vel)):
                 for beam in range(len(ens_vel[0])):
-                    if ens_vel[ens_bin][beam] != Ensemble.BadVelocity:
+                    if not Ensemble.is_bad_velocity(ens_vel[ens_bin][beam]):
                         avg_accum[ens_bin][beam] += ens_vel[ens_bin][beam]      # Accumulate velocity
                         avg_count[ens_bin][beam] += 1                           # Count good data
 
@@ -340,7 +340,7 @@ class AverageWaterColumn:
 
             # Accumulate the data
             for ens_bin in range(len(ens_data)):
-                if ens_data[ens_bin] != Ensemble.BadVelocity:
+                if not Ensemble.is_bad_velocity(ens_data[ens_bin]):
                     avg_accum[ens_bin] += ens_data[ens_bin]           # Accumulate velocity
                     avg_count[ens_bin] += 1                           # Count good data
 
