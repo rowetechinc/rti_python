@@ -382,24 +382,40 @@ class WaveForceCodec:
             ba.extend(self.process_wb2(beam_2_vel, num_4beam_ens, num_bins))    # [WB2] Beam 2 Beam Velocity
         if len(beam_3_vel) > 0:
             ba.extend(self.process_wb3(beam_3_vel, num_4beam_ens, num_bins))    # [WB3] Beam 3 Beam Velocity
-        ba.extend(self.process_wr0(rt_0, num_4beam_ens))                        # [WR0] Beam 0 Range Tracking
-        ba.extend(self.process_wr1(rt_1, num_4beam_ens))                        # [WR1] Beam 1 Range Tracking
-        ba.extend(self.process_wr2(rt_2, num_4beam_ens))                        # [WR2] Beam 2 Range Tracking
-        # Check if it is 3 beam or 4 beam data
+        else:
+            if len(beam_2_vel) > 0:
+                ba.extend(self.process_wb3(beam_2_vel, num_4beam_ens, num_bins))  # [WB3] Use Beam 2 as backup if a 3 beam system
+        if len(rt_0) > 0:
+            ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
+        if len(rt_1) > 0:
+            ba.extend(self.process_wr1(rt_1, num_4beam_ens))                    # [WR1] Beam 1 Range Tracking
+        if len(rt_2) > 0:
+            ba.extend(self.process_wr2(rt_2, num_4beam_ens))                    # [WR2] Beam 2 Range Tracking
         if len(rt_3) > 0:
-            ba.extend(self.process_wr3(rt_3, num_4beam_ens))                        # [WR3] Beam 3 Range Tracking
-        ba.extend(self.process_wps(pressure, num_4beam_ens))                # [WPS] Pressure
-        ba.extend(self.process_whg(heading, num_4beam_ens))                 # [WHG] Heading
-        ba.extend(self.process_wph(pitch, num_4beam_ens))                   # [WPH] Pitch
-        ba.extend(self.process_wrl(roll, num_4beam_ens))                    # [WRL] Roll
-        ba.extend(self.process_wts(water_temp, num_4beam_ens))              # [WTS] Water Temp
-        ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
-        ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
-
+            ba.extend(self.process_wr3(rt_3, num_4beam_ens))                    # [WR3] Beam 3 Range Tracking
+        else:
+            if len(rt_2) > 0:
+                ba.extend(self.process_wr3(rt_2, num_4beam_ens))                # [WR3] Use Beam 2 Range Tracking as backup if 3 beam system
+        if len(pressure) > 0:
+            ba.extend(self.process_wps(pressure, num_4beam_ens))                # [WPS] Pressure
+        if len(heading) > 0:
+            ba.extend(self.process_whg(heading, num_4beam_ens))                 # [WHG] Heading
+        if len(pitch) > 0:
+            ba.extend(self.process_wph(pitch, num_4beam_ens))                   # [WPH] Pitch
+        if len(roll) > 0:
+            ba.extend(self.process_wrl(roll, num_4beam_ens))                    # [WRL] Roll
+        if len(water_temp) > 0:
+            ba.extend(self.process_wts(water_temp, num_4beam_ens))              # [WTS] Water Temp
+        if len(height) > 0:
+            ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
+        if len(avg_range_track) > 0:
+            ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
         if len(beam_vert_vel) > 0:
             ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
-        ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
-        ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+        if len(vert_pressure) > 0:
+            ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
+        if len(rt_vert) > 0:
+            ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
 
         # Write the file
         filename = self.write_file(ba)
