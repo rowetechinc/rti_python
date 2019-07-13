@@ -210,6 +210,7 @@ class RtiConfig:
             self.config['PLOT']['LIVE'] = 'True'
             self.config['PLOT']['RATE'] = '2500'
             self.config['PLOT']["BUFF_SIZE"] = '1000'
+            self.config['PLOT']["MAX_POINTS"] = '4096'
             self.write()
 
         # Verify each value exist
@@ -231,6 +232,10 @@ class RtiConfig:
 
         if not self.config.has_option('PLOT', 'BUFF_SIZE'):
             self.config['PLOT']['BUFF_SIZE'] = '1000'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'MAX_POINTS'):
+            self.config['PLOT']['MAX_POINTS'] = '4096'
             self.write()
 
     @staticmethod

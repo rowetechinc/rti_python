@@ -18,16 +18,20 @@ class AverageWaterColumn:
     """
 
     # Index for the results
-    INDEX_BEAM = 0
-    INDEX_INSTRUMENT = 1
-    INDEX_EARTH = 2
-    INDEX_MAG = 3
-    INDEX_DIR = 4
-    INDEX_PRESSURE = 5
-    INDEX_XDCR_DEPTH = 6
-    INDEX_FIRST_TIME = 7
-    INDEX_LAST_TIME = 8
-    INDEX_RANGE_TRACK = 9
+    INDEX_SS_CODE = 0
+    INDEX_SS_CONFIG = 1
+    INDEX_NUM_BEAM = 2
+    INDEX_NUM_BINS = 3
+    INDEX_BEAM = 4
+    INDEX_INSTRUMENT = 5
+    INDEX_EARTH = 6
+    INDEX_MAG = 7
+    INDEX_DIR = 8
+    INDEX_PRESSURE = 9
+    INDEX_XDCR_DEPTH = 10
+    INDEX_FIRST_TIME = 11
+    INDEX_LAST_TIME = 12
+    INDEX_RANGE_TRACK = 13
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -47,6 +51,8 @@ class AverageWaterColumn:
         self.range_track_list = deque([], self.num_ens)
         self.blank = 0.0
         self.bin_size = 0.0
+        self.num_beams = 0
+        self.num_bins = 0
         self.first_time = None
         self.last_time = None
 
@@ -64,6 +70,9 @@ class AverageWaterColumn:
             # Check if the subsystem config and code match
             # Then add the velocity data to the list
             if ens.EnsembleData.SubsystemConfig == self.ss_config and ens.EnsembleData.SysFirmwareSubsystemCode == self.ss_code:
+                if ens.IsEnsembleData:
+                    self.num_beams = ens.EnsembleData.NumBeams
+                    self.num_bins = ens.EnsembleData.NumBins
                 if ens.IsAncillaryData:
                     self.blank = ens.AncillaryData.FirstBinRange
                     self.bin_size = ens.AncillaryData.BinSize
@@ -93,10 +102,15 @@ class AverageWaterColumn:
 
         If there were any errors averaging, NONE is returned for the average result.  It no
         data existed, NONE is also returned.  If data type does not exist, NONE is returned.
-        :return: Averaged data [Beam, Instrument, Earth, Mag, Dir]
+
+        Use the INDEX variables to access all the data in the returned object.
+
+        :return: Averaged data [ss_code, ss_config, num_beams, num_bins, Beam, Instrument, Earth, Mag, Dir, Pressure, xdcr_depth, first_time, last_time, range_track]
         """
         first_time = self.first_time
         last_time = self.last_time
+        num_bins = self.num_bins
+        num_beams = self.num_beams
 
         # Average the Beam data
         avg_beam_results = self.avg_beam_data()
@@ -126,7 +140,20 @@ class AverageWaterColumn:
         if not is_running_avg:
             self.reset()
 
-        return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results, avg_pressure_results, avg_xdcr_depth_results, first_time, last_time, avg_range_track_results]
+        return [self.ss_code,                   # Subsystem Code (str)
+                self.ss_config,                 # Subsystem Config (str)
+                num_beams,                      # Number of beams (int)
+                num_bins,                       # Number of bins (int)
+                avg_beam_results,               # Beam Vel Avg (list[bin][beam])
+                avg_instr_results,              # Instrument Vel Avg (list[bin][beam])
+                avg_earth_results,              # Earth Vel Avg (list[bin][beam])
+                avg_mag_results,                # Mag Avg (list[bin])
+                avg_dir_results,                # Dir Avg (list[bin])
+                avg_pressure_results,           # Pressure Avg (list[single value]float)
+                avg_xdcr_depth_results,         # Xdcr Depth Avg (list[single value]float)
+                first_time,                     # First Time in Avg (dt)
+                last_time,                      # Last Time in Avg (dt)
+                avg_range_track_results]        # Range Track Avg (list[beam])
 
     def reset(self):
         """
@@ -145,11 +172,13 @@ class AverageWaterColumn:
         self.range_track_list.clear()
         self.first_time = None
         self.last_time = None
+        self.num_bins = 0
+        self.num_beams = 0
 
     def avg_beam_data(self):
         """
         Average the Beam velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_beam_list)
@@ -162,7 +191,7 @@ class AverageWaterColumn:
     def avg_instr_data(self):
         """
         Average the Instrument velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_instr_list)
@@ -175,7 +204,7 @@ class AverageWaterColumn:
     def avg_earth_data(self):
         """
         Average the Earth velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_earth_list)
@@ -188,7 +217,7 @@ class AverageWaterColumn:
     def avg_mag_data(self):
         """
         Average the water current magnitude data
-        :return:
+        :return: Average magnitude for each [bin]
         """
         try:
             return self.avg_mag_dir(self.ens_magnitude)
@@ -201,7 +230,7 @@ class AverageWaterColumn:
     def avg_dir_data(self):
         """
         Average the water current direction data
-        :return:
+        :return: Average direction for each [bin]
         """
         try:
             return self.avg_mag_dir(self.ens_direction)
@@ -214,7 +243,7 @@ class AverageWaterColumn:
     def avg_pressure_data(self):
         """
         Average the water pressure data
-        :return:
+        :return: Average pressure. Single value in list
         """
         try:
             return self.avg_mag_dir(self.pressure)
@@ -227,7 +256,7 @@ class AverageWaterColumn:
     def avg_xdcr_depth_data(self):
         """
         Average the water Tranducer Depth data
-        :return:
+        :return: Average Transducer depth. Single value in list
         """
         try:
             return self.avg_mag_dir(self.xdcr_depth)
@@ -240,7 +269,7 @@ class AverageWaterColumn:
     def avg_range_track_data(self):
         """
         Average the Range Tracking data
-        :return:
+        :return:  Average Range for each [beam]
         """
         try:
             return self.avg_range(self.range_track_list)
