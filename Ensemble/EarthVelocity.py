@@ -137,8 +137,8 @@ class EarthVelocity:
 
             # The range is -180 to 180
             # This moves it to 0 to 360
-            #if bin_dir < 0.0:
-            #    bin_dir = 360.0 + bin_dir
+            if bin_dir < 0.0:
+                bin_dir = 360.0 + bin_dir
 
             return bin_dir
         else:

@@ -1,5 +1,9 @@
 rti_python ChangeLog
 
+rti_python - 2.1.2
+ - Added qa_qc to Utilities to screen data
+ - Changed Water Direction back to 0 - 360 degrees
+
 rti_python - 2.1.1
   -  Added encode_df to EarthVelocity.
   - Fixed bug in encode_csv in EarthVelocity
