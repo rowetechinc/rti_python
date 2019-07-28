@@ -102,7 +102,7 @@ def pretty_print_m(length):
         return str(round((length*100), 2)) + " cm"
 
     if length >= 1000:
-        return str(round(length/1000), 2) + " km"
+        return str(round((length/1000), 2)) + " km"
 
     return str(round(length, 2)) + " m"
 
