@@ -25,7 +25,8 @@ class WaveForceCodec:
                  ps_depth=30,
                  height_source=4,
                  corr_thresh=0.25,
-                 pressure_offset=0.0):
+                 pressure_offset=0.0,
+                 replace_pressure_with_vert=False):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -36,6 +37,7 @@ class WaveForceCodec:
         :param bin2: Second selected bin.
         :param bin3: Third selected bin.
         :param ps_depth Pressure Sensor depth.  Depth of the ADCP.
+        :param replace_pressure_with_vert: Replace the pressure sensor data with the vertical beam height.
         """
         self.EnsInBurst = ens_in_burst
         self.FilePath = path
@@ -50,8 +52,10 @@ class WaveForceCodec:
         self.CorrThreshold = corr_thresh
         self.PressureOffset = pressure_offset
         self.PressureSensorDepth = ps_depth
+        self.replace_pressure_with_vertical = replace_pressure_with_vert
         self.RecordCount = 0
         self.buffer_check_lock = threading.Lock()
+
 
         self.selected_bin = []
         if bin1 >= 0:
@@ -87,7 +91,10 @@ class WaveForceCodec:
         :param bin1: First selected bin.
         :param bin2: Second selected bin.
         :param bin3: Third selected bin.
-        :param ps_depth Pressure Sensor depth.  Depth of the ADCP.
+        :param ps_depth: Pressure Sensor depth.  Depth of the ADCP.
+        :param height_source: Select the height source to use.
+        :param corr_thresh: Correlation threshold.
+        :param pressure_offset: Pressure sensor offset.
         """
         self.EnsInBurst = ens_in_burst
         self.FilePath = path
@@ -412,10 +419,19 @@ class WaveForceCodec:
             ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
         if len(beam_vert_vel) > 0:
             ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
-        if len(vert_pressure) > 0:
-            ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
+
+        # Check if the pressure sensor data needs to replaced with vertical
+        if not self.replace_pressure_with_vertical:
+            if len(vert_pressure) > 0:
+                ba.extend(self.process_wzp(vert_pressure, num_vert_ens))        # [WZP] Vertical Beam Pressure
+
         if len(rt_vert) > 0:
+            # USING VERTICAL BEAM RT to replace pressure in cases where pressure not working
+            if self.replace_pressure_with_vertical:
+                ba.extend(self.process_wzp(rt_vert, num_vert_ens))              # [WZP] Vertical Beam Pressure
+
             ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+
 
         # Write the file
         filename = self.write_file(ba)

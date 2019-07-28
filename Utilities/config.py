@@ -108,6 +108,7 @@ class RtiConfig:
             self.config['Waves']['pressure_sensor_offset'] = '0.0'
             self.config['Waves']['latitude'] = '0.0'
             self.config['Waves']['longitude'] = '0.0'
+            self.config['Waves']['replace_pressure_with_vertical'] = 'False'
 
             self.write()
 
@@ -158,6 +159,10 @@ class RtiConfig:
 
         if not self.config.has_option('Waves', '4b_vert_pair'):
             self.config['Waves']['4b_vert_pair'] = 'True'
+            self.write()
+
+        if not self.config.has_option('Waves', 'replace_pressure_with_vertical'):
+            self.config['Waves']['replace_pressure_with_vertical'] = 'False'
             self.write()
 
     def init_average_waves_config(self):
