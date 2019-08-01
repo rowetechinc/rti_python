@@ -150,9 +150,9 @@ def test_encode_csv():
     # Check the csv data
     test_value = 1.0
     for line in result:
-        if bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
-            assert bool(re.search(str(test_value), line))
-            assert bool(re.search(Ensemble.CSV_EARTH_VEL, line))
+        if bool(re.search(Ensemble.CSV_EARTH_VEL, line[0])):
+            assert bool(re.search(str(test_value), line[0]))
+            assert bool(re.search(Ensemble.CSV_EARTH_VEL, line[0]))
             test_value += 1.1
 
 
@@ -244,13 +244,13 @@ def test_encode_csv_vector():
     # Check the csv data
     test_value = 1.0
     for line in result:
-        if bool(re.search(Ensemble.CSV_MAG, line)):
-            assert bool(re.search(str(1.73), line))
-            assert bool(re.search(Ensemble.CSV_MAG, line))
-        elif bool(re.search(Ensemble.CSV_DIR, line)):
-            assert bool(re.search(str(45.0), line))
-            assert bool(re.search(Ensemble.CSV_DIR, line))
-        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+        if bool(re.search(Ensemble.CSV_MAG, line[0])):
+            assert bool(re.search(str(1.73), line[0]))
+            assert bool(re.search(Ensemble.CSV_MAG, line[0]))
+        elif bool(re.search(Ensemble.CSV_DIR, line[0])):
+            assert bool(re.search(str(45.0), line[0]))
+            assert bool(re.search(Ensemble.CSV_DIR, line[0]))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line[0])):
             assert True
         else:
             assert False
@@ -278,13 +278,13 @@ def test_encode_csv_vector_bt():
 
     # Check the csv data
     for line in result:
-        if bool(re.search(Ensemble.CSV_MAG, line)):
-            assert bool(re.search(str(2.477), line))
-            assert bool(re.search(Ensemble.CSV_MAG, line))
-        elif bool(re.search(Ensemble.CSV_DIR, line)):
-            assert bool(re.search(str(49.3987), line))
-            assert bool(re.search(Ensemble.CSV_DIR, line))
-        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+        if bool(re.search(Ensemble.CSV_MAG, line[0])):
+            assert bool(re.search(str(2.477), line[0]))
+            assert bool(re.search(Ensemble.CSV_MAG, line[0]))
+        elif bool(re.search(Ensemble.CSV_DIR, line[0])):
+            assert bool(re.search(str(49.3987), line[0]))
+            assert bool(re.search(Ensemble.CSV_DIR, line[0]))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line[0])):
             assert True
         else:
             assert False
@@ -311,13 +311,13 @@ def test_encode_csv_vector_no_remove():
 
     # Check the csv data
     for line in result:
-        if bool(re.search(Ensemble.CSV_MAG, line)):
-            assert bool(re.search(str(3.464), line))
-            assert bool(re.search(Ensemble.CSV_MAG, line))
-        elif bool(re.search(Ensemble.CSV_DIR, line)):
-            assert bool(re.search(str(45.0), line))
-            assert bool(re.search(Ensemble.CSV_DIR, line))
-        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+        if bool(re.search(Ensemble.CSV_MAG, line[0])):
+            assert bool(re.search(str(3.464), line[0]))
+            assert bool(re.search(Ensemble.CSV_MAG, line[0]))
+        elif bool(re.search(Ensemble.CSV_DIR, line[0])):
+            assert bool(re.search(str(45.0), line[0]))
+            assert bool(re.search(Ensemble.CSV_DIR, line[0]))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line[0])):
             assert True
         else:
             assert False
@@ -344,13 +344,13 @@ def test_encode_csv_vector_no_gen():
 
     # Check the csv data
     for line in result:
-        if bool(re.search(Ensemble.CSV_MAG, line)):
-            assert bool(re.search(str(2.477), line))
-            assert bool(re.search(Ensemble.CSV_MAG, line))
-        elif bool(re.search(Ensemble.CSV_DIR, line)):
-            assert bool(re.search(str(49.3987), line))
-            assert bool(re.search(Ensemble.CSV_DIR, line))
-        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line)):
+        if bool(re.search(Ensemble.CSV_MAG, line[0])):
+            assert bool(re.search(str(2.477), line[0]))
+            assert bool(re.search(Ensemble.CSV_MAG, line[0]))
+        elif bool(re.search(Ensemble.CSV_DIR, line[0])):
+            assert bool(re.search(str(49.3987), line[0]))
+            assert bool(re.search(Ensemble.CSV_DIR, line[0]))
+        elif bool(re.search(Ensemble.CSV_EARTH_VEL, line[0])):
             assert True
         else:
             assert False
