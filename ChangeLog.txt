@@ -6,6 +6,8 @@ rti_python - 2.1.2
  - Fixed bug in AdcpCommands:print_pretty_m for values greater than 1000m.
  - In config.py, added option to replace the Pressure Height in AutoWaves with Vertical Beam Height
  - In WaveForceCodec, add the option to replace the Pressure Height with Vertical Beam Height
+ - Added Bin Size and Blank to AverageWaterColumn.
+ - Added static method in Ensemble to create a dataframe from 2D array like velocity or amp or corr
 
 rti_python - 2.1.1
   -  Added encode_df to EarthVelocity.

@@ -32,6 +32,8 @@ class AverageWaterColumn:
     INDEX_FIRST_TIME = 11
     INDEX_LAST_TIME = 12
     INDEX_RANGE_TRACK = 13
+    INDEX_BLANK = 14
+    INDEX_BIN_SIZE = 15
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -153,7 +155,9 @@ class AverageWaterColumn:
                 avg_xdcr_depth_results,         # Xdcr Depth Avg (list[single value]float)
                 first_time,                     # First Time in Avg (dt)
                 last_time,                      # Last Time in Avg (dt)
-                avg_range_track_results]        # Range Track Avg (list[beam])
+                avg_range_track_results,        # Range Track Avg (list[beam])
+                self.blank,                     # Blanking distance used to calculate bin depth
+                self.bin_size]                  # Bins size for the  use to calculate bin depth
 
     def reset(self):
         """

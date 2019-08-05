@@ -4,6 +4,8 @@ import datetime
 from PyCRC.CRCCCITT import CRCCCITT
 import math
 import logging
+import pandas as pd
+import numpy as np
 
 
 class Ensemble:
@@ -411,6 +413,56 @@ class Ensemble:
         result += name.encode()                                         # Name
 
         return result
+
+    @staticmethod
+    def to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
+        """
+        Convert the given 2D array to a dataframe.
+        Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+        :param vel_array: 2D array containing the data
+        :param dt: DateTime
+        :param ss_code: SS Code as a string
+        :param ss_config: SS Configuration as int
+        :param blank: Blanking distance.
+        :param bin_size: Bin Size
+        :return: Dataframe of all the data from the array given.
+        """
+
+        # Create a Dataframe with types, this makes the dataframe faster
+        dtypes = np.dtype([
+            ('time_stamp', np.datetime64),
+            ('ss_code', str),
+            ('ss_config', int),
+            ('bin_num', int),
+            ('beam_num', int),
+            ('bin_depth', float),
+            ('value', float),
+        ])
+        data = np.empty(0, dtype=dtypes)
+        df = pd.DataFrame(data)
+
+        # Go through each bin and beam
+        for bin_num in range(len(vel_array)):
+            for beam_num in range(len(vel_array[0])):
+                # Get the bin depth
+                bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
+
+                # Get the value
+                value = vel_array[bin_num][beam_num]
+
+                # Append the value to the dataframe
+                df = df.append({'time_stamp': dt,
+                                'ss_code': ss_code,
+                                'ss_config': ss_config,
+                                'bin_num': bin_num,
+                                'beam_num': beam_num,
+                                'bin_depth': bin_depth,
+                                'value': value},
+                               ignore_index=True)
+
+        return df
+
 
     @staticmethod
     def toJSON(self, pretty=False):
