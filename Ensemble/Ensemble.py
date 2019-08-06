@@ -415,7 +415,7 @@ class Ensemble:
         return result
 
     @staticmethod
-    def to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
+    def array_2d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
         """
         Convert the given 2D array to a dataframe.
         Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
@@ -460,6 +460,58 @@ class Ensemble:
 
                 # Increment index
                 i = i + 1
+
+        # Create the dataframe from the dictionary
+        # important to set the 'orient' parameter to "index" to make the keys as rows
+        df = pd.DataFrame.from_dict(dict_result, "index")
+
+        return df
+
+    @staticmethod
+    def array_1d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
+        """
+        Convert the given 1D array to a dataframe.
+        Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+
+        dictionary to dataframe to speed up performance
+        https://stackoverflow.com/questions/27929472/improve-row-append-performance-on-pandas-dataframes
+
+        :param vel_array: 2D array containing the data
+        :param dt: DateTime
+        :param ss_code: SS Code as a string
+        :param ss_config: SS Configuration as int
+        :param blank: Blanking distance.
+        :param bin_size: Bin Size
+        :return: Dataframe of all the data from the array given.
+        """
+
+        # Dictionary to create dataframe
+        # Faster than appending to a dataframe
+        dict_result = {}
+
+        # A counter to use to add entries to dict
+        i = 0
+
+        # Go through each bin and beam
+        for bin_num in range(len(vel_array)):
+            # Get the bin depth
+            bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
+
+            # Get the value
+            value = vel_array[bin_num]
+
+            # Create a dict entry
+            dict_result[i] = {'time_stamp': dt,
+                              'ss_code': ss_code,
+                              'ss_config': ss_config,
+                              'bin_num': bin_num,
+                              'beam_num': 0,
+                              'bin_depth': bin_depth,
+                              'value': value}
+
+            # Increment index
+            i = i + 1
 
         # Create the dataframe from the dictionary
         # important to set the 'orient' parameter to "index" to make the keys as rows
