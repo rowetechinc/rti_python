@@ -440,26 +440,27 @@ class Ensemble:
         # A counter to use to add entries to dict
         i = 0
 
-        # Go through each bin and beam
-        for bin_num in range(len(vel_array)):
-            for beam_num in range(len(vel_array[0])):
-                # Get the bin depth
-                bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
+        if vel_array:
+            # Go through each bin and beam
+            for bin_num in range(len(vel_array)):
+                for beam_num in range(len(vel_array[0])):
+                    # Get the bin depth
+                    bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
 
-                # Get the value
-                value = vel_array[bin_num][beam_num]
+                    # Get the value
+                    value = vel_array[bin_num][beam_num]
 
-                # Create a dict entry
-                dict_result[i] = {'time_stamp': dt,
-                                  'ss_code': ss_code,
-                                  'ss_config': ss_config,
-                                  'bin_num': bin_num,
-                                  'beam_num': beam_num,
-                                  'bin_depth': bin_depth,
-                                  'value': value}
+                    # Create a dict entry
+                    dict_result[i] = {'time_stamp': dt,
+                                      'ss_code': ss_code,
+                                      'ss_config': ss_config,
+                                      'bin_num': bin_num,
+                                      'beam_num': beam_num,
+                                      'bin_depth': bin_depth,
+                                      'value': value}
 
-                # Increment index
-                i = i + 1
+                    # Increment index
+                    i = i + 1
 
         # Create the dataframe from the dictionary
         # important to set the 'orient' parameter to "index" to make the keys as rows
@@ -493,25 +494,79 @@ class Ensemble:
         # A counter to use to add entries to dict
         i = 0
 
-        # Go through each bin and beam
-        for bin_num in range(len(vel_array)):
-            # Get the bin depth
-            bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
+        if vel_array:
+            # Go through each bin and beam
+            for bin_num in range(len(vel_array)):
+                # Get the bin depth
+                bin_depth = Ensemble.get_bin_depth(blank, bin_size, bin_num)
 
-            # Get the value
-            value = vel_array[bin_num]
+                # Get the value
+                value = vel_array[bin_num]
 
-            # Create a dict entry
-            dict_result[i] = {'time_stamp': dt,
-                              'ss_code': ss_code,
-                              'ss_config': ss_config,
-                              'bin_num': bin_num,
-                              'beam_num': 0,
-                              'bin_depth': bin_depth,
-                              'value': value}
+                # Create a dict entry
+                dict_result[i] = {'time_stamp': dt,
+                                  'ss_code': ss_code,
+                                  'ss_config': ss_config,
+                                  'bin_num': bin_num,
+                                  'beam_num': 0,
+                                  'bin_depth': bin_depth,
+                                  'value': value}
 
-            # Increment index
-            i = i + 1
+                # Increment index
+                i = i + 1
+
+        # Create the dataframe from the dictionary
+        # important to set the 'orient' parameter to "index" to make the keys as rows
+        df = pd.DataFrame.from_dict(dict_result, "index")
+
+        return df
+
+    @staticmethod
+    def array_beam_1d_to_df(range_array, dt, ss_code, ss_config):
+        """
+        Convert the given 1D array to a dataframe.
+        This 1D array should have 4 or less values representing a value
+        for each beam.
+        Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+
+        dictionary to dataframe to speed up performance
+        https://stackoverflow.com/questions/27929472/improve-row-append-performance-on-pandas-dataframes
+
+        :param range_array: 1D Beam array containing the data
+        :param dt: DateTime
+        :param ss_code: SS Code as a string
+        :param ss_config: SS Configuration as int
+        :param blank: Blanking distance.
+        :param bin_size: Bin Size
+        :return: Dataframe of all the data from the array given.
+        """
+
+        # Dictionary to create dataframe
+        # Faster than appending to a dataframe
+        dict_result = {}
+
+        # A counter to use to add entries to dict
+        i = 0
+
+        if range_array:
+            # Go through each bin and beam
+            for beam_num in range(len(range_array)):
+
+                # Get the value
+                value = range_array[beam_num]
+
+                # Create a dict entry
+                dict_result[i] = {'time_stamp': dt,
+                                  'ss_code': ss_code,
+                                  'ss_config': ss_config,
+                                  'bin_num': 0,
+                                  'beam_num': beam_num,
+                                  'bin_depth': value,
+                                  'value': value}
+
+                # Increment index
+                i = i + 1
 
         # Create the dataframe from the dictionary
         # important to set the 'orient' parameter to "index" to make the keys as rows
@@ -569,6 +624,30 @@ class Ensemble:
         :return: The depth of the given bin in meters.
         """
         return round(float(blank) + (float(bin_size) * float(bin_num)), 2)
+
+    @staticmethod
+    def get_avg_range(range_array):
+        """
+        Average the array of values.  Do not include the
+        bad values in the average.
+        :param range_array: Array to average.
+        :return: Average value.
+        """
+        # Average the ranges
+        range_count = 0
+        range_accum = 0.0
+
+        if range_array:
+            # Accumulate the data
+            for beam in range(len(range_array)):
+                if range_array[beam] > 0.0 and not Ensemble.is_bad_velocity(range_array[beam]):
+                    range_count += 1
+                    range_accum += range_array[beam]
+
+        if range_count > 0:
+            return range_accum / range_count
+        else:
+            return 0.0
 
     @staticmethod
     def GetInt32(start, numBytes, ens):
@@ -752,6 +831,8 @@ class Ensemble:
         :param vel: Velocity value to check.
         :return: True if Bad Velocity.
         """
+        if vel > 80.0:
+            return True
         if vel == Ensemble.BadVelocity:
             return True
         if Ensemble.is_float_close(vel, Ensemble.BadVelocity):
