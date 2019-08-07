@@ -64,15 +64,15 @@ from rti_python.Utilities.read_binary_file import ReadBinaryFile
         if ens.IsEnsembleData:
             print(str(ens.EnsembleData.EnsembleNumber))
 
-    # Create the file reader to read the binary file
-    read_binary = ReadBinaryFile()
-    read_binary.ensemble_event += process_ens_func
+# Create the file reader to read the binary file
+read_binary = ReadBinaryFile()
+read_binary.ensemble_event += process_ens_func
 
-    # Just define the file path
-    file_path = "/path/to/file/ensembles.ens"
+# Just define the file path
+file_path = "/path/to/file/ensembles.ens"
 
-    # Pass the file path to the reader
-    read_binary.playback(file_path)
+# Pass the file path to the reader
+read_binary.playback(file_path)
 ```
 
 
