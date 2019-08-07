@@ -72,3 +72,41 @@ class ReadBinaryFile:
         """
         if ens.IsEnsembleData:
             logging.debug(str(ens.EnsembleData.EnsembleNumber))
+
+
+if __name__ == '__main__':
+
+    import tkinter as tk
+    from tkinter import filedialog
+
+    def process_ens_func(sender, ens):
+        """
+        Receive the data from the file.  It will process the file.
+        When an ensemble is found, it will call this function with the
+        complete ensemble.
+        :param ens: Ensemble to process.
+        :return:
+        """
+        if ens.IsEnsembleData:
+            print(str(ens.EnsembleData.EnsembleNumber))
+
+    # Create the file reader to read the binary file
+    read_binary = ReadBinaryFile()
+    read_binary.ensemble_event += process_ens_func
+
+    # Just define the file path
+    #file_path = "/path/to/file/ensembles.ens"
+
+    # GUI to ask for file
+    # Ask for a file
+    # You can use any way to get the file path
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename()
+
+    # Pass the file path to the reader
+    read_binary.playback(file_path)
+
+
+
+
