@@ -138,4 +138,16 @@ class AncillaryData:
 
         return str_result
 
+    def is_upward_facing(self):
+        """
+        Check the roll value if it is near 0.  A value near
+        zero means the ADCP is upward facing.
+        :return: TRUE if Upward facing.
+        """
 
+        # Check if the roll value is near 0
+        roll = abs(self.Roll)
+        if roll > 0 and roll < 30:
+            return True
+
+        return False

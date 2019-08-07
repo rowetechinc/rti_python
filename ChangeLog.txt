@@ -8,6 +8,7 @@ rti_python - 2.1.2
  - In WaveForceCodec, add the option to replace the Pressure Height with Vertical Beam Height
  - Added Bin Size and Blank to AverageWaterColumn.
  - Added static method in Ensemble to create a dataframe from 2D array like velocity or amp or corr
+ - In AncillaryDataSet, added is_upward_facing().
 
 rti_python - 2.1.1
   -  Added encode_df to EarthVelocity.

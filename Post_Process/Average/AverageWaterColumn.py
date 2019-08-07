@@ -35,6 +35,7 @@ class AverageWaterColumn:
     INDEX_BLANK = 14
     INDEX_BIN_SIZE = 15
     INDEX_BT_RANGE = 16
+    INDEX_IS_UPWARD = 17
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -59,6 +60,7 @@ class AverageWaterColumn:
         self.num_bins = 0
         self.first_time = None
         self.last_time = None
+        self.is_upward = False
 
         self.thread_lock = Lock()
 
@@ -82,6 +84,7 @@ class AverageWaterColumn:
                     self.bin_size = ens.AncillaryData.BinSize
                     self.pressure.append([ens.AncillaryData.Pressure])
                     self.xdcr_depth.append([ens.AncillaryData.TransducerDepth])
+                    self.is_upward = ens.AncillaryData.is_upward_facing()               # Set if upward or downward
                 if ens.IsBeamVelocity:
                     self.ens_beam_list.append(ens.BeamVelocity.Velocities)
                 if ens.IsInstrumentVelocity:
@@ -165,7 +168,8 @@ class AverageWaterColumn:
                 avg_range_track_results,        # Range Track Avg (list[beam])
                 self.blank,                     # Blanking distance used to calculate bin depth
                 self.bin_size,                  # Bins size for the  use to calculate bin depth
-                avg_bottom_track_range_results]
+                avg_bottom_track_range_results, # Average bottom track value
+                self.is_upward]                 # Flag if upward or downward facing
 
     def reset(self):
         """
