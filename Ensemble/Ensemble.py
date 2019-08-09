@@ -831,8 +831,6 @@ class Ensemble:
         :param vel: Velocity value to check.
         :return: True if Bad Velocity.
         """
-        if vel > 80.0:
-            return True
         if vel == Ensemble.BadVelocity:
             return True
         if Ensemble.is_float_close(vel, Ensemble.BadVelocity):

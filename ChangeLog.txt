@@ -12,6 +12,7 @@ rti_python - 2.1.2
  - Added a main to read_binary_file to help understand how to use it.
  - In BinaryCodec, append the new data to the buffer instead of replace the new data.  Could prevent lost data.
  - In WavesCodec, handle a single bin.
+ - Fixed BAD_VELOCITY check.  Allow values greater than 88 now.  Incorrectly filtered out direction values greater than 88.
 
 rti_python - 2.1.1
   -  Added encode_df to EarthVelocity.
