@@ -341,15 +341,15 @@ class WaveForceCodec:
                 # Set the selected bin data
                 for sel_bin in range(num_bins):
                     # Earth Velocity (WUS, WVS, WZS)
-                    if len(ens_wave.east_vel) > 0:
+                    if len(ens_wave.east_vel) > 0 and len(ens_wave.east_vel) > sel_bin:
                         wus_buff.extend(struct.pack('f', ens_wave.east_vel[sel_bin]))
-                    if len(ens_wave.north_vel) > 0:
+                    if len(ens_wave.north_vel) > 0 and len(ens_wave.north_vel) > sel_bin:
                         wvs_buff.extend(struct.pack('f', ens_wave.north_vel[sel_bin]))
-                    if len(ens_wave.vertical_vel) > 0:
+                    if len(ens_wave.vertical_vel) > 0 and len(ens_wave.vertical_vel) > sel_bin:
                         wzs_buff.extend(struct.pack('f', ens_wave.vertical_vel[sel_bin]))
 
                     # Beam Velocity (WB0, WB1, WB2, WB3)
-                    if len(ens_wave.beam_vel[sel_bin]) > 0:
+                    if len(ens_wave.beam_vel) > sel_bin and len(ens_wave.beam_vel[sel_bin]) > 0:
                         beam_0_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][0]))          # Beam 0 Beam Velocity
                         if ens_wave.num_beams > 1:
                             beam_1_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][1]))      # Beam 1 Beam Velocity

@@ -324,8 +324,10 @@ class AddDataThread(Thread):
         :param data: Data to buffer.
         :return:
         """
+
         # Store the data to be buffered
-        self.temp_data = data
+        with global_condition:
+            self.temp_data = self.temp_data + data
 
         # Wakeup the thread
         with self.internal_condition:
@@ -350,6 +352,10 @@ class AddDataThread(Thread):
 
             with global_condition:
                 buffer += self.temp_data             # Set the data to the buffer
+                #print("Buffer: " + str(len(buffer)))
+
+                # Clear the temp data
+                self.temp_data = bytes()
 
                 # Check if enough data is in the buffer to process
                 if len(buffer) > Ensemble.HeaderSize + Ensemble.ChecksumSize + 200:
@@ -416,12 +422,12 @@ class ProcessDataThread(Thread):
         while self.alive:
             # Wait for data
             with global_condition:
-                if self.DELIMITER in buffer:                        # Check for the delimiter
-                    chunks = buffer.split(self.DELIMITER)           # If delimiter found, split to get the remaining buffer data
-                    buffer = chunks.pop()                           # Put the remaining data back in the buffer
+                if self.DELIMITER in buffer:                                # Check for the delimiter
+                    chunks = buffer.split(self.DELIMITER)                   # If delimiter found, split to get the remaining buffer data
+                    buffer = chunks.pop()                                   # Put the remaining data back in the buffer
 
-                    for chunk in chunks:                            # Take out the ens data
-                        self.verify_and_decode(self.DELIMITER + chunk)    # Process the binary ensemble data
+                    for chunk in chunks:                                    # Take out the ens data
+                        self.verify_and_decode(self.DELIMITER + chunk)      # Process the binary ensemble data
 
     def verify_and_decode(self, ens_bin):
         # Verify the ENS data is good

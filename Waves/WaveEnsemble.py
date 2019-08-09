@@ -304,27 +304,29 @@ class WaveEnsemble:
         # Create enough entries for all the bins or (bins x beams)
         # Initialize with bad values
         for selected_bin in selected_bins:
-            beam_data = []
-            for beam in range(num_beams):
-                # Check Correlation to use Beam velocity
-                if ens.IsBeamVelocity and ens.IsCorrelation and selected_bin < len(ens.Correlation.Correlation) and beam < ens.Correlation.element_multiplier:
-                    # Check the correlation against the correlation threshold
-                    if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
+            # Verify a good bin was selected
+            if selected_bin < num_bins:
+                beam_data = []
+                for beam in range(num_beams):
+                    # Check Correlation to use Beam velocity
+                    if ens.IsBeamVelocity and ens.IsCorrelation and selected_bin < len(ens.Correlation.Correlation) and beam < ens.Correlation.element_multiplier:
+                        # Check the correlation against the correlation threshold
+                        if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
+                            beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
+                        else:
+                            beam_data.append(Ensemble.BadVelocity)
+                    # No correlation data, so just use the beam velocity
+                    elif ens.IsBeamVelocity:
                         beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
-                    else:
-                        beam_data.append(Ensemble.BadVelocity)
-                # No correlation data, so just use the beam velocity
-                elif ens.IsBeamVelocity:
-                    beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
 
-            # Add the data for each bin
-            self.beam_vel.append(beam_data)
+                # Add the data for each bin
+                self.beam_vel.append(beam_data)
 
-            # Earth Velocity
-            if ens.IsEarthVelocity:
-                self.east_vel.append(ens.EarthVelocity.Velocities[selected_bin][0])
-                self.north_vel.append(ens.EarthVelocity.Velocities[selected_bin][1])
-                self.vertical_vel.append(ens.EarthVelocity.Velocities[selected_bin][2])
+                # Earth Velocity
+                if ens.IsEarthVelocity:
+                    self.east_vel.append(ens.EarthVelocity.Velocities[selected_bin][0])
+                    self.north_vel.append(ens.EarthVelocity.Velocities[selected_bin][1])
+                    self.vertical_vel.append(ens.EarthVelocity.Velocities[selected_bin][2])
 
         avg_range_ct = 0
         avg_range = 0.0
