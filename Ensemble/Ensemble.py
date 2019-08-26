@@ -415,11 +415,11 @@ class Ensemble:
         return result
 
     @staticmethod
-    def array_2d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
+    def array_2d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size, first_ens_num, last_ens_num):
         """
         Convert the given 2D array to a dataframe.
         Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
-        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, first_ens_num, last_ens_num, value
 
         dictionary to dataframe to speed up performance
         https://stackoverflow.com/questions/27929472/improve-row-append-performance-on-pandas-dataframes
@@ -430,6 +430,8 @@ class Ensemble:
         :param ss_config: SS Configuration as int
         :param blank: Blanking distance.
         :param bin_size: Bin Size
+        :param first_ens_num: First Ensemble Number.
+        :param last_ens_num: Last Ensemble Number.
         :return: Dataframe of all the data from the array given.
         """
 
@@ -457,6 +459,8 @@ class Ensemble:
                                       'bin_num': bin_num,
                                       'beam_num': beam_num,
                                       'bin_depth': bin_depth,
+                                      'first_ens_num': first_ens_num,
+                                      'last_ens_num': last_ens_num,
                                       'value': value}
 
                     # Increment index
@@ -469,11 +473,11 @@ class Ensemble:
         return df
 
     @staticmethod
-    def array_1d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size):
+    def array_1d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size, first_ens_num, last_ens_num):
         """
         Convert the given 1D array to a dataframe.
         Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
-        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, first_ens_num, last_ens_num, value
 
         dictionary to dataframe to speed up performance
         https://stackoverflow.com/questions/27929472/improve-row-append-performance-on-pandas-dataframes
@@ -484,6 +488,8 @@ class Ensemble:
         :param ss_config: SS Configuration as int
         :param blank: Blanking distance.
         :param bin_size: Bin Size
+        :param first_ens_num: First Ensemble Number.
+        :param last_ens_num: Last Ensemble Number.
         :return: Dataframe of all the data from the array given.
         """
 
@@ -510,6 +516,8 @@ class Ensemble:
                                   'bin_num': bin_num,
                                   'beam_num': 0,
                                   'bin_depth': bin_depth,
+                                  'first_ens_num': first_ens_num,
+                                  'last_ens_num': last_ens_num,
                                   'value': value}
 
                 # Increment index
@@ -522,13 +530,13 @@ class Ensemble:
         return df
 
     @staticmethod
-    def array_beam_1d_to_df(range_array, dt, ss_code, ss_config):
+    def array_beam_1d_to_df(range_array, dt, ss_code, ss_config, first_ens_num, last_ens_num):
         """
         Convert the given 1D array to a dataframe.
         This 1D array should have 4 or less values representing a value
         for each beam.
         Columns: Index, TimeStamp, Bin, Beam, SS_Code, SS_Config, BinSize, Blank, BinDepth, Value
-        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, value
+        Columns: Index, time_stamp, ss_code, ss_config, bin_num, beam_num, bin_depth, first_ens_num, last_ens_num, value
 
         dictionary to dataframe to speed up performance
         https://stackoverflow.com/questions/27929472/improve-row-append-performance-on-pandas-dataframes
@@ -537,8 +545,8 @@ class Ensemble:
         :param dt: DateTime
         :param ss_code: SS Code as a string
         :param ss_config: SS Configuration as int
-        :param blank: Blanking distance.
-        :param bin_size: Bin Size
+        :param first_ens_num: First Ensemble Number.
+        :param last_ens_num: Last Ensemble Number.
         :return: Dataframe of all the data from the array given.
         """
 
@@ -563,6 +571,8 @@ class Ensemble:
                                   'bin_num': 0,
                                   'beam_num': beam_num,
                                   'bin_depth': value,
+                                  'first_ens_num': first_ens_num,
+                                  'last_ens_num': last_ens_num,
                                   'value': value}
 
                 # Increment index

@@ -36,6 +36,8 @@ class AverageWaterColumn:
     INDEX_BIN_SIZE = 15
     INDEX_BT_RANGE = 16
     INDEX_IS_UPWARD = 17
+    INDEX_FIRST_ENS_NUM = 18
+    INDEX_LAST_ENS_NUM = 19
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -60,6 +62,8 @@ class AverageWaterColumn:
         self.num_bins = 0
         self.first_time = None
         self.last_time = None
+        self.first_ens_num = 0
+        self.last_ens_num = 0
         self.is_upward = False
 
         self.thread_lock = Lock()
@@ -101,9 +105,11 @@ class AverageWaterColumn:
                 # Set the times
                 if not self.first_time:
                     self.first_time = ens.EnsembleData.datetime()
+                    self.first_ens_num = ens.EnsembleData.EnsembleNumber
 
                 # Always store the last time
                 self.last_time = ens.EnsembleData.datetime()
+                self.last_ens_num = ens.EnsembleData.EnsembleNumber
 
     def average(self, is_running_avg=False):
         """
@@ -116,10 +122,15 @@ class AverageWaterColumn:
 
         :return: Averaged data [ss_code, ss_config, num_beams, num_bins, Beam, Instrument, Earth, Mag, Dir, Pressure, xdcr_depth, first_time, last_time, range_track]
         """
+
+        # These values get reset before the data is returned
+        # So store them here so they remain valid for the returned value
         first_time = self.first_time
         last_time = self.last_time
         num_bins = self.num_bins
         num_beams = self.num_beams
+        first_ens_num = self.first_ens_num
+        last_ens_num = self.last_ens_num
 
         # Average the Beam data
         avg_beam_results = self.avg_beam_data()
@@ -169,7 +180,9 @@ class AverageWaterColumn:
                 self.blank,                     # Blanking distance used to calculate bin depth
                 self.bin_size,                  # Bins size for the  use to calculate bin depth
                 avg_bottom_track_range_results, # Average bottom track value
-                self.is_upward]                 # Flag if upward or downward facing
+                self.is_upward,                 # Flag if upward or downward facing
+                first_ens_num,                  # First Ensemble number in average
+                last_ens_num]                   # Last Ensemble number in average
 
     def reset(self):
         """
@@ -191,6 +204,8 @@ class AverageWaterColumn:
         self.last_time = None
         self.num_bins = 0
         self.num_beams = 0
+        self.first_ens_num = 0
+        self.last_ens_num = 0
 
     def avg_beam_data(self):
         """
