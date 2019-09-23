@@ -1,15 +1,16 @@
 from rti_python.Codecs.BinaryCodec import BinaryCodec
 from obsub import event
 import logging
+import os
 
 
 class ReadBinaryFile:
 
-    def playback(self, file_path):
+    def playback(self, ens_file_path):
         """
         Playback the given file.  This will read the file
         then call ensemble_rcv to process the ensemble.
-        :param file_path: Ensemble file path.
+        :param ens_file_path: Ensemble file path.
         :return:
         """
         # RTB ensemble delimiter
@@ -17,16 +18,24 @@ class ReadBinaryFile:
 
         BLOCK_SIZE = 4096
 
+        # Get the total file size to keep track of total bytes read and show progress
+        file_size = os.path.getsize(ens_file_path)
+        bytes_read = 0
+
         # Create a buffer
         buff = bytes()
 
-        with open(file_path, "rb") as f:
+        with open(ens_file_path, "rb") as f:
 
             # Read in the file
             # for chunk in iter(lambda: f.read(4096), b''):
             #    self.adcp_codec.add(chunk)
 
             data = f.read(BLOCK_SIZE)  # Read in data
+
+            # Keep track of bytes read
+            bytes_read += BLOCK_SIZE
+            self.file_progress(bytes_read, file_size, ens_file_path)
 
             while data:  # Verify data was found
                 buff += data  # Accumulate the buffer
@@ -38,6 +47,10 @@ class ReadBinaryFile:
                         self.process_playback_ens(DELIMITER + chunk)  # Process the binary ensemble data
 
                 data = f.read(BLOCK_SIZE)  # Read the next batch of data
+
+                # Keep track of bytes read
+                bytes_read += BLOCK_SIZE
+                self.file_progress(bytes_read, file_size, ens_file_path)
 
         # Process whatever is remaining in the buffer
         self.process_playback_ens(DELIMITER + buff)
@@ -73,6 +86,18 @@ class ReadBinaryFile:
         if ens.IsEnsembleData:
             logging.debug(str(ens.EnsembleData.EnsembleNumber))
 
+    @event
+    def file_progress(self, bytes_read, total_bytes, ens_file_path):
+        """
+        Monitor the progress of reading the file.  This will give the
+        bytes read, total bytes and the file name.
+        :param bytes_read: Bytes read.
+        :param total_bytes: Total bytes read.
+        :param ens_file_path: File path.
+        :return:
+        """
+        logging.debug("ReadBinaryFile: Bytes Read: " + str(bytes_read) + " - Total Bytes: " + str(total_bytes) + " -- " + ens_file_path)
+
 
 if __name__ == '__main__':
 
@@ -90,9 +115,21 @@ if __name__ == '__main__':
         if ens.IsEnsembleData:
             print(str(ens.EnsembleData.EnsembleNumber))
 
+    def read_file_progress(sender, bytes_read, total_bytes, ens_file_path):
+        """
+        Monitor the file progress.
+        :param sender:
+        :param bytes_read: Bytes read.
+        :param total_bytes: Total bytes.
+        :param ens_file_path: File path.
+        :return:
+        """
+        logging.debug("Bytes Read: " + str(bytes_read) + " - Total Bytes: " + str(total_bytes) + " -- " + ens_file_path)
+
     # Create the file reader to read the binary file
     read_binary = ReadBinaryFile()
     read_binary.ensemble_event += process_ens_func
+    read_binary.file_progress += read_file_progress
 
     # Just define the file path
     #file_path = "/path/to/file/ensembles.ens"
