@@ -941,7 +941,7 @@ def test_AWC_change_ss_code():
     awc.add_ens(ens1)
     result = awc.average()
 
-    assert 14 == len(result)
+    assert 18 == len(result)
 
     # verify not empty list
     assert result[4]

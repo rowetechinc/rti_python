@@ -307,6 +307,10 @@ class WaveForceCodec:
                 if len(ens_wave.range_tracking) > 0:
                     rt_vert.extend(struct.pack('f', ens_wave.range_tracking[0]))
 
+                # Set the height source based off the selected height source (WHS)
+                if self.height_source == 4 or self.height_source == 5:
+                    height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+
             else:
                 # 4 Beam Data
                 num_4beam_ens += 1
@@ -316,8 +320,16 @@ class WaveForceCodec:
                 pitch.extend(struct.pack('f', ens_wave.pitch))                          # Pitch (WPH)
                 roll.extend(struct.pack('f', ens_wave.roll))                            # Roll (WRL)
                 water_temp.extend(struct.pack('f', ens_wave.water_temp))                # Water Temp (WTS)
-                height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+                #height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
                 avg_range_track.extend(struct.pack('f', ens_wave.avg_range_tracking))   # Avg Range Tracking (WAH)
+
+                # Set the height source based off the selected height source (WHS)
+                if self.height_source == 0 or self.height_source == 1 or self.height_source == 2 or self.height_source == 3:
+                    height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+                #if self.height_source == 4:
+                #    height.extend(struct.pack('f', ens_wave.avg_range_tracking))            # Average RT
+                #if self.height_source == 5:
+                #    height.extend(struct.pack('f', ens_wave.pressure))                      # Pressure
 
                 # Range Tracking (WR0, WR1, WR2, WR3)
                 rt_0.extend(struct.pack('f', ens_wave.range_tracking[0]))               # Beam 0 RT

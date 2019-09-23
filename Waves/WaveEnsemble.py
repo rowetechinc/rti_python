@@ -294,7 +294,8 @@ class WaveEnsemble:
         :param corr_thresh: Correlation threshold.
         """
         # Get the number of bins
-        num_bins = len(selected_bins)
+        num_selected_bins = len(selected_bins)
+        num_bins = ens.EnsembleData.NumBins
 
         # Get the number of beams
         num_beams = 1
@@ -328,12 +329,11 @@ class WaveEnsemble:
                     self.north_vel.append(ens.EarthVelocity.Velocities[selected_bin][1])
                     self.vertical_vel.append(ens.EarthVelocity.Velocities[selected_bin][2])
 
+        # Range Tracking
+        # Average the ranges
         avg_range_ct = 0
         avg_range = 0.0
-
         for beam in range(num_beams):
-            # Range Tracking
-            # Average the ranges
             if ens.IsRangeTracking:
                 if ens.RangeTracking.Range[beam] > 0:
                     avg_range += ens.RangeTracking.Range[beam]
@@ -343,16 +343,17 @@ class WaveEnsemble:
                     self.range_tracking.append(-1.0)
             else:
                 self.range_tracking.append(-1.0)
+
+        # Include the pressure in the average of the range tracking
         if self.pressure >= 0:
             avg_range += self.pressure
             avg_range_ct += 1
 
+        # Set the average range and vertical beam height as the average of the range tracking and pressure
         if ens.IsRangeTracking:
-            # Get the average range
             if avg_range_ct > 0:
                 self.avg_range_tracking = avg_range / avg_range_ct
                 self.vert_beam_height = self.avg_range_tracking
-
             else:
                 self.vert_beam_height = 0.0
                 self.avg_range_tracking = 0.0
@@ -360,17 +361,17 @@ class WaveEnsemble:
         # Cleanup
         # Check Vertical beam height data (avg range)
         # and use pressure as backup
-        if self.pressure != 0:
-            if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
-                self.vert_beam_height = self.pressure
+        #if self.pressure != 0:
+        #    if self.vert_beam_height > 1.2 * self.pressure or self.vert_beam_height < 0.8 * self.pressure:
+        #        self.vert_beam_height = self.pressure
 
         # Check for slant height data
         # Check Range tracking and use pressure as backup
-        if ens.IsRangeTracking:
-            if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
-                for beam in range(num_beams):
-                    if self.range_tracking[beam] > 1.2 * self.pressure or self.range_tracking[beam] < 0.8 * self.pressure:
-                        self.range_tracking[beam] = self.pressure
+        #if ens.IsRangeTracking:
+        #    if ens.RangeTracking.Range[0] != -1 and self.pressure != 0:
+        #        for beam in range(num_beams):
+        #            if self.range_tracking[beam] > 1.2 * self.pressure or self.range_tracking[beam] < 0.8 * self.pressure:
+        #                self.range_tracking[beam] = self.pressure
 
         # Height Source
         if self.height_source == 0:
