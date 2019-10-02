@@ -67,11 +67,11 @@ class EarthVelocity:
         """
         # Remove the vessel speed
         for bin_num in range(len(self.Velocities)):
-            if self.Velocities[bin_num][0] != Ensemble.BadVelocity:
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][0]):
                 self.Velocities[bin_num][0] = self.Velocities[bin_num][0] + bt_east            # Remove vessel speed
-            if self.Velocities[bin_num][1] != Ensemble.BadVelocity:
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][1]):
                 self.Velocities[bin_num][1] = self.Velocities[bin_num][1] + bt_north           # Remove vessel speed
-            if self.Velocities[bin_num][2] != Ensemble.BadVelocity:
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][2]):
                 self.Velocities[bin_num][2] = self.Velocities[bin_num][2] + bt_vert            # Remove vessel speed
 
         # Generate the new vectors after removing the vessel speed
@@ -102,14 +102,9 @@ class EarthVelocity:
         dir = []
 
         for bin_num in range(len(earth_vel)):
-            # Verify the data is good
-            if earth_vel[bin_num][0] != Ensemble.BadVelocity and earth_vel[bin_num][1] != Ensemble.BadVelocity and earth_vel[bin_num][2] != Ensemble.BadVelocity:
-                mag.append(EarthVelocity.calculate_magnitude(earth_vel[bin_num][0], earth_vel[bin_num][1], earth_vel[bin_num][2]))
-                dir.append(EarthVelocity.calculate_direction(earth_vel[bin_num][0], earth_vel[bin_num][1]))
-            else:
-                # Mark the data bad
-                mag.append(Ensemble.BadVelocity)
-                dir.append(Ensemble.BadVelocity)
+            # Calculate the magnitude and direction
+            mag.append(EarthVelocity.calculate_magnitude(earth_vel[bin_num][0], earth_vel[bin_num][1], earth_vel[bin_num][2]))
+            dir.append(EarthVelocity.calculate_direction(earth_vel[bin_num][0], earth_vel[bin_num][1]))
 
         return mag, dir
 
@@ -122,7 +117,11 @@ class EarthVelocity:
         :param vertical: Earth Vertical Velocity
         :return: Magnitude value
         """
-        return math.sqrt((east*east) + (north*north) + (vertical*vertical))
+
+        if not Ensemble.is_bad_velocity(east) and not Ensemble.is_bad_velocity(north) and not Ensemble.is_bad_velocity(vertical):
+            return math.sqrt((east*east) + (north*north) + (vertical*vertical))
+        else:
+            return Ensemble.BadVelocity
 
     @staticmethod
     def calculate_direction(east, north):
@@ -133,14 +132,17 @@ class EarthVelocity:
         :param north: Earth North Velocity
         :return: Direction of the water
         """
-        dir = (math.atan2(east, north)) * (180.0 / math.pi)
+        if not Ensemble.is_bad_velocity(east) and not Ensemble.is_bad_velocity(north):
+            bin_dir = (math.atan2(east, north)) * (180.0 / math.pi)
 
-        # The range is -180 to 180
-        # This moves it to 0 to 360
-        if dir < 0.0:
-            dir = 360.0 + dir
+            # The range is -180 to 180
+            # This moves it to 0 to 360
+            if bin_dir < 0.0:
+                bin_dir = 360.0 + bin_dir
 
-        return dir
+            return bin_dir
+        else:
+            return Ensemble.BadVelocity
 
     def encode(self):
         """
@@ -183,13 +185,42 @@ class EarthVelocity:
                 val = self.Velocities[bin_num][beam]
 
                 # Create the CSV string
-                str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
+                str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val)])
 
         # Generate Magnitude and Direction CSV
         for bin_num in range(self.num_elements):
             mag = self.Magnitude[bin_num]
             dir = self.Direction[bin_num]
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, 0, blank, bin_size, mag))
-            str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, 0, blank, bin_size, dir))
+            str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, 0, blank, bin_size, mag)])
+            str_result.append([Ensemble.gen_csv_line(dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, 0, blank, bin_size, dir)])
 
         return str_result
+
+    def encode_df(self, dt, ss_code, ss_config, blank, bin_size):
+        """
+        Encode into Dataframe array format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :param blank: Blank or first bin position in meters.
+        :param bin_size: Bin size in meters.
+        :return: List of CSV lines.
+        """
+        df_result = []
+
+        for beam in range(self.element_multiplier):
+            for bin_num in range(self.num_elements):
+                # Get the value
+                val = self.Velocities[bin_num][beam]
+
+                # Create the Dataframe array
+                df_result.append([dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val])
+
+        # Generate Magnitude and Direction CSV
+        for bin_num in range(self.num_elements):
+            mag = self.Magnitude[bin_num]
+            dir = self.Direction[bin_num]
+            df_result.append([dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, beam, blank, bin_size, mag])
+            df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, blank, bin_size, dir])
+
+        return df_result

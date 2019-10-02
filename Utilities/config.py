@@ -108,6 +108,7 @@ class RtiConfig:
             self.config['Waves']['pressure_sensor_offset'] = '0.0'
             self.config['Waves']['latitude'] = '0.0'
             self.config['Waves']['longitude'] = '0.0'
+            self.config['Waves']['replace_pressure_with_vertical'] = 'False'
 
             self.write()
 
@@ -160,6 +161,10 @@ class RtiConfig:
             self.config['Waves']['4b_vert_pair'] = 'True'
             self.write()
 
+        if not self.config.has_option('Waves', 'replace_pressure_with_vertical'):
+            self.config['Waves']['replace_pressure_with_vertical'] = 'False'
+            self.write()
+
     def init_average_waves_config(self):
         """
         Default configuration for the Average Waves Column.
@@ -207,6 +212,10 @@ class RtiConfig:
             self.config['PLOT'] = {}
             self.config['PLOT']['IP'] = RtiConfig.get_ip()
             self.config['PLOT']['PORT'] = '5001'
+            self.config['PLOT']['LIVE'] = 'True'
+            self.config['PLOT']['RATE'] = '2500'
+            self.config['PLOT']["BUFF_SIZE"] = '1000'
+            self.config['PLOT']["MAX_POINTS"] = '4096'
             self.write()
 
         # Verify each value exist
@@ -216,6 +225,22 @@ class RtiConfig:
 
         if not self.config.has_option('PLOT', 'PORT'):
             self.config['PLOT']['PORT'] = '5001'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'LIVE'):
+            self.config['PLOT']['LIVE'] = 'True'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'RATE'):
+            self.config['PLOT']['RATE'] = '2500'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'BUFF_SIZE'):
+            self.config['PLOT']['BUFF_SIZE'] = '1000'
+            self.write()
+
+        if not self.config.has_option('PLOT', 'MAX_POINTS'):
+            self.config['PLOT']['MAX_POINTS'] = '4096'
             self.write()
 
     @staticmethod

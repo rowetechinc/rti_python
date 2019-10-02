@@ -72,22 +72,22 @@ def test_AWC_1ens():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[5][0][0] == 1.0
+    assert result[5][0][1] == 2.0
+    assert result[5][0][2] == 3.0
+    assert result[5][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[6][0][0] == 1.0
+    assert result[6][0][1] == 2.0
+    assert result[6][0][2] == 3.0
+    assert result[6][0][3] == 4.0
 
 def test_AWC_2ens():
 
@@ -155,22 +155,22 @@ def test_AWC_2ens():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[5][0][0] == 1.0
+    assert result[5][0][1] == 2.0
+    assert result[5][0][2] == 3.0
+    assert result[5][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[6][0][0] == 1.0
+    assert result[6][0][1] == 2.0
+    assert result[6][0][2] == 3.0
+    assert result[6][0][3] == 4.0
 
 def test_AWC_3ens():
 
@@ -239,22 +239,22 @@ def test_AWC_3ens():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[5][0][0] == 1.0
+    assert result[5][0][1] == 2.0
+    assert result[5][0][2] == 3.0
+    assert result[5][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[6][0][0] == 1.0
+    assert result[6][0][1] == 2.0
+    assert result[6][0][2] == 3.0
+    assert result[6][0][3] == 4.0
 
 def test_AWC_data():
 
@@ -323,22 +323,22 @@ def test_AWC_data():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 5.0
-    assert result[1][0][1] == 6.0
-    assert result[1][0][2] == 7.0
-    assert result[1][0][3] == 8.0
+    assert result[5][0][0] == 5.0
+    assert result[5][0][1] == 6.0
+    assert result[5][0][2] == 7.0
+    assert result[5][0][3] == 8.0
 
     # Earth Results
-    assert result[2][0][0] == 9.0
-    assert result[2][0][1] == 10.0
-    assert result[2][0][2] == 11.0
-    assert result[2][0][3] == 12.0
+    assert result[6][0][0] == 9.0
+    assert result[6][0][1] == 10.0
+    assert result[6][0][2] == 11.0
+    assert result[6][0][3] == 12.0
 
 
 def test_AWC_4ens():
@@ -462,22 +462,22 @@ def test_AWC_4ens():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 5.0
-    assert result[1][0][1] == 6.0
-    assert result[1][0][2] == 7.0
-    assert result[1][0][3] == 8.0
+    assert result[5][0][0] == 5.0
+    assert result[5][0][1] == 6.0
+    assert result[5][0][2] == 7.0
+    assert result[5][0][3] == 8.0
 
     # Earth Results
-    assert result[2][0][0] == 9.0
-    assert result[2][0][1] == 10.0
-    assert result[2][0][2] == 11.0
-    assert result[2][0][3] == 12.0
+    assert result[6][0][0] == 9.0
+    assert result[6][0][1] == 10.0
+    assert result[6][0][2] == 11.0
+    assert result[6][0][3] == 12.0
 
 
 def test_AWC_4ens_new_data():
@@ -601,22 +601,22 @@ def test_AWC_4ens_new_data():
     assert result[2]
 
     # Beam Results
-    assert result[0][0][0] == pytest.approx(4.33, 0.01)
-    assert result[0][0][1] == pytest.approx(8.33, 0.01)
-    assert result[0][0][2] == pytest.approx(12.33, 0.01)
-    assert result[0][0][3] == pytest.approx(16.33, 0.01)
+    assert result[4][0][0] == pytest.approx(4.33, 0.01)
+    assert result[4][0][1] == pytest.approx(8.33, 0.01)
+    assert result[4][0][2] == pytest.approx(12.33, 0.01)
+    assert result[4][0][3] == pytest.approx(16.33, 0.01)
 
     # Instrument Results
-    assert result[1][0][0] == pytest.approx(20.3, 0.01)
-    assert result[1][0][1] == pytest.approx(24.3, 0.01)
-    assert result[1][0][2] == pytest.approx(28.3, 0.01)
-    assert result[1][0][3] == pytest.approx(32.3, 0.01)
+    assert result[5][0][0] == pytest.approx(20.3, 0.01)
+    assert result[5][0][1] == pytest.approx(24.3, 0.01)
+    assert result[5][0][2] == pytest.approx(28.3, 0.01)
+    assert result[5][0][3] == pytest.approx(32.3, 0.01)
 
     # Earth Results
-    assert result[2][0][0] == pytest.approx(36.3, 0.01)
-    assert result[2][0][1] == pytest.approx(40.3, 0.01)
-    assert result[2][0][2] == pytest.approx(44.3, 0.01)
-    assert result[2][0][3] == pytest.approx(48.3, 0.01)
+    assert result[6][0][0] == pytest.approx(36.3, 0.01)
+    assert result[6][0][1] == pytest.approx(40.3, 0.01)
+    assert result[6][0][2] == pytest.approx(44.3, 0.01)
+    assert result[6][0][3] == pytest.approx(48.3, 0.01)
 
 
 def test_AWC_change_beam():
@@ -708,9 +708,9 @@ def test_AWC_change_beam():
     result = awc.average()
 
     # verify empty list
-    assert not result[0]
-    assert not result[1]
-    assert not result[2]
+    assert not result[4]
+    assert not result[5]
+    assert not result[6]
 
 
 def test_AWC_change_bin():
@@ -817,9 +817,9 @@ def test_AWC_change_bin():
     result = awc.average()
 
     # verify empty list
-    assert not result[0]
-    assert not result[1]
-    assert not result[2]
+    assert not result[4]
+    assert not result[5]
+    assert not result[6]
 
 
 def test_AWC_change_ss_code():
@@ -941,40 +941,40 @@ def test_AWC_change_ss_code():
     awc.add_ens(ens1)
     result = awc.average()
 
-    assert 9 == len(result)
+    assert 18 == len(result)
 
     # verify not empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
+    assert result[4]
+    assert result[5]
+    assert result[6]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 5.0
-    assert result[1][0][1] == 6.0
-    assert result[1][0][2] == 7.0
-    assert result[1][0][3] == 8.0
+    assert result[5][0][0] == 5.0
+    assert result[5][0][1] == 6.0
+    assert result[5][0][2] == 7.0
+    assert result[5][0][3] == 8.0
 
     # Earth Results
-    assert result[2][0][0] == 9.0
-    assert result[2][0][1] == 10.0
-    assert result[2][0][2] == 11.0
-    assert result[2][0][3] == 12.0
+    assert result[6][0][0] == 9.0
+    assert result[6][0][1] == 10.0
+    assert result[6][0][2] == 11.0
+    assert result[6][0][3] == 12.0
 
     # Magnitude
-    assert result[3][0] == pytest.approx(17.378, 0.1)
-    assert result[3][1] == pytest.approx(17.378, 0.1)
-    assert result[3][2] == pytest.approx(17.378, 0.1)
+    assert result[7][0] == pytest.approx(17.378, 0.1)
+    assert result[7][1] == pytest.approx(17.378, 0.1)
+    assert result[7][2] == pytest.approx(17.378, 0.1)
 
     # Direction
-    assert result[4][0] == pytest.approx(41.98, 0.1)
-    assert result[4][1] == pytest.approx(41.98, 0.1)
-    assert result[4][2] == pytest.approx(41.98, 0.1)
+    assert result[8][0] == pytest.approx(41.98, 0.1)
+    assert result[8][1] == pytest.approx(41.98, 0.1)
+    assert result[8][2] == pytest.approx(41.98, 0.1)
 
 
 def test_AWC_change_ss_config():
@@ -1093,27 +1093,27 @@ def test_AWC_change_ss_config():
     result = awc.average()
 
     # verify not empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
+    assert result[AverageWaterColumn.INDEX_BEAM]
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT]
+    assert result[AverageWaterColumn.INDEX_EARTH]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 5.0
-    assert result[1][0][1] == 6.0
-    assert result[1][0][2] == 7.0
-    assert result[1][0][3] == 8.0
+    assert result[5][0][0] == 5.0
+    assert result[5][0][1] == 6.0
+    assert result[5][0][2] == 7.0
+    assert result[5][0][3] == 8.0
 
     # Earth Results
-    assert result[2][0][0] == 9.0
-    assert result[2][0][1] == 10.0
-    assert result[2][0][2] == 11.0
-    assert result[2][0][3] == 12.0
+    assert result[6][0][0] == 9.0
+    assert result[6][0][1] == 10.0
+    assert result[6][0][2] == 11.0
+    assert result[6][0][3] == 12.0
 
 
 def test_AWC_mag_dir():
@@ -1179,29 +1179,29 @@ def test_AWC_mag_dir():
     result = awc.average()
 
     # verify empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
-    assert result[3]
-    assert result[4]
+    assert result[AverageWaterColumn.INDEX_BEAM]
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT]
+    assert result[AverageWaterColumn.INDEX_EARTH]
+    assert result[AverageWaterColumn.INDEX_MAG]
+    assert result[AverageWaterColumn.INDEX_DIR]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[4][0][0] == 1.0
+    assert result[4][0][1] == 2.0
+    assert result[4][0][2] == 3.0
+    assert result[4][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[5][0][0] == 1.0
+    assert result[5][0][1] == 2.0
+    assert result[5][0][2] == 3.0
+    assert result[5][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[6][0][0] == 1.0
+    assert result[6][0][1] == 2.0
+    assert result[6][0][2] == 3.0
+    assert result[6][0][3] == 4.0
 
     # Mag Results
     assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
@@ -1293,29 +1293,29 @@ def test_AWC_pressure_xdcr_depth():
     result = awc.average()
 
     # verify empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
-    assert result[3]
-    assert result[4]
+    assert result[AverageWaterColumn.INDEX_BEAM]
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT]
+    assert result[AverageWaterColumn.INDEX_EARTH]
+    assert result[AverageWaterColumn.INDEX_MAG]
+    assert result[AverageWaterColumn.INDEX_DIR]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][3] == 4.0
 
     # Mag Results
     assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
@@ -1409,29 +1409,29 @@ def test_AWC_time():
     result = awc.average()
 
     # verify empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
-    assert result[3]
-    assert result[4]
+    assert result[AverageWaterColumn.INDEX_BEAM]
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT]
+    assert result[AverageWaterColumn.INDEX_EARTH]
+    assert result[AverageWaterColumn.INDEX_MAG]
+    assert result[AverageWaterColumn.INDEX_DIR]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][3] == 4.0
 
     # Mag Results
     assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)
@@ -1560,29 +1560,29 @@ def test_AWC_last_time():
     result = awc.average()
 
     # verify empty list
-    assert result[0]
-    assert result[1]
-    assert result[2]
-    assert result[3]
-    assert result[4]
+    assert result[AverageWaterColumn.INDEX_BEAM]
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT]
+    assert result[AverageWaterColumn.INDEX_EARTH]
+    assert result[AverageWaterColumn.INDEX_MAG]
+    assert result[AverageWaterColumn.INDEX_DIR]
 
     # Beam Results
-    assert result[0][0][0] == 1.0
-    assert result[0][0][1] == 2.0
-    assert result[0][0][2] == 3.0
-    assert result[0][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_BEAM][0][3] == 4.0
 
     # Instrument Results
-    assert result[1][0][0] == 1.0
-    assert result[1][0][1] == 2.0
-    assert result[1][0][2] == 3.0
-    assert result[1][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_INSTRUMENT][0][3] == 4.0
 
     # Earth Results
-    assert result[2][0][0] == 1.0
-    assert result[2][0][1] == 2.0
-    assert result[2][0][2] == 3.0
-    assert result[2][0][3] == 4.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][0] == 1.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][1] == 2.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][2] == 3.0
+    assert result[AverageWaterColumn.INDEX_EARTH][0][3] == 4.0
 
     # Mag Results
     assert result[AverageWaterColumn.INDEX_MAG][0] == pytest.approx(3.741, 0.01)

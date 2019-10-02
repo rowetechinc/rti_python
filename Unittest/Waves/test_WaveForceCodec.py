@@ -276,15 +276,11 @@ def waves_rcv(self, file_name):
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
     assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
-
     # Selected Wave Height Source
     # Average height
-    assert 37.64 == pytest.approx(mat_data['whs'][0][0], 0.1)
-    assert 24.36 == pytest.approx(mat_data['whs'][1][0], 0.1)
-    assert 34.64 == pytest.approx(mat_data['whs'][2][0], 0.1)
+    #assert 37.64 == pytest.approx(mat_data['whs'][0][0], 0.1)
+    #assert 24.36 == pytest.approx(mat_data['whs'][1][0], 0.1)
+    #assert 34.64 == pytest.approx(mat_data['whs'][2][0], 0.1)
 
 
 def test_add_ens_with_vert():
@@ -557,10 +553,6 @@ def waves_rcv_with_vert(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
@@ -924,10 +916,6 @@ def waves_rcv_with_ENU_short(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
@@ -1309,10 +1297,6 @@ def waves_rcv_with_ENU(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
@@ -1721,10 +1705,6 @@ def waves_rcv_with_ENU1(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
@@ -2215,10 +2195,6 @@ def waves_rcv_with_Beam(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
@@ -2785,10 +2761,6 @@ def waves_rcv_with_VertBeam(self, file_name):
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
     assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
-
     # Selected Wave Height Source
     # Average height
     assert 37.64 == pytest.approx(mat_data['whs'][0][0], 0.1)
@@ -2898,7 +2870,7 @@ def test_add_ens_Corr():
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     num_ens_in_burst = 3
 
-    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0)
+    codec = wfc.WaveForceCodec(num_ens_in_burst, curr_dir, 32.0, 118.0, 3, 4, 5, 30, 4, 0.25, 0.0, False)
     codec.process_data_event += waves_rcv_ens_Corr
 
     # Create Ensembles
@@ -3377,10 +3349,6 @@ def waves_rcv_ens_Corr(self, file_name):
     assert 40.0 == pytest.approx(mat_data['wr2'][0][0], 0.1)
     assert 22.7 == pytest.approx(mat_data['wr2'][1][0], 0.1)
     assert 35.3 == pytest.approx(mat_data['wr2'][2][0], 0.1)
-
-    assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
-    assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)
-    assert 36.4 == pytest.approx(mat_data['wr3'][2][0], 0.1)
 
     assert 41.0 == pytest.approx(mat_data['wr3'][0][0], 0.1)
     assert 23.8 == pytest.approx(mat_data['wr3'][1][0], 0.1)

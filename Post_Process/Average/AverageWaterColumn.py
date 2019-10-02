@@ -18,15 +18,26 @@ class AverageWaterColumn:
     """
 
     # Index for the results
-    INDEX_BEAM = 0
-    INDEX_INSTRUMENT = 1
-    INDEX_EARTH = 2
-    INDEX_MAG = 3
-    INDEX_DIR = 4
-    INDEX_PRESSURE = 5
-    INDEX_XDCR_DEPTH = 6
-    INDEX_FIRST_TIME = 7
-    INDEX_LAST_TIME = 8
+    INDEX_SS_CODE = 0
+    INDEX_SS_CONFIG = 1
+    INDEX_NUM_BEAM = 2
+    INDEX_NUM_BINS = 3
+    INDEX_BEAM = 4
+    INDEX_INSTRUMENT = 5
+    INDEX_EARTH = 6
+    INDEX_MAG = 7
+    INDEX_DIR = 8
+    INDEX_PRESSURE = 9
+    INDEX_XDCR_DEPTH = 10
+    INDEX_FIRST_TIME = 11
+    INDEX_LAST_TIME = 12
+    INDEX_RANGE_TRACK = 13
+    INDEX_BLANK = 14
+    INDEX_BIN_SIZE = 15
+    INDEX_BT_RANGE = 16
+    INDEX_IS_UPWARD = 17
+    INDEX_FIRST_ENS_NUM = 18
+    INDEX_LAST_ENS_NUM = 19
 
     def __init__(self, num_ens, ss_code, ss_config):
 
@@ -43,10 +54,17 @@ class AverageWaterColumn:
         self.ens_direction = deque([], self.num_ens)
         self.pressure = deque([], self.num_ens)
         self.xdcr_depth = deque([], self.num_ens)
+        self.range_track_list = deque([], self.num_ens)
+        self.bottom_track_range_list = deque([], self.num_ens)
         self.blank = 0.0
         self.bin_size = 0.0
+        self.num_beams = 0
+        self.num_bins = 0
         self.first_time = None
         self.last_time = None
+        self.first_ens_num = 0
+        self.last_ens_num = 0
+        self.is_upward = False
 
         self.thread_lock = Lock()
 
@@ -62,11 +80,15 @@ class AverageWaterColumn:
             # Check if the subsystem config and code match
             # Then add the velocity data to the list
             if ens.EnsembleData.SubsystemConfig == self.ss_config and ens.EnsembleData.SysFirmwareSubsystemCode == self.ss_code:
+                if ens.IsEnsembleData:
+                    self.num_beams = ens.EnsembleData.NumBeams
+                    self.num_bins = ens.EnsembleData.NumBins
                 if ens.IsAncillaryData:
                     self.blank = ens.AncillaryData.FirstBinRange
                     self.bin_size = ens.AncillaryData.BinSize
                     self.pressure.append([ens.AncillaryData.Pressure])
                     self.xdcr_depth.append([ens.AncillaryData.TransducerDepth])
+                    self.is_upward = ens.AncillaryData.is_upward_facing()               # Set if upward or downward
                 if ens.IsBeamVelocity:
                     self.ens_beam_list.append(ens.BeamVelocity.Velocities)
                 if ens.IsInstrumentVelocity:
@@ -75,13 +97,19 @@ class AverageWaterColumn:
                     self.ens_earth_list.append(ens.EarthVelocity.Velocities)
                     self.ens_magnitude.append(ens.EarthVelocity.Magnitude)
                     self.ens_direction.append(ens.EarthVelocity.Direction)
+                if ens.IsRangeTracking:
+                    self.range_track_list.append(ens.RangeTracking.Range)
+                if ens.IsBottomTrack:
+                    self.bottom_track_range_list.append(ens.BottomTrack.Range)
 
                 # Set the times
                 if not self.first_time:
                     self.first_time = ens.EnsembleData.datetime()
+                    self.first_ens_num = ens.EnsembleData.EnsembleNumber
 
                 # Always store the last time
                 self.last_time = ens.EnsembleData.datetime()
+                self.last_ens_num = ens.EnsembleData.EnsembleNumber
 
     def average(self, is_running_avg=False):
         """
@@ -89,10 +117,20 @@ class AverageWaterColumn:
 
         If there were any errors averaging, NONE is returned for the average result.  It no
         data existed, NONE is also returned.  If data type does not exist, NONE is returned.
-        :return: Averaged data [Beam, Instrument, Earth, Mag, Dir]
+
+        Use the INDEX variables to access all the data in the returned object.
+
+        :return: Averaged data [ss_code, ss_config, num_beams, num_bins, Beam, Instrument, Earth, Mag, Dir, Pressure, xdcr_depth, first_time, last_time, range_track]
         """
+
+        # These values get reset before the data is returned
+        # So store them here so they remain valid for the returned value
         first_time = self.first_time
         last_time = self.last_time
+        num_bins = self.num_bins
+        num_beams = self.num_beams
+        first_ens_num = self.first_ens_num
+        last_ens_num = self.last_ens_num
 
         # Average the Beam data
         avg_beam_results = self.avg_beam_data()
@@ -115,11 +153,36 @@ class AverageWaterColumn:
         # Average the Pressure data
         avg_xdcr_depth_results = self.avg_xdcr_depth_data()
 
+        # Average the Range Tracking
+        avg_range_track_results = self.avg_range_track_data()
+
+        # Average the Range Tracking
+        avg_bottom_track_range_results = self.avg_bottom_track_range_data()
+
         # Clear the lists
         if not is_running_avg:
             self.reset()
 
-        return [avg_beam_results, avg_instr_results, avg_earth_results, avg_mag_results, avg_dir_results, avg_pressure_results, avg_xdcr_depth_results, first_time, last_time]
+        return [self.ss_code,                   # Subsystem Code (str)
+                self.ss_config,                 # Subsystem Config (str)
+                num_beams,                      # Number of beams (int)
+                num_bins,                       # Number of bins (int)
+                avg_beam_results,               # Beam Vel Avg (list[bin][beam])
+                avg_instr_results,              # Instrument Vel Avg (list[bin][beam])
+                avg_earth_results,              # Earth Vel Avg (list[bin][beam])
+                avg_mag_results,                # Mag Avg (list[bin])
+                avg_dir_results,                # Dir Avg (list[bin])
+                avg_pressure_results,           # Pressure Avg (list[single value]float)
+                avg_xdcr_depth_results,         # Xdcr Depth Avg (list[single value]float)
+                first_time,                     # First Time in Avg (dt)
+                last_time,                      # Last Time in Avg (dt)
+                avg_range_track_results,        # Range Track Avg (list[beam])
+                self.blank,                     # Blanking distance used to calculate bin depth
+                self.bin_size,                  # Bins size for the  use to calculate bin depth
+                avg_bottom_track_range_results, # Average bottom track value
+                self.is_upward,                 # Flag if upward or downward facing
+                first_ens_num,                  # First Ensemble number in average
+                last_ens_num]                   # Last Ensemble number in average
 
     def reset(self):
         """
@@ -135,13 +198,19 @@ class AverageWaterColumn:
         self.ens_direction.clear()
         self.pressure.clear()
         self.xdcr_depth.clear()
+        self.range_track_list.clear()
+        self.bottom_track_range_list.clear()
         self.first_time = None
         self.last_time = None
+        self.num_bins = 0
+        self.num_beams = 0
+        self.first_ens_num = 0
+        self.last_ens_num = 0
 
     def avg_beam_data(self):
         """
         Average the Beam velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_beam_list)
@@ -154,7 +223,7 @@ class AverageWaterColumn:
     def avg_instr_data(self):
         """
         Average the Instrument velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_instr_list)
@@ -167,7 +236,7 @@ class AverageWaterColumn:
     def avg_earth_data(self):
         """
         Average the Earth velocity data
-        :return:
+        :return: Average velocity for each [bin][beam]
         """
         try:
             return self.avg_vel(self.ens_earth_list)
@@ -180,7 +249,7 @@ class AverageWaterColumn:
     def avg_mag_data(self):
         """
         Average the water current magnitude data
-        :return:
+        :return: Average magnitude for each [bin]
         """
         try:
             return self.avg_mag_dir(self.ens_magnitude)
@@ -193,7 +262,7 @@ class AverageWaterColumn:
     def avg_dir_data(self):
         """
         Average the water current direction data
-        :return:
+        :return: Average direction for each [bin]
         """
         try:
             return self.avg_mag_dir(self.ens_direction)
@@ -206,7 +275,7 @@ class AverageWaterColumn:
     def avg_pressure_data(self):
         """
         Average the water pressure data
-        :return:
+        :return: Average pressure. Single value in list
         """
         try:
             return self.avg_mag_dir(self.pressure)
@@ -219,12 +288,38 @@ class AverageWaterColumn:
     def avg_xdcr_depth_data(self):
         """
         Average the water Tranducer Depth data
-        :return:
+        :return: Average Transducer depth. Single value in list
         """
         try:
             return self.avg_mag_dir(self.xdcr_depth)
         except Exception as e:
             logging.error("Error processing data to average Transducer Depth. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_range_track_data(self):
+        """
+        Average the Range Tracking data
+        :return:  Average Range for each [beam]
+        """
+        try:
+            return self.avg_range(self.range_track_list)
+        except Exception as e:
+            logging.error("Error processing data to average Range Tracking. " + str(e))
+            if self.thread_lock.locked():
+                self.thread_lock.release()
+            return None
+
+    def avg_bottom_track_range_data(self):
+        """
+        Average the Bottom Track Range data
+        :return:  Average Bottom Track Range for each [beam]
+        """
+        try:
+            return self.avg_range(self.bottom_track_range_list)
+        except Exception as e:
+            logging.error("Error processing data to average Bottom Track Range. " + str(e))
             if self.thread_lock.locked():
                 self.thread_lock.release()
             return None
@@ -283,7 +378,7 @@ class AverageWaterColumn:
             # Accumulate the data
             for ens_bin in range(len(ens_vel)):
                 for beam in range(len(ens_vel[0])):
-                    if ens_vel[ens_bin][beam] != Ensemble.BadVelocity:
+                    if not Ensemble.is_bad_velocity(ens_vel[ens_bin][beam]):
                         avg_accum[ens_bin][beam] += ens_vel[ens_bin][beam]      # Accumulate velocity
                         avg_count[ens_bin][beam] += 1                           # Count good data
 
@@ -307,7 +402,7 @@ class AverageWaterColumn:
 
         This will not average the data if the data is BAD VELOCITY.
 
-        :param vel:  Magnitude or direction data from each ensemble.
+        :param data:  Magnitude or direction data from each ensemble.
         :return: Average of all the velocities in the all the ensembles.
         """
         # Determine number of bins and beams
@@ -315,13 +410,6 @@ class AverageWaterColumn:
         avg_accum = []
         avg_count = []
         avg_vel = None
-
-        # lock the thread when iterating the deque
-        #self.thread_lock.acquire(True, 1000)
-
-        # Create a deep copy of the data
-        # This will make it thread safe
-        #deep_copy_data = copy.deepcopy(data)
 
         for ens_data in data:
             temp_num_bins = len(ens_data)
@@ -340,12 +428,9 @@ class AverageWaterColumn:
 
             # Accumulate the data
             for ens_bin in range(len(ens_data)):
-                if ens_data[ens_bin] != Ensemble.BadVelocity:
+                if not Ensemble.is_bad_velocity(ens_data[ens_bin]):
                     avg_accum[ens_bin] += ens_data[ens_bin]           # Accumulate velocity
                     avg_count[ens_bin] += 1                           # Count good data
-
-        # Unlock thread
-        #self.thread_lock.release()
 
         # Average the data accumulate
         for ens_bin in range(len(avg_accum)):
@@ -353,3 +438,51 @@ class AverageWaterColumn:
                 avg_vel[ens_bin] = avg_accum[ens_bin] / avg_count[ens_bin]    # Average data
 
         return avg_vel
+
+    def avg_range(self, rt):
+        """
+        Average the Range Tracking data given.
+        This will verify the number of beams
+        is the same between ensembles.  If any ensembles have a different
+        number of beams, then a exception will be thrown.
+
+        This will not average the data if the data is BAD VELOCITY.
+
+        :param rt:  Range Tracking data from each ensemble.
+        :return: Average of all the Range Tracking in the all the ensembles.
+        """
+        # Determine number of beams
+        num_beams = 0
+        avg_accum = []
+        avg_count = []
+        avg_range = None
+
+        for ens_range in rt:
+            temp_num_beams = len(ens_range)
+
+            # Verify the bins and beams has not changed
+            if num_beams == 0:
+                num_beams = temp_num_beams
+            elif num_beams != temp_num_beams:
+                logging.error("Number of beams is not consistent between ensembles")
+                self.thread_lock.release()
+                raise Exception("Number of beams is not consistent between ensembles")
+
+            # Create the average lists
+            if num_beams != 0 and len(avg_accum) == 0:
+                avg_accum = [0 for beam in range(num_beams)]
+                avg_count = [0 for beam in range(num_beams)]
+                avg_range = [0 for beam in range(num_beams)]
+
+            # Accumulate the data
+            for beam in range(len(ens_range)):
+                if not Ensemble.is_bad_velocity(ens_range[beam]):
+                    avg_accum[beam] += ens_range[beam]      # Accumulate range
+                    avg_count[beam] += 1                    # Count good data
+
+        # Average the data accumulate
+        for beam in range(len(avg_accum)):
+                if avg_count[beam] > 0:                                 # Verify data was accumulated
+                    avg_range[beam] = avg_accum[beam] / avg_count[beam] # Average data
+
+        return avg_range

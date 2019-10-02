@@ -25,7 +25,8 @@ class WaveForceCodec:
                  ps_depth=30,
                  height_source=4,
                  corr_thresh=0.25,
-                 pressure_offset=0.0):
+                 pressure_offset=0.0,
+                 replace_pressure_with_vert=False):
         """
         Initialize the wave recorder
         :param ens_in_burst: Number of ensembles in a burst.
@@ -36,6 +37,7 @@ class WaveForceCodec:
         :param bin2: Second selected bin.
         :param bin3: Third selected bin.
         :param ps_depth Pressure Sensor depth.  Depth of the ADCP.
+        :param replace_pressure_with_vert: Replace the pressure sensor data with the vertical beam height.
         """
         self.EnsInBurst = ens_in_burst
         self.FilePath = path
@@ -50,8 +52,10 @@ class WaveForceCodec:
         self.CorrThreshold = corr_thresh
         self.PressureOffset = pressure_offset
         self.PressureSensorDepth = ps_depth
+        self.replace_pressure_with_vertical = replace_pressure_with_vert
         self.RecordCount = 0
         self.buffer_check_lock = threading.Lock()
+
 
         self.selected_bin = []
         if bin1 >= 0:
@@ -87,7 +91,10 @@ class WaveForceCodec:
         :param bin1: First selected bin.
         :param bin2: Second selected bin.
         :param bin3: Third selected bin.
-        :param ps_depth Pressure Sensor depth.  Depth of the ADCP.
+        :param ps_depth: Pressure Sensor depth.  Depth of the ADCP.
+        :param height_source: Select the height source to use.
+        :param corr_thresh: Correlation threshold.
+        :param pressure_offset: Pressure sensor offset.
         """
         self.EnsInBurst = ens_in_burst
         self.FilePath = path
@@ -300,6 +307,10 @@ class WaveForceCodec:
                 if len(ens_wave.range_tracking) > 0:
                     rt_vert.extend(struct.pack('f', ens_wave.range_tracking[0]))
 
+                # Set the height source based off the selected height source (WHS)
+                if self.height_source == 4 or self.height_source == 5:
+                    height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+
             else:
                 # 4 Beam Data
                 num_4beam_ens += 1
@@ -309,8 +320,16 @@ class WaveForceCodec:
                 pitch.extend(struct.pack('f', ens_wave.pitch))                          # Pitch (WPH)
                 roll.extend(struct.pack('f', ens_wave.roll))                            # Roll (WRL)
                 water_temp.extend(struct.pack('f', ens_wave.water_temp))                # Water Temp (WTS)
-                height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+                #height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
                 avg_range_track.extend(struct.pack('f', ens_wave.avg_range_tracking))   # Avg Range Tracking (WAH)
+
+                # Set the height source based off the selected height source (WHS)
+                if self.height_source == 0 or self.height_source == 1 or self.height_source == 2 or self.height_source == 3:
+                    height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
+                #if self.height_source == 4:
+                #    height.extend(struct.pack('f', ens_wave.avg_range_tracking))            # Average RT
+                #if self.height_source == 5:
+                #    height.extend(struct.pack('f', ens_wave.pressure))                      # Pressure
 
                 # Range Tracking (WR0, WR1, WR2, WR3)
                 rt_0.extend(struct.pack('f', ens_wave.range_tracking[0]))               # Beam 0 RT
@@ -334,15 +353,15 @@ class WaveForceCodec:
                 # Set the selected bin data
                 for sel_bin in range(num_bins):
                     # Earth Velocity (WUS, WVS, WZS)
-                    if len(ens_wave.east_vel) > 0:
+                    if len(ens_wave.east_vel) > 0 and len(ens_wave.east_vel) > sel_bin:
                         wus_buff.extend(struct.pack('f', ens_wave.east_vel[sel_bin]))
-                    if len(ens_wave.north_vel) > 0:
+                    if len(ens_wave.north_vel) > 0 and len(ens_wave.north_vel) > sel_bin:
                         wvs_buff.extend(struct.pack('f', ens_wave.north_vel[sel_bin]))
-                    if len(ens_wave.vertical_vel) > 0:
+                    if len(ens_wave.vertical_vel) > 0 and len(ens_wave.vertical_vel) > sel_bin:
                         wzs_buff.extend(struct.pack('f', ens_wave.vertical_vel[sel_bin]))
 
                     # Beam Velocity (WB0, WB1, WB2, WB3)
-                    if len(ens_wave.beam_vel[sel_bin]) > 0:
+                    if len(ens_wave.beam_vel) > sel_bin and len(ens_wave.beam_vel[sel_bin]) > 0:
                         beam_0_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][0]))          # Beam 0 Beam Velocity
                         if ens_wave.num_beams > 1:
                             beam_1_vel.extend(struct.pack('f', ens_wave.beam_vel[sel_bin][1]))      # Beam 1 Beam Velocity
@@ -382,22 +401,49 @@ class WaveForceCodec:
             ba.extend(self.process_wb2(beam_2_vel, num_4beam_ens, num_bins))    # [WB2] Beam 2 Beam Velocity
         if len(beam_3_vel) > 0:
             ba.extend(self.process_wb3(beam_3_vel, num_4beam_ens, num_bins))    # [WB3] Beam 3 Beam Velocity
-        ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
-        ba.extend(self.process_wr1(rt_1, num_4beam_ens))                    # [WR1] Beam 1 Range Tracking
-        ba.extend(self.process_wr2(rt_2, num_4beam_ens))                    # [WR2] Beam 2 Range Tracking
-        ba.extend(self.process_wr3(rt_3, num_4beam_ens))                    # [WR3] Beam 3 Range Tracking
-        ba.extend(self.process_wps(pressure, num_4beam_ens))                # [WPS] Pressure
-        ba.extend(self.process_whg(heading, num_4beam_ens))                 # [WHG] Heading
-        ba.extend(self.process_wph(pitch, num_4beam_ens))                   # [WPH] Pitch
-        ba.extend(self.process_wrl(roll, num_4beam_ens))                    # [WRL] Roll
-        ba.extend(self.process_wts(water_temp, num_4beam_ens))              # [WTS] Water Temp
-        ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
-        ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
-
+        else:
+            if len(beam_2_vel) > 0:
+                ba.extend(self.process_wb3(beam_2_vel, num_4beam_ens, num_bins))  # [WB3] Use Beam 2 as backup if a 3 beam system
+        if len(rt_0) > 0:
+            ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
+        if len(rt_1) > 0:
+            ba.extend(self.process_wr1(rt_1, num_4beam_ens))                    # [WR1] Beam 1 Range Tracking
+        if len(rt_2) > 0:
+            ba.extend(self.process_wr2(rt_2, num_4beam_ens))                    # [WR2] Beam 2 Range Tracking
+        if len(rt_3) > 0:
+            ba.extend(self.process_wr3(rt_3, num_4beam_ens))                    # [WR3] Beam 3 Range Tracking
+        else:
+            if len(rt_2) > 0:
+                ba.extend(self.process_wr3(rt_2, num_4beam_ens))                # [WR3] Use Beam 2 Range Tracking as backup if 3 beam system
+        if len(pressure) > 0:
+            ba.extend(self.process_wps(pressure, num_4beam_ens))                # [WPS] Pressure
+        if len(heading) > 0:
+            ba.extend(self.process_whg(heading, num_4beam_ens))                 # [WHG] Heading
+        if len(pitch) > 0:
+            ba.extend(self.process_wph(pitch, num_4beam_ens))                   # [WPH] Pitch
+        if len(roll) > 0:
+            ba.extend(self.process_wrl(roll, num_4beam_ens))                    # [WRL] Roll
+        if len(water_temp) > 0:
+            ba.extend(self.process_wts(water_temp, num_4beam_ens))              # [WTS] Water Temp
+        if len(height) > 0:
+            ba.extend(self.process_whs(height, num_4beam_ens))                  # [WHS] Wave Height Source. (User Select. Range Tracking Beam or Vertical Beam or Pressure)
+        if len(avg_range_track) > 0:
+            ba.extend(self.process_wah(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
         if len(beam_vert_vel) > 0:
             ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
-        ba.extend(self.process_wzp(vert_pressure, num_vert_ens))            # [WZP] Vertical Beam Pressure
-        ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+
+        # Check if the pressure sensor data needs to replaced with vertical
+        if not self.replace_pressure_with_vertical:
+            if len(vert_pressure) > 0:
+                ba.extend(self.process_wzp(vert_pressure, num_vert_ens))        # [WZP] Vertical Beam Pressure
+
+        if len(rt_vert) > 0:
+            # USING VERTICAL BEAM RT to replace pressure in cases where pressure not working
+            if self.replace_pressure_with_vertical:
+                ba.extend(self.process_wzp(rt_vert, num_vert_ens))              # [WZP] Vertical Beam Pressure
+
+            ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+
 
         # Write the file
         filename = self.write_file(ba)
