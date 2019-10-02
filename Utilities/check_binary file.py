@@ -126,7 +126,7 @@ class RtiCheckFile:
         print("---------------------------------------------")
         print("---------------------------------------------")
 
-    def file_progress_handler(self, sender, bytes_read, total_size, block_size):
+    def file_progress_handler(self, sender, bytes_read, total_size, file_name):
         """
         Monitor the file playback progress.
         :param sender: NOT USED
@@ -138,7 +138,7 @@ class RtiCheckFile:
         if self.pbar is None:
             self.pbar = tqdm(total=total_size)
 
-        self.pbar.update(block_size)
+        self.pbar.update(int(bytes_read))
 
     def ens_handler(self, sender, ens):
         """
