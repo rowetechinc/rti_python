@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog
 from rti_python.Utilities.read_binary_file import ReadBinaryFile
 from tqdm import tqdm
+from obsub import event
+import logging
 
 class RtiCheckFile:
     """
@@ -154,16 +156,21 @@ class RtiCheckFile:
         self.last_ens = ens
 
         # Checking missing Ensemble
-        is_missing_ens = self.check_missing_ens(ens)
+        is_missing_ens, prev_ens, err_str  = RtiCheckFile.check_missing_ens(ens, self.prev_ens_num, self.show_live_errors)
+        self.prev_ens_num = prev_ens        # Log previous ens
         if is_missing_ens:
             self.is_missing_ens = True
             self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.missing_ens_count += 1
 
         # Check status
-        is_status_issue = self.check_status(ens)
+        is_status_issue, err_str = self.check_status(ens, self.show_live_errors)
         if is_status_issue:
             self.is_status_issue = True
             self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.bad_status_count += 1
 
         # Count the number of ensembles
         self.ens_count += 1
@@ -171,52 +178,71 @@ class RtiCheckFile:
         # Update the progress bar
         #self.pbar.update(1)
 
-    def check_status(self, ens):
+        # Send ensemble to event to let other objects process the data
+        self.ensemble_event(ens)
+
+    @event
+    def ensemble_event(self, ens):
+        """
+        Event to subscribe to receive decoded ensembles.
+        :param ens: Ensemble object.
+        :return:
+        """
+        if ens.IsEnsembleData:
+            logging.debug(str(ens.EnsembleData.EnsembleNumber))
+
+    @staticmethod
+    def check_status(ens, show_live_errors):
         """
         Check the status for any errors.
         :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
         :return: True = Found an issue
         """
+        err_str = ""
+        found_issue = False
+
         if ens.IsEnsembleData:
             if not ens.EnsembleData.Status == 0:
                 err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tStatus: [" + str(hex(ens.EnsembleData.Status)) + "]: " + ens.EnsembleData.status_str()
 
                 # Display the error if turned on
-                if self.show_live_errors:
+                if show_live_errors:
                     print(err_str)
 
                 # Record the error
-                self.found_issue_str += err_str + "\n"
-                self.bad_status_count += 1
-                return True
+                found_issue = True
 
-        return False
+        return found_issue, err_str
 
-    def check_missing_ens(self, ens):
+    @staticmethod
+    def check_missing_ens(ens, prev_ens_num, show_live_errors=False):
         """
         Check if the ensemble numbers are not in order.
         :param ens: Ensemble
+        :param prev_ens_num: Previous ensemble number to compare against
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
         :return: TRUE = Found an Issue
         """
         found_issue = False
+        err_str = ""
 
         if ens.IsEnsembleData:
-            if not self.prev_ens_num == 0:
-                if not ens.EnsembleData.EnsembleNumber == (self.prev_ens_num + 1):
-                    err_str = "Missing Ensemble: " + str(self.prev_ens_num + 1)
+            if not prev_ens_num == 0:
+                if not ens.EnsembleData.EnsembleNumber == (prev_ens_num + 1):
+                    err_str = "Missing Ensemble: " + str(prev_ens_num + 1)
 
                     # Display the error if turned on
-                    if self.show_live_errors:
+                    if show_live_errors:
                         print(err_str)
 
                     # Record the error
-                    self.found_issue_str += err_str + "\n"
-                    self.missing_ens_count += 1
                     found_issue = True
 
-            self.prev_ens_num = ens.EnsembleData.EnsembleNumber
+            # Keep track of the previous ensemble number
+            prev_ens_num = ens.EnsembleData.EnsembleNumber
 
-        return found_issue
+        return found_issue, prev_ens_num, err_str
 
 
 if __name__ == "__main__":

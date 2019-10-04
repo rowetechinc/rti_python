@@ -4,9 +4,9 @@ twisted
 pycrc
 pyqt5
 pytest
-pandas==0.19.2
-pyinstaller
 scipy
+pandas
+pyinstaller
 pynmea2
 obsub
 configparser
