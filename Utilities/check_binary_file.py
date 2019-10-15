@@ -19,7 +19,7 @@ class RtiCheckFile:
         self.is_status_issue = False
         self.is_voltage_issue = False
         self.is_amplitude_0db_issue = False
-        self.is_correlation_1pct_issue = False
+        self.is_correlation_100pct_issue = False
         self.file_path = ""
         self.pbar = None
         self.first_ens = None
@@ -27,6 +27,9 @@ class RtiCheckFile:
         self.show_live_errors = False
         self.bad_status_count = 0
         self.missing_ens_count = 0
+        self.bad_voltage_count = 0
+        self.bad_amp_0db_count = 0
+        self.bad_corr_100pct_count = 0
 
     def init(self):
         """
@@ -98,12 +101,15 @@ class RtiCheckFile:
         print("---------------------------------------------")
 
         # Check results for any fails
-        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_1pct_issue:
+        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue:
             print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             print("*********************************************")
             print(self.found_issue_str)
             print("Total Bad Status: " + str(self.bad_status_count))
             print("Total Missing Ensembles: " + str(self.missing_ens_count))
+            print("Total Bad Voltage: " + str(self.bad_voltage_count))
+            print("Total Bad Amplitude (0dB): " + str(self.bad_amp_0db_count))
+            print("Total Bad Correlation (100%): " + str(self.bad_corr_100pct_count))
             print("*********************************************")
         else:
             if not self.prev_ens_num == 0:
@@ -180,21 +186,21 @@ class RtiCheckFile:
             self.is_voltage_issue = True
             self.found_issues += 1
             self.found_issue_str += err_str + "\n"
-            self.bad_status_count += 1
+            self.bad_voltage_count += 1
 
         is_amplitude_0db_issue, err_str = self.check_amplitude_0db(ens, self.show_live_errors)
         if is_amplitude_0db_issue:
             self.is_amplitude_0db_issue = True
             self.found_issues += 1
             self.found_issue_str += err_str + "\n"
-            self.bad_status_count += 1
+            self.bad_amp_0db_count += 1
 
-        is_correlation_1pct_issue, err_str = self.check_correlation_1pct(ens, self.show_live_errors)
-        if is_correlation_1pct_issue:
-            self.is_correlation_1pct_issue = True
+        is_correlation_100pct_issue, err_str = self.check_correlation_1pct(ens, self.show_live_errors)
+        if is_correlation_100pct_issue:
+            self.is_correlation_100pct_issue = True
             self.found_issues += 1
             self.found_issue_str += err_str + "\n"
-            self.bad_status_count += 1
+            self.bad_corr_100pct_count += 1
 
         # Count the number of ensembles
         self.ens_count += 1
@@ -372,7 +378,7 @@ class RtiCheckFile:
                     bad_beams += str(beam_check) + ","
 
             if bad_beams:
-                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + " Correlation[" + str(bad_beams[:-1]) + "] : 0 dB"
+                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + " Correlation[" + str(bad_beams[:-1]) + "] : 100%"
 
                 # Display the error if turned on
                 if show_live_errors:
