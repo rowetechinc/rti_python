@@ -17,6 +17,9 @@ class RtiCheckFile:
         self.prev_ens_num = 0
         self.is_missing_ens = False
         self.is_status_issue = False
+        self.is_voltage_issue = False
+        self.is_amplitude_0db_issue = False
+        self.is_correlation_1pct_issue = False
         self.file_path = ""
         self.pbar = None
         self.first_ens = None
@@ -95,7 +98,7 @@ class RtiCheckFile:
         print("---------------------------------------------")
 
         # Check results for any fails
-        if self.is_missing_ens or self.is_status_issue:
+        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_1pct_issue:
             print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             print("*********************************************")
             print(self.found_issue_str)
@@ -172,6 +175,27 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.bad_status_count += 1
 
+        is_voltage_issue, err_str = self.check_voltage(ens, self.show_live_errors)
+        if is_voltage_issue:
+            self.is_voltage_issue = True
+            self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.bad_status_count += 1
+
+        is_amplitude_0db_issue, err_str = self.check_amplitude_0db(ens, self.show_live_errors)
+        if is_amplitude_0db_issue:
+            self.is_amplitude_0db_issue = True
+            self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.bad_status_count += 1
+
+        is_correlation_1pct_issue, err_str = self.check_correlation_1pct(ens, self.show_live_errors)
+        if is_correlation_1pct_issue:
+            self.is_correlation_1pct_issue = True
+            self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.bad_status_count += 1
+
         # Count the number of ensembles
         self.ens_count += 1
 
@@ -243,6 +267,121 @@ class RtiCheckFile:
             prev_ens_num = ens.EnsembleData.EnsembleNumber
 
         return found_issue, prev_ens_num, err_str
+
+    @staticmethod
+    def check_voltage(ens, show_live_errors):
+        """
+        Check if the voltage is above 36 volts or below 12v.
+        The ADCP cannot handle these voltages.
+        :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :return: True = Found an issue
+        """
+        err_str = ""
+        found_issue = False
+
+        if ens.IsEnsembleData:
+            if ens.SystemSetup.Voltage > 36 or ens.SystemSetup.Voltage < 12:
+                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tVoltage: [" + str(ens.SystemSetup.Voltage) + "]"
+
+                # Display the error if turned on
+                if show_live_errors:
+                    print(err_str)
+
+                # Record the error
+                found_issue = True
+
+        return found_issue, err_str
+
+    @staticmethod
+    def check_amplitude_0db(ens, show_live_errors):
+        """
+        Check if the amplitude is less than 10 db.  If a majority of the
+        bins are less then 10 dB, then there is an issue.
+        :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :return: True = Found an issue
+        """
+        err_str = ""
+        found_issue = False
+
+        if ens.IsAmplitude:
+
+            # Get the number of bins and beams
+            bin_count = ens.Amplitude.num_elements
+
+            # Initialize the list with all 0's with each beam
+            bad_bin = [0] * ens.Amplitude.element_multiplier
+
+            for beam in range(ens.Amplitude.element_multiplier):
+                for bin_num in range(ens.Amplitude.num_elements):
+
+                    # Accumulate the bad bins
+                    if ens.Amplitude.Amplitude[bin_num][beam] <= 7.0:
+                        bad_bin[beam] += 1
+
+            # Log all the bad beams
+            bad_beams = ""
+            for beam_check in range(ens.Amplitude.element_multiplier):
+                if bad_bin[beam_check] > int(bin_count * 0.8):
+                    bad_beams += str(beam_check) + ","
+
+            if bad_beams:
+                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + " Amplitude[" + str(bad_beams[:-1]) + "] : 0 dB"
+
+                # Display the error if turned on
+                if show_live_errors:
+                    print(err_str)
+
+                # Record the error
+                found_issue = True
+
+        return found_issue, err_str
+
+    @staticmethod
+    def check_correlation_1pct(ens, show_live_errors):
+        """
+        Check if the correlation is less than 100 percent (1.0).  If a majority of the
+        bins are 100 percent, then there is an issue.
+        :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :return: True = Found an issue
+        """
+        err_str = ""
+        found_issue = False
+
+        if ens.IsCorrelation:
+
+            # Get the number of bins and beams
+            bin_count = ens.Correlation.num_elements
+
+            # Initialize the list with all 0's with each beam
+            bad_bin = [0] * ens.Correlation.element_multiplier
+
+            for beam in range(ens.Correlation.element_multiplier):
+                for bin_num in range(ens.Correlation.num_elements):
+
+                    # Accumulate the bad bins
+                    if ens.Correlation.Correlation[bin_num][beam] >= 1.0:
+                        bad_bin[beam] += 1
+
+            # Log all the bad beams
+            bad_beams = ""
+            for beam_check in range(ens.Correlation.element_multiplier):
+                if bad_bin[beam_check] > int(bin_count * 0.8):
+                    bad_beams += str(beam_check) + ","
+
+            if bad_beams:
+                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + " Correlation[" + str(bad_beams[:-1]) + "] : 0 dB"
+
+                # Display the error if turned on
+                if show_live_errors:
+                    print(err_str)
+
+                # Record the error
+                found_issue = True
+
+        return found_issue, err_str
 
 
 if __name__ == "__main__":
