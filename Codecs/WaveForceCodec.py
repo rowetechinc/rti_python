@@ -273,8 +273,6 @@ class WaveForceCodec:
 
         ps_depth_buff = bytearray()
 
-        #ens_waves_buff = []
-
         # Convert the buffer to wave ensembles
         # Process the data for each waves ensemble
         for ens in ens_buff:
@@ -320,15 +318,14 @@ class WaveForceCodec:
                 pitch.extend(struct.pack('f', ens_wave.pitch))                          # Pitch (WPH)
                 roll.extend(struct.pack('f', ens_wave.roll))                            # Roll (WRL)
                 water_temp.extend(struct.pack('f', ens_wave.water_temp))                # Water Temp (WTS)
-                #height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
                 avg_range_track.extend(struct.pack('f', ens_wave.avg_range_tracking))   # Avg Range Tracking (WAH)
 
                 # Set the height source based off the selected height source (WHS)
                 if self.height_source == 0 or self.height_source == 1 or self.height_source == 2 or self.height_source == 3:
                     height.extend(struct.pack('f', ens_wave.height))                        # Height (WHS)
-                #if self.height_source == 4:
+                #if self.height_source == 4 and num_vert_ens <= 0:
                 #    height.extend(struct.pack('f', ens_wave.avg_range_tracking))            # Average RT
-                #if self.height_source == 5:
+                #if self.height_source == 5 and num_vert_ens <= 0:
                 #    height.extend(struct.pack('f', ens_wave.pressure))                      # Pressure
 
                 # Range Tracking (WR0, WR1, WR2, WR3)
@@ -404,6 +401,7 @@ class WaveForceCodec:
         else:
             if len(beam_2_vel) > 0:
                 ba.extend(self.process_wb3(beam_2_vel, num_4beam_ens, num_bins))  # [WB3] Use Beam 2 as backup if a 3 beam system
+
         if len(rt_0) > 0:
             ba.extend(self.process_wr0(rt_0, num_4beam_ens))                    # [WR0] Beam 0 Range Tracking
         if len(rt_1) > 0:
@@ -432,18 +430,31 @@ class WaveForceCodec:
         if len(beam_vert_vel) > 0:
             ba.extend(self.process_wz0(beam_vert_vel, num_vert_ens, num_bins))  # [WZ0] Vertical Beam Beam Velocity
 
-        # Check if the pressure sensor data needs to replaced with vertical
-        if not self.replace_pressure_with_vertical:
-            if len(vert_pressure) > 0:
-                ba.extend(self.process_wzp(vert_pressure, num_vert_ens))        # [WZP] Vertical Beam Pressure
+        if num_vert_ens > 0:
+            # Check if the pressure sensor data needs to replaced with vertical
+            if not self.replace_pressure_with_vertical:
+                if len(vert_pressure) > 0:
+                    ba.extend(self.process_wzp(vert_pressure, num_vert_ens))        # [WZP] Vertical Beam Pressure
 
-        if len(rt_vert) > 0:
-            # USING VERTICAL BEAM RT to replace pressure in cases where pressure not working
-            if self.replace_pressure_with_vertical:
-                ba.extend(self.process_wzp(rt_vert, num_vert_ens))              # [WZP] Vertical Beam Pressure
+            if len(rt_vert) > 0:
+                # USING VERTICAL BEAM RT to replace pressure in cases where pressure not working
+                if self.replace_pressure_with_vertical:
+                    ba.extend(self.process_wzp(rt_vert, num_vert_ens))              # [WZP] Vertical Beam Pressure
 
-            ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+                ba.extend(self.process_wzr(rt_vert, num_vert_ens))                  # [WZR] Vertical Beam Range Tracking
+        # No Vertical Beam Data
+        else:
+            # Replace Vertical pressure data with 4 Beam pressure because vertical data does not exist
+            if len(pressure) > 0:
+                ba.extend(self.process_wzp(pressure, num_4beam_ens))
 
+            # Replace Vertical Range Tracking with average 4 beam range tracking because vertical data does not exist
+            if len(avg_range_track) > 0:
+                ba.extend(self.process_wzr(avg_range_track, num_4beam_ens))         # [WAH] Average Range Tracking
+
+            # Replace the Vertical beam velocity with the 4 beam vertical velocity because vertical data does not exist
+            if len(wzs_buff) > 0:
+                ba.extend(self.process_wz0(wzs_buff, wzs_buff_cnt, num_bins))  # [WZS] Vertical Velocity
 
         # Write the file
         filename = self.write_file(ba)

@@ -1,5 +1,8 @@
 rti_python ChangeLog
 
+rti_python - 2.1.3
+ - Added watchdog.py
+
 rti_python - 2.1.2
  - Added qa_qc to Utilities to screen data
  - Changed Water Direction back to 0 - 360 degrees

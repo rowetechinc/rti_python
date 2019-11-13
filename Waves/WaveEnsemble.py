@@ -341,6 +341,11 @@ class WaveEnsemble:
                     self.range_tracking.append(ens.RangeTracking.Range[beam])
                 else:
                     self.range_tracking.append(-1.0)
+            # If Range Tracking data is not available, use Pressure data as a backup
+            elif ens.IsAncillaryData and ens.AncillaryData.TransducerDepth > 0:
+                avg_range += ens.AncillaryData.TransducerDepth
+                avg_range_ct += 1
+                self.range_tracking.append(ens.AncillaryData.TransducerDepth)
             else:
                 self.range_tracking.append(-1.0)
 
@@ -350,13 +355,13 @@ class WaveEnsemble:
             avg_range_ct += 1
 
         # Set the average range and vertical beam height as the average of the range tracking and pressure
-        if ens.IsRangeTracking:
-            if avg_range_ct > 0:
-                self.avg_range_tracking = avg_range / avg_range_ct
-                self.vert_beam_height = self.avg_range_tracking
-            else:
-                self.vert_beam_height = 0.0
-                self.avg_range_tracking = 0.0
+        #if ens.IsRangeTracking:
+        if avg_range_ct > 0:
+            self.avg_range_tracking = avg_range / avg_range_ct
+            self.vert_beam_height = self.avg_range_tracking
+        else:
+            self.vert_beam_height = 0.0
+            self.avg_range_tracking = 0.0
 
         # Cleanup
         # Check Vertical beam height data (avg range)
