@@ -845,6 +845,8 @@ class Ensemble:
             return True
         if Ensemble.is_float_close(vel, Ensemble.BadVelocity):
             return True
+        if vel is None:
+            return True
 
         return False
 

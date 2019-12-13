@@ -1,6 +1,7 @@
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
 import math
+import numpy as np
 
 
 class EarthVelocity:
@@ -85,6 +86,27 @@ class EarthVelocity:
         """
         self.Magnitude, self.Direction = EarthVelocity.generate_vectors(self.Velocities)
 
+    def average_mag_dir(self):
+        """
+        Generate the average Magnitude and direction for the entire ensemble.
+        Assume the ship speed has already been removed.
+        This will also filter for all bad velocities when taking the average.
+        :return: [Avg_MAG, Avg_DIR] Average Magnitude and Direction
+        """
+        # Get the average magnitude for all the bins
+        # Ignore bad velocity
+        mag_no_bad_vel = np.array(self.Magnitude)                               # Convert to NP Array
+        mag_no_bad_vel[mag_no_bad_vel >= Ensemble.BadVelocity] = np.nan         # Replace bad velocity with Nan
+        avg_mag = np.nanmean(mag_no_bad_vel)                                    # Take average
+
+        # Get the average direction
+        dir_no_bad_vel = np.array(self.Direction)                               # Convert to NP Array
+        dir_no_bad_vel[dir_no_bad_vel >= Ensemble.BadVelocity] = np.nan         # Replace bad velocity with Nan
+        avg_dir = np.nanmean(mag_no_bad_vel)                                    # Take average
+
+        # Return Average Magnitude, Direction
+        return avg_mag, avg_dir
+
     @staticmethod
     def generate_vectors(earth_vel):
         """
@@ -107,6 +129,8 @@ class EarthVelocity:
             dir.append(EarthVelocity.calculate_direction(earth_vel[bin_num][0], earth_vel[bin_num][1]))
 
         return mag, dir
+
+
 
     @staticmethod
     def calculate_magnitude(east, north, vertical):

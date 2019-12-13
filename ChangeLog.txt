@@ -1,5 +1,8 @@
 rti_python ChangeLog
 
+rti_python - 2.1.4
+ - Added average_mag_dir in EarthVelocity.
+
 rti_python - 2.1.3
  - Added watchdog.py
 
