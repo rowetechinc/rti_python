@@ -248,6 +248,95 @@ class RtiConfig:
             self.config['PLOT']['MAX_POINTS'] = '4096'
             self.write()
 
+    def init_timeseries_plot_config(self):
+        """
+        Default configuration for the Time Series Plot.
+        Call this to add the Time Series (TIMESERIES) sections to the config.
+        You can later add more to this section here or in your own code.
+        :return:
+        """
+
+        # Verify the section exist
+        if 'PLOT' not in self.config:
+            self.config['TIMESERIES'] = {}
+            self.config['TIMESERIES']['IP'] = RtiConfig.get_ip()
+            self.config['TIMESERIES']['PORT'] = '4241'
+            self.config['TIMESERIES']['IS_BOAT_SPEED'] = 'True'
+            self.config['TIMESERIES']['IS_BOAT_DIR'] = 'False'
+            self.config['TIMESERIES']['IS_HEADING'] = 'False'
+            self.config['TIMESERIES']['IS_PITCH'] = 'False'
+            self.config['TIMESERIES']['IS_ROLL'] = 'False'
+            self.config['TIMESERIES']['IS_TEMPERATURE'] = 'False'
+            self.config['TIMESERIES']["IS_GNSS_QUAL"] = 'False'
+            self.config['TIMESERIES']["IS_GNSS_HDOP"] = 'False'
+            self.config['TIMESERIES']['IS_NUM_SATS'] = 'False'
+            self.config['TIMESERIES']['IS_WATER_SPEED'] = 'False'
+            self.config['TIMESERIES']["IS_WATER_DIR"] = 'False'
+            self.config['TIMESERIES']["IS_VTG_SPEED"] = 'False'
+            self.config['TIMESERIES']["MAX_ENS"] = '1024'
+            self.write()
+
+        # Verify each value exist
+        if not self.config.has_option('TIMESERIES', 'IP'):
+            self.config['TIMESERIES']['IP'] = RtiConfig.get_ip()
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'PORT'):
+            self.config['TIMESERIES']['PORT'] = '4241'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_BOAT_SPEED'):
+            self.config['TIMESERIES']['PORT'] = 'True'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_BOAT_DIR'):
+            self.config['TIMESERIES']['IS_BOAT_DIR'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_HEADING'):
+            self.config['TIMESERIES']['IS_HEADING'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_PITCH'):
+            self.config['TIMESERIES']['IS_PITCH'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_ROLL'):
+            self.config['TIMESERIES']['IS_ROLL'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_TEMPERATURE'):
+            self.config['TIMESERIES']['IS_TEMPERATURE'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_GNSS_QUAL'):
+            self.config['TIMESERIES']['IS_GNSS_QUAL'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_GNSS_HDOP'):
+            self.config['TIMESERIES']['IS_GNSS_HDOP'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_NUM_SATS'):
+            self.config['TIMESERIES']['IS_NUM_SATS'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_WATER_SPEED'):
+            self.config['TIMESERIES']['IS_WATER_SPEED'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_WATER_DIR'):
+            self.config['TIMESERIES']['IS_WATER_DIR'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'IS_VTG_SPEED'):
+            self.config['TIMESERIES']['IS_VTG_SPEED'] = 'False'
+            self.write()
+
+        if not self.config.has_option('TIMESERIES', 'MAX_ENS'):
+            self.config['TIMESERIES']['MAX_ENS'] = '1024'
+            self.write()
+
     @staticmethod
     def get_ip():
         """
@@ -264,3 +353,10 @@ class RtiConfig:
         finally:
             s.close()
         return IP
+
+    @staticmethod
+    def bool_to_str(bool_val: bool):
+        if bool_val:
+            return "True"
+
+        return "False"
