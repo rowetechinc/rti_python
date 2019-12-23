@@ -128,3 +128,4 @@ PlanR/frontend/planr/node_modules/
 
 Unittest/Waves/*.mat
 Unittest/.pytest*
+Unittest/River/*.hdf5

@@ -110,7 +110,6 @@ class RtiConfig:
             self.config['Waves']['longitude'] = '0.0'
             self.config['Waves']['replace_pressure_with_vertical'] = 'False'
             self.config['Waves']['data_timeout'] = '30'
-
             self.write()
 
         # Verify each value exist
@@ -257,7 +256,7 @@ class RtiConfig:
         """
 
         # Verify the section exist
-        if 'PLOT' not in self.config:
+        if 'TIMESERIES' not in self.config:
             self.config['TIMESERIES'] = {}
             self.config['TIMESERIES']['IP'] = RtiConfig.get_ip()
             self.config['TIMESERIES']['PORT'] = '4241'
@@ -335,6 +334,24 @@ class RtiConfig:
 
         if not self.config.has_option('TIMESERIES', 'MAX_ENS'):
             self.config['TIMESERIES']['MAX_ENS'] = '1024'
+            self.write()
+
+    def init_river_project_config(self):
+        """
+        Default configuration for the terminal.
+        Call this to add the terminal sections to the config.
+        You can later add more to this section here or in your own code.
+        :return:
+        """
+        # Verify the section exist
+        if 'RIVER' not in self.config:
+            self.config['RIVER'] = {}
+            self.config['RIVER']['output_dir'] = os.path.expanduser('~')
+            self.write()
+
+        # Verify each value exist
+        if not self.config.has_option('RIVER', 'output_dir'):
+            self.config['RIVER']['output_dir'] = os.path.expanduser('~')
             self.write()
 
     @staticmethod
