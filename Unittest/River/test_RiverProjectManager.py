@@ -80,6 +80,15 @@ def test_add_project():
     assert "Project1" == project_file.attrs["Name"]
 
 
+def test_get_project():
+    rvr_prj_mgr = RiverProjectManager(rti_config)
+
+    project_file_path = rvr_prj_mgr.get_project("Project2")
+
+    # Project Name in file matches file
+    assert os.path.join(os.getcwd(), "Project2.hdf5") == project_file_path
+
+
 def test_add_project_file_not_exist():
     rvr_prj_mgr = RiverProjectManager(rti_config)
 

@@ -18,9 +18,6 @@ class RiverProjectManager:
         # List of all the projects available
         self.projects = {}
 
-        # Set current project file
-        self.prj_file = None
-
         # Search for all available projects
         self.search_for_projects()
 
@@ -40,7 +37,9 @@ class RiverProjectManager:
                 prj_name = os.path.splitext(file)
 
                 # Add it to the list
-                self.projects[prj_name] = os.path.join(self.config.config['RIVER']['output_dir'], file)
+                # Use the first part of prj_name which the file name
+                # The second value is the file extension
+                self.projects[prj_name[0]] = os.path.join(self.config.config['RIVER']['output_dir'], file)
 
     def get_project_list(self):
         """
@@ -48,6 +47,23 @@ class RiverProjectManager:
         :return: List of available projects.
         """
         return self.projects.keys()
+
+    def get_project(self, project_name: str) -> str:
+        """
+        Get the file path to the project from the list of HDF5 projects.
+        If the project does not exist, return None.
+        :param project_name: Project name used in the dictionary.
+        :return: File Path to HDF5 Project or None
+
+        """
+        #for name in self.projects.keys():
+        #    print(name)
+        #    print(self.projects[name])
+        # Verify project exist
+        if project_name in self.projects:
+            return self.projects[project_name]
+
+        return None
 
     def add_project(self, name: str, project_file_path: str):
         if os.path.exists(project_file_path):
@@ -66,10 +82,10 @@ class RiverProjectManager:
             self.projects[name] = project_file_path
 
             # Create the H5DF file
-            self.prj_file = h5py.File(project_file_path, "a")
+            prj_file = h5py.File(project_file_path, "a")
 
             # Return the project file
-            return self.prj_file
+            return prj_file
 
         # Return None if the project HDF5 does not exist
         return None
@@ -112,25 +128,29 @@ class RiverProjectManager:
             # Add project to the list
             self.projects[new_name] = os.path.join(self.config.config['RIVER']['output_dir'], new_name + ".hdf5")
 
+            #print(name)
+            #print(new_name)
             # Set the name variable to new_name now
+            # This is set to the name can be set in the attr for the project
             name = new_name
         else:
             # Add project to the list using original project name
             self.projects[name] = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
 
         # Create the H5DF file
-        self.prj_file = h5py.File(file_path, "a")
+        prj_file = h5py.File(file_path, "a")
 
         # Create a folder for transects to be stored
-        self.prj_file.create_group("transects")
+        prj_file.create_group("transects")
 
         # Create a folder for moving bed tests
-        self.prj_file.create_group("moving_bed_test")
+        prj_file.create_group("moving_bed_test")
 
         # Set the name for the project file
-        self.prj_file.attrs["Name"] = name
+        prj_file.attrs["Name"] = name
+        prj_file.attrs['FilePath'] = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
 
-        return self.prj_file
+        return prj_file
 
     def create_transect(self, project_name: str, transect: Transect):
 
@@ -139,7 +159,7 @@ class RiverProjectManager:
             self.create_project(project_name)
 
         # Create a transect within the transect folder
-        transect_grp = self.prj_file.create_group("transect/" + transect.get_name())
+        transect_grp = self.prjects[project_name].create_group("transect/" + transect.get_name())
 
         # Set the meta data for the transect
         self.set_transect_meta(transect_grp, transect)
