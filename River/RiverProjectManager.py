@@ -1,10 +1,16 @@
 import h5py
 import os
 from rti_python.Utilities.config import RtiConfig
+from rti_python.River.RiverProject import RiverProject
 from rti_python.River.Transect import Transect
+from rti_python.River.RiverProjectMeta import RiverProjectMeta
+
+
 
 
 class RiverProjectManager:
+
+    VERSION = 1.0
 
     def __init__(self, rti_config: RtiConfig):
         """
@@ -36,10 +42,13 @@ class RiverProjectManager:
                 # The project name is the file name without the extension
                 prj_name = os.path.splitext(file)
 
-                # Add it to the list
                 # Use the first part of prj_name which the file name
                 # The second value is the file extension
-                self.projects[prj_name[0]] = os.path.join(self.config.config['RIVER']['output_dir'], file)
+                project_name_without_ext = prj_name[0]
+
+                # Create a project and add it ot the list
+                project = RiverProject(self.config, project_name_without_ext, os.path.join(self.config.config['RIVER']['output_dir'], file))
+                self.projects[project_name_without_ext] = project
 
     def get_project_list(self):
         """
@@ -48,7 +57,7 @@ class RiverProjectManager:
         """
         return self.projects.keys()
 
-    def get_project(self, project_name: str) -> str:
+    def get_project(self, project_name: str) -> RiverProject:
         """
         Get the file path to the project from the list of HDF5 projects.
         If the project does not exist, return None.
@@ -65,7 +74,14 @@ class RiverProjectManager:
 
         return None
 
-    def add_project(self, name: str, project_file_path: str):
+    def add_project(self, name: str, project_file_path: str) -> RiverProject:
+        """
+        Add a project to the list of projects.  If the no HDF5 project file can
+        be found, return none.
+        :param name: Name of the project.
+        :param project_file_path: Project File path
+        :return: Project file path if it exist or None if no HDF5 file exist.
+        """
         if os.path.exists(project_file_path):
             # Check if the project already exist
             # If it does, create a new project name with an index
@@ -79,13 +95,23 @@ class RiverProjectManager:
                 project_already_exist_index += 1
 
             # Add project to the list
-            self.projects[name] = project_file_path
+            self.projects[name] = RiverProject(self.config, name, project_file_path)
 
-            # Create the H5DF file
-            prj_file = h5py.File(project_file_path, "a")
+            # Create the H5DF file object to verify subgroups exist
+            with h5py.File(project_file_path, "a") as prj_file:
+
+                # Check if Transect Subgroup is in the project file
+                if RiverProjectMeta.SUBGROUP_TRANSECT not in prj_file:
+                    # Create a folder for transects to be stored
+                    prj_file.create_group(RiverProjectMeta.SUBGROUP_TRANSECT)
+
+                # Check if the Moving Bed Test Subgroup is in the project file
+                if RiverProjectMeta.SUBGROUP_MBT not in prj_file:
+                    # Create a folder for moving bed tests
+                    prj_file.create_group(RiverProjectMeta.SUBGROUP_MBT)
 
             # Return the project file
-            return prj_file
+            return self.projects[name]
 
         # Return None if the project HDF5 does not exist
         return None
@@ -125,32 +151,38 @@ class RiverProjectManager:
                 new_name = name + "_" + str(file_already_exist_index)
                 file_path = os.path.join(self.config.config['RIVER']['output_dir'], new_name + ".hdf5")
 
-            # Add project to the list
-            self.projects[new_name] = os.path.join(self.config.config['RIVER']['output_dir'], new_name + ".hdf5")
+            # Create a project
+            prj_file_path = os.path.join(self.config.config['RIVER']['output_dir'], new_name + ".hdf5")
+            project = RiverProject(self.config, new_name, prj_file_path)
 
-            #print(name)
-            #print(new_name)
+            # Add project to the list
+            self.projects[new_name] = project
+
             # Set the name variable to new_name now
             # This is set to the name can be set in the attr for the project
             name = new_name
         else:
+            # Create a project
+            prj_file_path = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
+            project = RiverProject(self.config, name, prj_file_path)
+
             # Add project to the list using original project name
-            self.projects[name] = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
+            self.projects[name] = project
 
         # Create the H5DF file
-        prj_file = h5py.File(file_path, "a")
+        with h5py.File(file_path, "a") as prj_file:
+            # Create a folder for transects to be stored
+            prj_file.create_group(RiverProjectMeta.SUBGROUP_TRANSECT)
 
-        # Create a folder for transects to be stored
-        prj_file.create_group("transects")
+            # Create a folder for moving bed tests
+            prj_file.create_group(RiverProjectMeta.SUBGROUP_MBT)
 
-        # Create a folder for moving bed tests
-        prj_file.create_group("moving_bed_test")
+            # Set meta data for the project file
+            prj_file.attrs[RiverProjectMeta.PROJECT_NAME] = name
+            prj_file.attrs[RiverProjectMeta.PROJECT_FILE_PATH] = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
 
-        # Set the name for the project file
-        prj_file.attrs["Name"] = name
-        prj_file.attrs['FilePath'] = os.path.join(self.config.config['RIVER']['output_dir'], name + ".hdf5")
-
-        return prj_file
+        # Return the path to the HDF5 project file created
+        return self.projects[name]
 
     def create_transect(self, project_name: str, transect: Transect):
 
@@ -158,16 +190,20 @@ class RiverProjectManager:
         if project_name not in self.projects:
             self.create_project(project_name)
 
+        # Open the project file
+        # Create the H5DF file
+        prj_file = h5py.File(self.projects[project_name].file_path, "a")
+
         # Create a transect within the transect folder
-        transect_grp = self.prjects[project_name].create_group("transect/" + transect.get_name())
+        transect_grp = prj_file.create_group(RiverProjectMeta.SUBGROUP_TRANSECT + "/" + transect.get_name())
 
         # Set the meta data for the transect
         self.set_transect_meta(transect_grp, transect)
 
     def set_transect_meta(self, transect_grp: h5py.Group, transect: Transect):
-        transect_grp.attrs["StationName"] = transect.station_name
-        transect_grp.attrs["StationInfo"] = transect.station_info
-        transect_grp.attrs["Comments"] = transect.comments
+        transect_grp.attrs[RiverProjectMeta.TRANSECT_STATION_NAME] = transect.station_name
+        transect_grp.attrs[RiverProjectMeta.TRANSECT_STATION_INFO] = transect.station_info
+        transect_grp.attrs[RiverProjectMeta.TRANSECT_STATION_COMMENTS] = transect.comments
 
 
 

@@ -2,6 +2,8 @@
 
 class Transect:
 
+    VERSION = 1.0
+
     def __init__(self, index):
         self.transect_index = index
         self.name = ""

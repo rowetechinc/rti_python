@@ -2,7 +2,9 @@ import pytest
 import os
 from rti_python.Utilities.config import RtiConfig
 from rti_python.River.RiverProjectManager import RiverProjectManager
+from rti_python.River.RiverProjectManager import RiverProjectMeta
 from rti_python.River.Transect import Transect
+import h5py
 
 rti_config = RtiConfig()
 rti_config.init_river_project_config()
@@ -25,68 +27,73 @@ def test_constructor():
 
 def test_create_project():
     rvr_prj_mgr = RiverProjectManager(rti_config)
-    project_file = rvr_prj_mgr.create_project("Project1")
+    project = rvr_prj_mgr.create_project("Project1")
+    with h5py.File(project.file_path, "a") as project_file:
 
-    if project_file is not None:
-        assert True
-    else:
-        assert False
+        if project_file is not None:
+            assert True
+        else:
+            assert False
 
-    if 'Name' in project_file.attrs:
-        assert True
-    else:
-        assert False
+        if RiverProjectMeta.PROJECT_NAME in project_file.attrs:
+            assert True
+        else:
+            assert False
 
-    assert "Project1" == project_file.attrs["Name"]
+        assert "Project1" == project_file.attrs[RiverProjectMeta.PROJECT_NAME]
 
 
 def test_get_project_list():
     rvr_prj_mgr = RiverProjectManager(rti_config)
 
-    project_file = rvr_prj_mgr.create_project("Project2")
+    project = rvr_prj_mgr.create_project("Project2")
+    with h5py.File(project.file_path, "a") as project_file:
 
-    prjs_list = rvr_prj_mgr.get_project_list()
-    assert len(prjs_list) >= 1
+        prjs_list = rvr_prj_mgr.get_project_list()
+        assert len(prjs_list) >= 1
 
-    assert True == ("Project2" in prjs_list)
+        assert True == ("Project2" in prjs_list)
 
-    assert "Project2" == project_file.attrs["Name"]
+        assert "Project2" == project_file.attrs[RiverProjectMeta.PROJECT_NAME]
 
 
 def test_create_project_exist():
     rvr_prj_mgr = RiverProjectManager(rti_config)
-    project_file = rvr_prj_mgr.create_project("Project3")
-    project_file1 = rvr_prj_mgr.create_project("Project3")      # Duplicate
+    project = rvr_prj_mgr.create_project("Project3")
+    project1 = rvr_prj_mgr.create_project("Project3")      # Duplicate
+    with h5py.File(project.file_path, "a") as project_file:
+        with h5py.File(project1.file_path, "a") as project_file1:
 
-    prjs_list = rvr_prj_mgr.get_project_list()
-    assert len(prjs_list) >= 2
+            prjs_list = rvr_prj_mgr.get_project_list()
+            assert len(prjs_list) >= 2
 
-    assert True == ("Project3_0" in prjs_list)
+            assert True == ("Project3_0" in prjs_list)
 
-    assert "Project3" == project_file.attrs["Name"]
-    assert "Project3_0" == project_file1.attrs["Name"]
+            assert "Project3" == project_file.attrs[RiverProjectMeta.PROJECT_NAME]
+            assert "Project3_0" == project_file1.attrs[RiverProjectMeta.PROJECT_NAME]
 
 
 def test_add_project():
     rvr_prj_mgr = RiverProjectManager(rti_config)
 
-    project_file = rvr_prj_mgr.add_project("Project22", os.path.join("./", "Project1.hdf5"))
-
+    project = rvr_prj_mgr.add_project("Project22", os.path.join(rti_config.config['RIVER']['output_dir'], "Project1.hdf5"))
     project_list = rvr_prj_mgr.get_project_list()
 
-    # Project name in list matches list entry
-    assert True == ("Project22" in project_list)
-    # Project Name in file matches file
-    assert "Project1" == project_file.attrs["Name"]
+    with h5py.File(project.file_path, "a") as project_file:
+
+        # Project name in list matches list entry
+        assert True == ("Project22" in project_list)
+        # Project Name in file matches file
+        assert "Project1" == project_file.attrs[RiverProjectMeta.PROJECT_NAME]
 
 
 def test_get_project():
     rvr_prj_mgr = RiverProjectManager(rti_config)
 
-    project_file_path = rvr_prj_mgr.get_project("Project2")
+    project = rvr_prj_mgr.get_project("Project2")
 
     # Project Name in file matches file
-    assert os.path.join(os.getcwd(), "Project2.hdf5") == project_file_path
+    assert os.path.join(os.getcwd(), "Project2.hdf5") == project.file_path
 
 
 def test_add_project_file_not_exist():
