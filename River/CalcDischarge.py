@@ -110,7 +110,7 @@ class CalcDischarge:
     ONE_SIXTH_POWER_LAW = 1/6
 
     def __init__(self):
-
+        self.version = 1.1
 
     def calculate_ensemble_flow(self,
                                 ens: Ensemble,
@@ -122,10 +122,9 @@ class CalcDischarge:
                                 bt_north: float,
                                 bt_vert: float,
                                 delta_time: float,
-                                top_flow_mode: FlowMode=FlowMode.Constants,
-                                top_pwr_func_exponent: float=ONE_SIXTH_POWER_LAW,
-                                bottom_flow_mode: FlowMode=FlowMode.PowerFunction,
-                                bottom_pwr_func_exponent: float=ONE_SIXTH_POWER_LAW) -> EnsembleFlowInfo:
+                                top_flow_mode: FlowMode = FlowMode.Constants,
+                                top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,
+                                bottom_flow_mode: FlowMode = FlowMode.PowerFunction) -> EnsembleFlowInfo:
 
         # Initialize the values
         ensemble_flow_info = EnsembleFlowInfo()
@@ -184,7 +183,7 @@ class CalcDischarge:
             if first_bin_pos < depth_angle and ens.EnsembleData.NumBeams >= 2:
 
                 # num3
-                earth_vel = [ens.EarthVelocity.Velocities[bin_index, 0], ens.EarthVelocity.Velocities[bin_index, 1]]
+                earth_vel = [ens.EarthVelocity.Velocities[bin_index][0], ens.EarthVelocity.Velocities[bin_index][1]]
                 cross_prod_bin = np.cross(earth_vel, bt_vel)
 
                 # Store the bin info
@@ -196,7 +195,7 @@ class CalcDischarge:
                 # dz is change in bin size
                 measured_bin_info = MeasuredBinInfo()
                 measured_bin_info.depth = bin_depth_index                                                 # Bin Depth
-                measured_bin_info.flow = cross_prod_bin[0] * delta_time * ens.AncillaryData.BinSize       # Flow for bin
+                measured_bin_info.flow = cross_prod_bin * delta_time * ens.AncillaryData.BinSize          # Flow for bin
                 measured_bin_info.valid = True                                                            # Valid bin
                 measured_bin_info_list.append(measured_bin_info)
 
@@ -212,10 +211,10 @@ class CalcDischarge:
                 accum_flow += measured_bin_info.flow
 
                 # Accumulate East Velocity
-                accum_east_vel += ens.EarthVelocity.Velocities[bin_index, 0]
+                accum_east_vel += ens.EarthVelocity.Velocities[bin_index][0]
 
                 # Accumulate North Velocity
-                accum_north_vel += ens.EarthVelocity.Velocities[bin_index, 1]
+                accum_north_vel += ens.EarthVelocity.Velocities[bin_index][1]
 
                 # Accumulate good bins
                 accum_bins += 1
@@ -229,15 +228,16 @@ class CalcDischarge:
         # Store the bin info
         ensemble_flow_info.measured_bin_info = measured_bin_info_list
 
+        # Verify the top bin is good
         if not measured_bin_info_top.valid:
             ensemble_flow_info
 
         # Get the depths
         depth1 = measured_bin_info_top.depth
         depth2 = measured_bin_info_bottom.depth
-        x1 = overall_depth
-        x2 = overall_depth - depth1 + ens.AncillaryData.BinSize / 2.0
-        x3 = overall_depth - depth2 - ens.AncillaryData.BinSize / 2.0
+        x1 = overall_depth                                                  # Depth of the water
+        x2 = overall_depth - depth1 + ens.AncillaryData.BinSize / 2.0       # Depth Not including the top
+        x3 = overall_depth - depth2 - ens.AncillaryData.BinSize / 2.0       # Depth Not including the bottom
 
         # Accumulate the overall velocity and take the cross product
         # to get the overall discharge
@@ -246,16 +246,19 @@ class CalcDischarge:
         # Qbin = (Vw X Vb)*dt*dz
         # Cross product of water velocity and boat velocity
         # dt is delta time
-        # dz is change in bin size
+        # dz is change in bin (depth)
         vel_accum = [accum_east_vel / accum_bins, accum_north_vel / accum_bins]
         cross_prod_accum_vel = np.cross(vel_accum, bt_vel)
         ensemble_flow_info.measured_flow = cross_prod_accum_vel * delta_time * (x2 - x3)
 
+        ################
+        # CALCULATE TOP
         # Calculate the top flow based on the mode selected
         if top_flow_mode == FlowMode.Constants:
             # Use the flow from the top most bin only (TRDI)
             ensemble_flow_info.top_flow = measured_bin_info_top.flow / ens.AncillaryData.BinSize * (x1 - x2)
         elif top_flow_mode == FlowMode.PowerFunction:
+            # Use the Power Law to calculate the top flow
             y1 = top_pwr_func_exponent + 1.0
             ensemble_flow_info.top_flow = accum_flow * (math.pow(x1, y1) - math.pow(x2, y1)) / (math.pow(x2, y1) - math.pow(x3, y1))
         elif top_flow_mode == FlowMode.Slope:
@@ -284,10 +287,13 @@ class CalcDischarge:
                 east_vel_list.append(east_vel_bin)
                 north_vel_list.append(north_vel_bin)
 
+            # Average depth
             x4 = (x1 - x2) / 2.0
+
+            # Calculate the slope for East and North velocity
             slope_vel_east = Slope()
-            slope_vel_east.setXYs(earth_vel, depth_list)
             slope_vel_north = Slope()
+            slope_vel_east.setXYs(earth_vel, depth_list)
             slope_vel_north.setXYs(north_vel_list, depth_list)
             if (depth_list[1] - depth_list[0]) != 0:
                 slope_vel_east = slope_vel_east.cal_y(x4)
@@ -300,9 +306,15 @@ class CalcDischarge:
             cross_prod_top_accum_vel = np.cross(top_vel_accum, bt_vel)
             ensemble_flow_info.top_flow = delta_time * (x1-x2) * cross_prod_top_accum_vel
 
+        ##################
+        # CALCULATE BOTTOM
         # Set the Bottom Flow
         if bottom_flow_mode == FlowMode.PowerFunction:
             y2 = top_pwr_func_exponent + 1.0
-            ensemble_flow_info.bottom_flow = accum_flow * math.pow(x3, y2) / (math.pow(x2, y2) - math.pow(x3, y2))
+            ensemble_flow_info.bottom_flow = accum_flow * (x3 ** y2) / ((x2 ** y2) - (x3 ** y2))
         elif bottom_flow_mode == FlowMode.Constants:
             ensemble_flow_info.bottom_flow = measured_bin_info_bottom.flow / ens.AncillaryData.BinSize * x3
+
+        # Return the ensemble flow results
+        ensemble_flow_info.valid = True
+        return ensemble_flow_info
