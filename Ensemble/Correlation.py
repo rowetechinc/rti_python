@@ -86,3 +86,26 @@ class Correlation:
 
         return str_result
 
+    def is_good_bin(self, bin_num: int, min_corr: float) -> bool:
+        """
+        Verify if the given bin has good data based on the minimum correlation
+        value given.
+        :param bin_num: Bin Number
+        :param min_corr: Minimum Correlation value.
+        :return: TRUE = All beams have amplitude values greater than min value given.
+        """
+        # Verify a good bin number is given
+        if bin_num >= self.num_elements:
+            return False
+
+        # Verify the amplitude value is greater then the given min value
+        bad_count = 0
+        for beam in range(self.element_multiplier):
+            if self.Correlation[bin_num][beam] < min_corr:
+                bad_count += 1
+
+        # If any bad values are found in the bin, return false
+        if bad_count > 1:
+            return False
+
+        return True

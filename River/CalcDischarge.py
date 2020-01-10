@@ -108,6 +108,8 @@ class CalcDischarge:
 
     # One-sixth power law common value
     ONE_SIXTH_POWER_LAW = 1/6
+    MINIMUM_AMPLITUDE = 0.25
+    MINIMUM_CORRELATION = 0.10
 
     def __init__(self):
         self.version = 1.1
@@ -124,7 +126,9 @@ class CalcDischarge:
                                 delta_time: float,
                                 top_flow_mode: FlowMode = FlowMode.Constants,
                                 top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,
-                                bottom_flow_mode: FlowMode = FlowMode.PowerFunction) -> EnsembleFlowInfo:
+                                bottom_flow_mode: FlowMode = FlowMode.PowerFunction,
+                                min_amp=MINIMUM_AMPLITUDE,
+                                min_corr=MINIMUM_CORRELATION) -> EnsembleFlowInfo:
 
         # Initialize the values
         ensemble_flow_info = EnsembleFlowInfo()
@@ -138,21 +142,34 @@ class CalcDischarge:
         if ens.IsAncillaryData and ens.AncillaryData.BinSize < 1E-06:
             return ensemble_flow_info
 
+        # num1
+        range_count = 0
+        # d
+        bt_min_depth = float('NaN')
         # Get the average bottom track range
         # num2
-        avg_depth = 0.0
+        accum_range = 0.0
         if ens.IsBottomTrack:
             # num4
-            avg_depth = ens.BottomTrack.avg_range()
+            for bt_range in ens.BottomTrack.Range:
+                if bt_range >= 1E-06:
+                    if math.isnan(bt_min_depth):
+                        bt_min_depth = bt_range
+                    elif bt_range < bt_min_depth:
+                        bt_min_depth = bt_range
 
-        if avg_depth <= 0.0:
+                    range_count += 1
+                    accum_range += bt_range
+
+        if range_count == 0.0:
             return ensemble_flow_info
 
-        # Maximum depth of all the ranges
-        max_depth = max(ens.BottomTrack.Range)
+        # Average Depth
+        # num4
+        avg_depth = accum_range / range_count
 
         # num5
-        depth_angle = max_depth * math.cos(beam_angle / 180.0 * math.pi) + boat_draft - max((pulse_length + pulse_lag) / 2.0, ens.AncillaryData.BinSize / 2.0)
+        depth_angle = bt_min_depth * math.cos(beam_angle / 180.0 * math.pi) + boat_draft - max((pulse_length + pulse_lag) / 2.0, ens.AncillaryData.BinSize / 2.0)
 
         # Average depth and the boat draft
         # num6
@@ -196,7 +213,7 @@ class CalcDischarge:
                 measured_bin_info = MeasuredBinInfo()
                 measured_bin_info.depth = bin_depth_index                                                 # Bin Depth
                 measured_bin_info.flow = cross_prod_bin * delta_time * ens.AncillaryData.BinSize          # Flow for bin
-                measured_bin_info.valid = True                                                            # Valid bin
+                measured_bin_info.valid = ens.is_good_bin(bin_index, min_amp, min_corr)                   # Valid bin
                 measured_bin_info_list.append(measured_bin_info)
 
                 # Set the top most bin
@@ -260,20 +277,19 @@ class CalcDischarge:
         elif top_flow_mode == FlowMode.PowerFunction:
             # Use the Power Law to calculate the top flow
             y1 = top_pwr_func_exponent + 1.0
-            ensemble_flow_info.top_flow = accum_flow * (math.pow(x1, y1) - math.pow(x2, y1)) / (math.pow(x2, y1) - math.pow(x3, y1))
+            ensemble_flow_info.top_flow = accum_flow * ((x1 ** y1) - (x2 ** y1)) / ((x2 ** y1) - (x3 ** y1))
         elif top_flow_mode == FlowMode.Slope:
             if len(bin_list) < 6:
                 ensemble_flow_info.top_flow = measured_bin_info_top.flow / ens.AncillaryData.BinSize * (x1 - x2)
 
             # Accumulate the velocities and bin depths
-            # for the second and third good bins, skipping the first bin
+            # 3 Point Slope
             depth_list = []
             east_vel_list = []
             north_vel_list = []
-            for bin_slope_index in range(2):
-                # Get the next bin in the list of good bins
-                # Add 1 to skip the first bin
-                index_bin = bin_list[bin_slope_index+1]
+            for bin_slope_index in range(3):
+                # Get the bin in the list of good bins
+                index_bin = bin_list[bin_slope_index]
 
                 # Calculate the depth of the bin
                 depth_bin = ens.AncillaryData.FirstBinRange + boat_draft + (index_bin * ens.AncillaryData.BinSize)

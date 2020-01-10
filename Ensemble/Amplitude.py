@@ -89,3 +89,27 @@ class Amplitude:
                 str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_AMP, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
 
         return str_result
+
+    def is_good_bin(self, bin_num: int, min_amp: float) -> bool:
+        """
+        Verify if the given bin has good data based on the minimum amplitude
+        value given.
+        :param bin_num: Bin Number
+        :param min_amp: Minimum amplitude value.
+        :return: TRUE = All beams have amplitude values greater than min value given.
+        """
+        # Verify a good bin number is given
+        if bin_num >= self.num_elements:
+            return False
+
+        # Verify the amplitude value is greater then the given min value
+        bad_count = 0
+        for beam in range(self.element_multiplier):
+            if self.Amplitude[bin_num][beam] < min_amp:
+                bad_count += 1
+
+        # If any bad values are found in the bin, return false
+        if bad_count > 1:
+            return False
+
+        return True

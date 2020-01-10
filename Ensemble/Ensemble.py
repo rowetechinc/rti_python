@@ -389,6 +389,31 @@ class Ensemble:
 
         return result
 
+    def is_good_bin(self, bin_num: int, min_amp: float = 0.25, min_corr: float = 0.10) -> bool:
+        """
+        Verify the data is good for a given bin.  This will check the Amplitude, Correlation
+        and Earth Velocity data.  It will check the Amplitude bin against the minimum amplitude value.
+        It will check the Correlation against the minimum correlation value.  It will check for
+        BAD_VELOCITY in the Earth Velocity data.
+        :param ens: Ensemble data.
+        :param bin_num: Bin Number.
+        :param min_amp: Minimum Amplitude value.
+        :param min_corr: Minimum Correlation value.
+        :return: TRUE if all values pass.
+        """
+        # Verify Amplitude data exist and all is good for the bin
+        if self.IsAmplitude and not self.Amplitude.is_good_bin(bin_num, min_amp):
+            return False
+        # Verify Correlation data exist and all is good for the bin
+        if self.IsCorrelation and not self.Correlation.is_good_bin(bin_num, min_corr):
+            return False
+
+        # Verify Earth Velocity data exist and all is good for the bin
+        if self.IsEarthVelocity and not self.EarthVelocity.is_good_bin(bin_num):
+            return False
+
+        return True
+
     @staticmethod
     def generate_header(value_type, num_elements, element_multiplier, imag, name_length, name):
         """
@@ -849,4 +874,5 @@ class Ensemble:
             return True
 
         return False
+
 

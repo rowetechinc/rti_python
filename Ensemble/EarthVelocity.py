@@ -130,8 +130,6 @@ class EarthVelocity:
 
         return mag, dir
 
-
-
     @staticmethod
     def calculate_magnitude(east, north, vertical):
         """
@@ -248,3 +246,25 @@ class EarthVelocity:
             df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, blank, bin_size, dir])
 
         return df_result
+
+    def is_good_bin(self, bin_num: int) -> bool:
+        """
+        Verify if the given bin has good data based on BAD_VELOCITY.
+        :param bin_num: Bin Number
+        :return: TRUE = All beams do not have BAD_VELOCITY.
+        """
+        # Verify a good bin number is given
+        if bin_num >= self.num_elements:
+            return False
+
+        # Verify the amplitude value is greater then the given min value
+        bad_count = 0
+        for beam in range(self.element_multiplier):
+            if Ensemble.is_bad_velocity(self.Velocities[bin_num][beam]):
+                bad_count += 1
+
+        # If any bad values are found in the bin, return false
+        if bad_count > 1:
+            return False
+
+        return True
