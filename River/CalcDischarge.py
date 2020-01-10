@@ -128,7 +128,8 @@ class CalcDischarge:
                                 top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,
                                 bottom_flow_mode: FlowMode = FlowMode.PowerFunction,
                                 min_amp=MINIMUM_AMPLITUDE,
-                                min_corr=MINIMUM_CORRELATION) -> EnsembleFlowInfo:
+                                min_corr=MINIMUM_CORRELATION,
+                                heading_offset=None) -> EnsembleFlowInfo:
 
         # Initialize the values
         ensemble_flow_info = EnsembleFlowInfo()
@@ -153,14 +154,18 @@ class CalcDischarge:
             # num4
             for bt_range in ens.BottomTrack.Range:
                 if bt_range >= 1E-06:
+
+                    # Find minimum depth
                     if math.isnan(bt_min_depth):
                         bt_min_depth = bt_range
                     elif bt_range < bt_min_depth:
                         bt_min_depth = bt_range
 
+                    # Accumulate for the average
                     range_count += 1
                     accum_range += bt_range
 
+        # No good range values so bottom is not seen
         if range_count == 0.0:
             return ensemble_flow_info
 
@@ -194,14 +199,16 @@ class CalcDischarge:
         accum_north_vel = 0.0
         # num11
         accum_bins = 0
-        bt_vel = [bt_east, bt_north]
         bin_depth_index = first_bin_pos
         for bin_index in range(ens.EnsembleData.NumBins):
-            if first_bin_pos < depth_angle and ens.EnsembleData.NumBeams >= 2:
+            if bin_depth_index < depth_angle and ens.EnsembleData.NumBeams >= 2:
 
                 # num3
                 earth_vel = [ens.EarthVelocity.Velocities[bin_index][0], ens.EarthVelocity.Velocities[bin_index][1]]
-                cross_prod_bin = np.cross(earth_vel, bt_vel)
+                cross_prod_bin = self.cross_product(ens.EarthVelocity.Velocities[bin_index][0],
+                                                    ens.EarthVelocity.Velocities[bin_index][1],
+                                                    bt_east,
+                                                    bt_north)
 
                 # Store the bin info
                 # Equation A16
@@ -246,8 +253,8 @@ class CalcDischarge:
         ensemble_flow_info.measured_bin_info = measured_bin_info_list
 
         # Verify the top bin is good
-        if not measured_bin_info_top.valid:
-            ensemble_flow_info
+        if not measured_bin_info_top or not measured_bin_info_top.valid:
+            return ensemble_flow_info
 
         # Get the depths
         depth1 = measured_bin_info_top.depth
@@ -265,7 +272,7 @@ class CalcDischarge:
         # dt is delta time
         # dz is change in bin (depth)
         vel_accum = [accum_east_vel / accum_bins, accum_north_vel / accum_bins]
-        cross_prod_accum_vel = np.cross(vel_accum, bt_vel)
+        cross_prod_accum_vel = self.cross_product(vel_accum[0], vel_accum[1], bt_east, bt_north)
         ensemble_flow_info.measured_flow = cross_prod_accum_vel * delta_time * (x2 - x3)
 
         ################
@@ -282,45 +289,54 @@ class CalcDischarge:
             if len(bin_list) < 6:
                 ensemble_flow_info.top_flow = measured_bin_info_top.flow / ens.AncillaryData.BinSize * (x1 - x2)
 
-            # Accumulate the velocities and bin depths
-            # 3 Point Slope
-            depth_list = []
-            east_vel_list = []
-            north_vel_list = []
-            for bin_slope_index in range(3):
-                # Get the bin in the list of good bins
-                index_bin = bin_list[bin_slope_index]
-
-                # Calculate the depth of the bin
-                depth_bin = ens.AncillaryData.FirstBinRange + boat_draft + (index_bin * ens.AncillaryData.BinSize)
-
-                # Get the east and north velocity
-                east_vel_bin = ens.EarthVelocity.Velocities[index_bin][0]
-                north_vel_bin = ens.EarthVelocity.Velocities[index_bin][1]
-
-                # Add it to the list
-                depth_list.append(depth_bin)
-                east_vel_list.append(east_vel_bin)
-                north_vel_list.append(north_vel_bin)
-
-            # Average depth
-            x4 = (x1 - x2) / 2.0
-
-            # Calculate the slope for East and North velocity
-            slope_vel_east = Slope()
-            slope_vel_north = Slope()
-            slope_vel_east.setXYs(earth_vel, depth_list)
-            slope_vel_north.setXYs(north_vel_list, depth_list)
-            if (depth_list[1] - depth_list[0]) != 0:
-                slope_vel_east = slope_vel_east.cal_y(x4)
-                slope_vel_north = slope_vel_north.cal_y(x4)
             else:
-                ensemble_flow_info.top_flow = measured_bin_info.flow / ens.AncillaryData.BinSize * (x1 - x2)
+                # Accumulate the velocities and bin depths
+                # 3 Point Slope
+                depth_list = []
+                east_vel_list = []
+                north_vel_list = []
+                for bin_slope_index in range(3):
+                    # Get the bin in the list of good bins
+                    index_bin = bin_list[bin_slope_index]
 
-            # Calculate the cross product of the slope of the top bins
-            top_vel_accum = [slope_vel_east, slope_vel_north]
-            cross_prod_top_accum_vel = np.cross(top_vel_accum, bt_vel)
-            ensemble_flow_info.top_flow = delta_time * (x1-x2) * cross_prod_top_accum_vel
+                    # Calculate the depth of the bin
+                    depth_bin = ens.AncillaryData.FirstBinRange + boat_draft + (index_bin * ens.AncillaryData.BinSize)
+
+                    if not heading_offset:
+                        # Get the east and north velocity
+                        east_vel_bin = ens.EarthVelocity.Velocities[index_bin][0]
+                        north_vel_bin = ens.EarthVelocity.Velocities[index_bin][1]
+                    else:
+                        east_vel_bin = ens.EarthVelocity.Velocities[index_bin][0] * math.cos(heading_offset) - ens.EarthVelocity.Velocities[index_bin][1] * math.sin(heading_offset)
+                        north_vel_bin = ens.EarthVelocity.Velocities[index_bin][0] * math.sin(heading_offset) + ens.EarthVelocity.Velocities[index_bin][1] * math.cos(heading_offset)
+
+                    # Add it to the list
+                    depth_list.append(depth_bin)
+                    east_vel_list.append(east_vel_bin)
+                    north_vel_list.append(north_vel_bin)
+
+                # Average depth
+                x4 = (x1 - x2) / 2.0
+
+                # Calculate the slope for East and North velocity
+                slope_vel_east = Slope()
+                slope_vel_north = Slope()
+                slope_vel_east.setXYs(earth_vel, depth_list)
+                slope_vel_north.setXYs(north_vel_list, depth_list)
+
+                # Prevent divide by zero
+                if (depth_list[1] - depth_list[0]) != 0:
+                    slope_vel_east = slope_vel_east.cal_y(x4)
+                    slope_vel_north = slope_vel_north.cal_y(x4)
+                else:
+                    ensemble_flow_info.top_flow = measured_bin_info.flow / ens.AncillaryData.BinSize * (x1 - x2)
+
+                # Calculate the cross product of the slope of the top bins
+                cross_prod_top_accum_vel = self.cross_product(slope_vel_east,
+                                                              slope_vel_north,
+                                                              bt_east,
+                                                              bt_north)
+                ensemble_flow_info.top_flow = delta_time * (x1-x2) * cross_prod_top_accum_vel
 
         ##################
         # CALCULATE BOTTOM
@@ -334,3 +350,7 @@ class CalcDischarge:
         # Return the ensemble flow results
         ensemble_flow_info.valid = True
         return ensemble_flow_info
+
+    @staticmethod
+    def cross_product(vel_east: float, vel_north: float, vel_bt_east: float, vel_bt_north: float):
+        return (vel_north + vel_bt_north) * vel_bt_east - (vel_east + vel_bt_east) * vel_bt_north
