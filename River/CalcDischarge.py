@@ -78,18 +78,18 @@ class Slope:
 
         avg_x = accum_x / list_length
         avg_y = accum_y / list_length
-        val = list_length * accum_xx - accum_x * accum_x
+        cal_base = list_length * accum_xx - accum_x * accum_x
 
-        if val == 0.0:
+        if cal_base == 0.0:
             self.b = 0.0
             self.a = 1.0
             self.c = -avg_x
         else:
-            val8 = (list_length * accum_xy - accum_x * accum_y) / val
-            val9 = (accum_y * accum_xx - accum_x * accum_xy) / val
+            slope = (list_length * accum_xy - accum_x * accum_y) / cal_base
+            b_val = (accum_y * accum_xx - accum_x * accum_xy) / cal_base
             self.b = 1.0
-            self.a = -val8
-            self.c = -val9
+            self.a = -slope
+            self.c = -b_val
 
     def cal_x(self, y: float) -> float:
         if self.a == 0.0:
@@ -101,7 +101,7 @@ class Slope:
         if self.b == 0.0:
             return 0.0
 
-        return 0.0 - (self.a * x * self.c) / self.b
+        return 0.0 - (self.a * x + self.c) / self.b
 
 
 class CalcDischarge:
@@ -113,6 +113,10 @@ class CalcDischarge:
 
     def __init__(self):
         self.version = 1.1
+
+    @staticmethod
+    def cross_product(vel_east: float, vel_north: float, vel_bt_east: float, vel_bt_north: float):
+        return (vel_north + vel_bt_north) * vel_bt_east - (vel_east + vel_bt_east) * vel_bt_north
 
     def calculate_ensemble_flow(self,
                                 ens: Ensemble,
@@ -130,6 +134,25 @@ class CalcDischarge:
                                 min_amp=MINIMUM_AMPLITUDE,
                                 min_corr=MINIMUM_CORRELATION,
                                 heading_offset=None) -> EnsembleFlowInfo:
+        """
+        Calculate the measured unit flow.
+        :param ens:
+        :param boat_draft:
+        :param beam_angle:
+        :param pulse_length:
+        :param pulse_lag:
+        :param bt_east:
+        :param bt_north:
+        :param bt_vert:
+        :param delta_time: Time difference between ensembles.
+        :param top_flow_mode:
+        :param top_pwr_func_exponent:
+        :param bottom_flow_mode:
+        :param min_amp:
+        :param min_corr:
+        :param heading_offset: Heading angle correction.
+        :return:
+        """
 
         # Initialize the values
         ensemble_flow_info = EnsembleFlowInfo()
@@ -145,10 +168,9 @@ class CalcDischarge:
 
         # num1
         range_count = 0
-        # d
+        # Minimum depth of bottom track
         bt_min_depth = float('NaN')
         # Get the average bottom track range
-        # num2
         accum_range = 0.0
         if ens.IsBottomTrack:
             # num4
@@ -173,32 +195,32 @@ class CalcDischarge:
         # num4
         avg_depth = accum_range / range_count
 
-        # num5
+        # Possible maximum depth
         depth_angle = bt_min_depth * math.cos(beam_angle / 180.0 * math.pi) + boat_draft - max((pulse_length + pulse_lag) / 2.0, ens.AncillaryData.BinSize / 2.0)
 
-        # Average depth and the boat draft
-        # num6
+        # Distance from water surface to the bottom
         overall_depth = avg_depth + boat_draft
 
+        # First valid bin
         measured_bin_info_top = None
         measured_bin_info_bottom = None
 
         # First Bin Position
-        # num7
         first_bin_pos = ens.AncillaryData.FirstBinRange + boat_draft
 
         # List of bins
         measured_bin_info_list = []
         bin_list = []
         bin_index = 0
-        # num8
+        # Accumulated Flow
         accum_flow = 0.0
-        # num9
+        # Accumulated East Velocity
         accum_east_vel = 0.0
-        # num10
+        # Accumulated North Velocity
         accum_north_vel = 0.0
-        # num11
+        # Number of good bins
         accum_bins = 0
+
         bin_depth_index = first_bin_pos
         for bin_index in range(ens.EnsembleData.NumBins):
             if bin_depth_index < depth_angle and ens.EnsembleData.NumBeams >= 2:
@@ -351,6 +373,119 @@ class CalcDischarge:
         ensemble_flow_info.valid = True
         return ensemble_flow_info
 
-    @staticmethod
-    def cross_product(vel_east: float, vel_north: float, vel_bt_east: float, vel_bt_north: float):
-        return (vel_north + vel_bt_north) * vel_bt_east - (vel_east + vel_bt_east) * vel_bt_north
+    def calculate_avg_vel(self,
+                          ens: Ensemble,
+                          boat_draft: float,
+                          beam_angle: float,
+                          pulse_length: float,
+                          pulse_width: float,
+                          top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,,
+                          min_amp=MINIMUM_AMPLITUDE,
+                          min_corr=MINIMUM_CORRELATION):
+        """
+        Calculate the surface and bottom average velocity.
+        :param ens:
+        :param boat_draft:
+        :param beam_angle:
+        :param pulse_length:
+        :param pulse_width:
+        :param top_pwr_func_exponent:
+        :param min_amp:
+        :param min_corr:
+        :return:
+        """
+
+        da = ens.AncillaryData.BinSize
+
+        if da < 1e-6:
+            return
+
+        bt_min_depth = float('NaN')
+        depth_count = 0
+        depth_accum = 0.0
+
+        if ens.IsBottomTrack:
+            # num4
+            for bt_range in ens.BottomTrack.Range:
+                # Verify a good range value
+                if bt_range >= 1E-06:
+
+                    # Find minimum depth
+                    if math.isnan(bt_min_depth):
+                        bt_min_depth = bt_range
+                    else:
+                        if bt_range < bt_min_depth:
+                            bt_min_depth = bt_range
+
+                    # Accumulate depths
+                    depth_count += 1
+                    depth_accum += bt_range
+
+        # Calculate average depth
+        if depth_count == 0:
+            return
+        bt_avg_depth = depth_accum / depth_count
+
+        # Possible maximum depth
+        dlg_max = bt_min_depth * math.cos(beam_angle / 180.0 * math.pi) + boat_draft - max((pulse_length + pulse_width) / 2, da / 2.0)
+
+        # Distance from water surface to bottom
+        depth_total = bt_avg_depth + boat_draft
+
+        # First valid bin
+        first_valid_bin = MeasuredBinInfo()
+        first_valid_bin.valid = False
+
+        # Last Valid bin
+        last_valid_bin = MeasuredBinInfo()
+
+        # First Bin Depth
+        bin_depth = ens.AncillaryData.FirstBinRange + boat_draft
+
+        # Accumulate East and North Velocity
+        sum_east_vel = 0
+        sum_north_vel = 0
+
+        bin_depth_index = bin_depth
+
+        for bin_index in range(ens.EnsembleData.NumBins):
+            if bin_depth_index < dlg_max:
+
+                # Get the bin info
+                bin_info = MeasuredBinInfo()
+                bin_info.Depth = bin_depth
+                bin_info.valid = ens.is_good_bin(bin_index, min_amp, min_corr)                   # Valid bin
+
+                # Set the first good and last bin info
+                if bin_info.valid:
+                    if not first_valid_bin.valid:
+                        first_valid_bin = bin_info
+                    last_valid_bin = bin_info
+
+                sum_east_vel += ens.EarthVelocity.Velocities[bin_index][0]
+                sum_north_vel += ens.EarthVelocity.Velocities[bin_index][1]
+
+            # Increment the bin position
+            bin_depth_index += ens.AncillaryData.BinSize
+
+        # Check if any bins are good
+        if not first_valid_bin.valid:
+            return
+
+        # Set the top and bottom depth
+        depth_top = first_valid_bin.depth
+        depth_bottom = last_valid_bin.depth
+
+        z3 = depth_total
+        z2 = depth_total - depth_top + da / 2.0
+        z1 = depth_total - depth_bottom - da / 2.0
+
+        # Surface velocity
+        a = top_pwr_func_exponent + 1
+        top_vx = sum_east_vel * da / (depth_top - da / 2.0) * ((z3 ** a) - (z2 ** a)) / ((z2 ** a) - (z1 ** a))
+        top_vy = sum_north_vel * da / (depth_top - da / 2.0) * ((z3 ** a) - (z2 ** a)) / ((z2 ** a) - (z1 ** a))
+
+        bottom_vx = sum_east_vel * da / z1 * (z1 ** a) / ((z2 ** a) - (z1 ** a))
+        bottom_vy = sum_north_vel * da / z1 * (z1 ** a) / ((z2 ** a) - (z1 ** a))
+
+        return top_vx, top_vy, bottom_vx, bottom_vy
