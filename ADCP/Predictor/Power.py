@@ -259,7 +259,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     # Get the configuration from the json file
     config = json.loads(open(json_file_path).read())
 
-
     # Number of Ensembles
     # Check for divide by 0
     num_ensembles = 0
@@ -274,7 +273,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     if _is_burst_:
         num_ensembles = _ensembles_per_burst_
 
-
     # Wakeups  (Question about CEI)
     wakeups = 1
     if _cei_ > 3.0:
@@ -282,7 +280,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
             wakeups = num_ensembles * _cwpp_
         else:
             wakeups = num_ensembles
-
 
     # Bottom Track Pings
     bottom_track_pings = 0.0
@@ -292,7 +289,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
             bottom_track_pings = num_ensembles
         else:
             bottom_track_pings = round(_cwpp_ / 10.0) * num_ensembles
-
 
     # Bottom Track Time
     (bottom_track_range, wp_range, first_bin, cfg_range) = rti_python.ADCP.Predictor.Range.calculate_predicted_range(CWPON=_cwpon_,
@@ -313,7 +309,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
                                                                                                                      Temperature=_temperature_,
                                                                                                                      XdcrDepth=_xdcr_depth_)
     bottom_track_time = 0.0015 * bottom_track_range
-
 
     # Transmit Power Bottom Track
     # double beam_xmt_power_bottom_track = XmtW_1200000 + XmtW_600000 + XmtW_300000 + XmtW_150000 + XmtW_75000 + XmtW_38000;
@@ -342,10 +337,8 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     if (_system_frequency_ > config["DEFAULT"]["38000"]["FREQ"]) and (_system_frequency_ < config["DEFAULT"]["75000"]["FREQ"]):
         beam_xmt_power_bottom_track = config["DEFAULT"]["38000"]["XMIT_W"]
 
-
     # Bottom Track Transmit Power
     bt_transmit_power = bottom_track_pings * 0.2 * (bottom_track_time * beam_xmt_power_bottom_track * _beams_) / 3600.0
-
 
     # Bottom Track Receiver Power
     freq_mult = 1
@@ -354,14 +347,11 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
 
     bt_receive_power = bottom_track_pings * (bottom_track_time * _system_boot_power_) / 3600.0 * freq_mult
 
-
     # Wakeup Power
     wakeup_power = wakeups * _system_wakeup_time_ * _system_boot_power_ / 3600.0
 
-
     # Init Power
     init_power = wakeups * _system_init_power_ * _system_init_time_ / 3600.0
-
 
     # Sample Rate
     sum_sampling = 0.0
@@ -381,7 +371,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
 
     sample_rate = _system_frequency_ * sum_sampling
 
-
     # Meters Per Sample
     # Check for divide by 0
     meters_per_sample = 0
@@ -389,7 +378,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
         meters_per_sample = 0.0
     else:
         meters_per_sample = math.cos(_beam_angle_ / 180.0 * math.pi) * _speed_of_sound_ / 2.0 / sample_rate
-
 
     # Bin Samples
     # Check for divide by 0
@@ -399,7 +387,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     else:
         bin_samples = math.trunc(_cwpbs_ / meters_per_sample)
 
-
     # Bin Time
     bin_time = 1
     # Check for divide by 0
@@ -408,7 +395,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     else:
         bin_time = bin_samples / sample_rate
 
-
     # Lag Samples
     # Check for divide by 0
     lag_samples = 0
@@ -416,7 +402,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
         lag_samples = 0
     else:
         lag_samples = 2 * math.trunc((math.trunc(_cwpbb_lag_length_ / meters_per_sample) + 1.0) / 2.0)
-
 
     # Code Repeats
     code_repeats = 0;
@@ -440,7 +425,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     else:
         lag_time = lag_samples / sample_rate
 
-
     # Transmit Code Time
     transmit_code_time = 1
     # If using Broadband
@@ -454,7 +438,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
             transmit_code_time = bin_time
         else:
             transmit_code_time = 2.0 * bin_time
-
 
     # Transmit Scale
     xmt_scale = 0.0
@@ -470,7 +453,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
             xmt_scale = (lag_samples - 1.0) / lag_samples
         else:
             xmt_scale = 1.0 / lag_samples
-
 
     # Transmit Watt
     # Get the sum of all the selected XmtW
@@ -489,14 +471,11 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     if (_system_frequency_ > config["DEFAULT"]["38000"]["FREQ"]) and (_system_frequency_ < config["DEFAULT"]["75000"]["FREQ"]):         # 38khz
         sum_xmt_w = config["DEFAULT"]["38000"]["XMIT_W"]
 
-
     # Beam Transmit Power Profile
     beam_xmt_power_profile = xmt_scale * sum_xmt_w
 
-
     # Transmit Power
     transmit_power = (transmit_code_time * beam_xmt_power_profile * _beams_ * num_ensembles * _cwpp_) / 3600.0
-
 
     # Time Between Pings
     time_between_pings = 0.0
@@ -507,7 +486,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
         time_between_pings = _cwpbn_ * bin_samples / sample_rate
     else:
         time_between_pings = _cwptbp_
-
 
     # Profile Time / Receive Time
     receive_time = 0.0
@@ -534,8 +512,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
         else:                                                   # Use the greatest sleep time found
             receive_time = time_between_pings
 
-
-
     # Receive Power
     system_rcv_power = 3.80
     if _beams_ == 4:
@@ -552,16 +528,13 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
 
     receive_power = (receive_time * system_rcv_power * num_ensembles * _cwpp_) / 3600.0 * freq_mult_rcv_pwr
 
-
     # Save Power
     save_power = (wakeups * _system_save_power_ * _system_save_time_) / 3600.0
-
 
     # Sleep Power
     sleep_power = _system_sleep_power_ * _deployment_duration_ * 24.0
     if _is_burst_:
         sleep_power = _system_sleep_power_
-
 
     # Transmit Voltage
     # Sum up the Xmt Voltage
@@ -579,7 +552,6 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     elif (_system_frequency_ > config["DEFAULT"]["38000"]["FREQ"]) and (_system_frequency_ < config["DEFAULT"]["75000"]["FREQ"]):           # 38khz
         sum_xmt_v = sum_xmt_v = config["DEFAULT"]["38000"]["XMIT_V"]
 
-
     # Leakage
     # Sum up the Leakage
     sum_leakage_ua = 0.0;
@@ -596,12 +568,10 @@ def _calculate_power(_cei_, _deployment_duration_, _beams_, _system_frequency_,
     if (_system_frequency_ > config["DEFAULT"]["38000"]["FREQ"]) and (_system_frequency_ < config["DEFAULT"]["75000"]["FREQ"]):             # 38khz
         sum_leakage_ua = 3.0 * math.sqrt(2.0 * 0.000001 * config["DEFAULT"]["38000"]["UF"] * config["DEFAULT"]["38000"]["XMIT_V"])
 
-
     # Cap Charge Power
     cap_charge_power = 0.03 * (bt_transmit_power + transmit_power) + 1.3 * _deployment_duration_ * 24.0 * sum_xmt_v * 0.000001 * sum_leakage_ua
     if _is_burst_:
         cap_charge_power = 0.03 * (bt_transmit_power + transmit_power) + 1.3 * sum_xmt_v * 0.000001 * sum_leakage_ua
-
 
     return bt_transmit_power + bt_receive_power + wakeup_power + init_power + transmit_power + receive_power + save_power + sleep_power + cap_charge_power
 
@@ -714,6 +684,30 @@ def _calculate_number_batteries(_power_usage_, _deployment_duration, _battery_ca
     battery_pwr = _battery_capacity_ * _battery_derate_ - _battery_self_discharge_ * _deployment_duration / 365.0
 
     return _power_usage_ / battery_pwr
+
+
+def calculate_battery_usage(power_usage: float, num_batt: int, battery_pwr: float, _battery_derate_: float = 0.85) -> float:
+    """
+    Calculate how much of the battery will be consumed based on the power usage given.
+    :param power_usage: Power usage.
+    :param num_batt: Number of batteries.
+    :param battery_pwr: Battery Power for the type of battery.
+    :param _battery_derate_: Derate of the battery.  Default is 0.80
+    :return: Percentage of the battery is consumed.
+    """
+
+    # Derate the battery power
+    actual_batt_pwr = battery_pwr * _battery_derate_
+
+    # Calculate the total power available
+    total_battery_pwr_avail = actual_batt_pwr * num_batt
+
+    # Check if any power is given
+    if total_battery_pwr_avail == 0:
+        return 0
+
+    # return the percentage of power used compared to total power
+    return power_usage / total_battery_pwr_avail
 
 
 def test__calculate_power():
