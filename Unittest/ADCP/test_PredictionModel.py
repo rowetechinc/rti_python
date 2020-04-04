@@ -64,6 +64,46 @@ def test_calculate_power():
 
     assert batts == pytest.approx(82.203, 0.01)
 
+def test__calculate_power():
+    power = rti_python.ADCP.Predictor.Power.calculate_power(CEI=1,
+                           DeploymentDuration=30,
+                           Beams=4,
+                           SystemFrequency=288000,
+                           CWPON=True,
+                           CWPBL=1,
+                           CWPBS=4,
+                           CWPBN=30,
+                           CWPBB_LagLength=1,
+                           CWPBB=1,
+                           CWPP=9,
+                           CWPTBP=0.5,
+                           CBTON=True,
+                           CBTBB=1,
+                           BeamAngle=20,
+                           SpeedOfSound=1490,
+                           SystemBootPower=1.8,
+                           SystemWakeUpTime=0.4,
+                           SystemInitPower=2.8,
+                           SystemInitTime=0.25,
+                           BroadbandPower=True,
+                           SystemSavePower=1.8,
+                           SystemSaveTime=0.15,
+                           SystemSleepPower=0.024,
+                           BeamDiameter=0.075,
+                           CyclesPerElement=12,
+                           Temperature=10.0,
+                           Salinity=35.0,
+                           XdcrDepth=0.0)
+
+    batteryUsage = rti_python.ADCP.Predictor.Power.calculate_number_batteries(PowerUsage=power,
+                                              DeploymentDuration=30,
+                                              BatteryCapacity=440.0,
+                                              BatteryDerate=0.85,
+                                              BatterySelfDischarge=0.05)
+
+    assert pytest.approx(power, 0.01) == 30754.86
+    assert pytest.approx(batteryUsage, 0.01) == 82.23
+
 
 def test_calculate_power_kwargs():
     _CEI_ = 1
@@ -667,4 +707,171 @@ def test_calculate_storage_size_kwargs():
     assert burst == pytest.approx(6.872 * 1000000000, 0.1)
 
 
+def test__calculate_power_nb():
+    power = rti_python.ADCP.Predictor.Power.calculate_power(CEI=1,
+                           DeploymentDuration=30,
+                           Beams=4,
+                           SystemFrequency=288000,
+                           CWPON=True,
+                           CWPBL=1,
+                           CWPBS=4,
+                           CWPBN=30,
+                           CWPBB_LagLength=1,
+                           CWPBB=0,
+                           CWPP=9,
+                           CWPTBP=0.5,
+                           CBTON=True,
+                           CBTBB=0,
+                           BeamAngle=20,
+                           SpeedOfSound=1490,
+                           SystemBootPower=1.8,
+                           SystemWakeUpTime=0.4,
+                           SystemInitPower=2.8,
+                           SystemInitTime=0.25,
+                           BroadbandPower=True,
+                           SystemSavePower=1.8,
+                           SystemSaveTime=0.15,
+                           SystemSleepPower=0.024,
+                           BeamDiameter=0.075,
+                           CyclesPerElement=12,
+                           Temperature=10.0,
+                           Salinity=35.0,
+                           XdcrDepth=0.0)
 
+    batteryUsage = rti_python.ADCP.Predictor.Power.calculate_number_batteries(PowerUsage=power,
+                                              DeploymentDuration=30,
+                                              BatteryCapacity=440.0,
+                                              BatteryDerate=0.85,
+                                              BatterySelfDischarge=0.05)
+
+    assert pytest.approx(power, 0.01) == 34770.30
+    assert pytest.approx(batteryUsage, 0.01) == 92.97
+
+
+def test__calculate_power_600():
+    power = rti_python.ADCP.Predictor.Power.calculate_power(CEI=1,
+                           DeploymentDuration=30,
+                           Beams=4,
+                           SystemFrequency=576000,
+                           CWPON=True,
+                           CWPBL=1,
+                           CWPBS=4,
+                           CWPBN=30,
+                           CWPBB_LagLength=1,
+                           CWPBB=1,
+                           CWPP=9,
+                           CWPTBP=0.5,
+                           CBTON=True,
+                           CBTBB=1,
+                           BeamAngle=20,
+                           SpeedOfSound=1490,
+                           SystemBootPower=1.8,
+                           SystemWakeUpTime=0.4,
+                           SystemInitPower=2.8,
+                           SystemInitTime=0.25,
+                           BroadbandPower=True,
+                           SystemSavePower=1.8,
+                           SystemSaveTime=0.15,
+                           SystemSleepPower=0.024,
+                           BeamDiameter=0.075,
+                           CyclesPerElement=12,
+                           Temperature=10.0,
+                           Salinity=35.0,
+                           XdcrDepth=0.0)
+
+    batteryUsage = rti_python.ADCP.Predictor.Power.calculate_number_batteries(PowerUsage=power,
+                                              DeploymentDuration=30,
+                                              BatteryCapacity=440.0,
+                                              BatteryDerate=0.85,
+                                              BatterySelfDischarge=0.05)
+
+    assert pytest.approx(power, 0.01) == 16852.22
+    assert pytest.approx(batteryUsage, 0.01) == 45.06
+
+
+def test__calculate_power_burst():
+    power = rti_python.ADCP.Predictor.Power.calculate_burst_power(CEI=0.249,
+                           DeploymentDuration=1,
+                           Beams=4,
+                           SystemFrequency=288000,
+                           CWPON=True,
+                           CWPBL=1,
+                           CWPBS=4,
+                           CWPBN=30,
+                           CWPBB_LagLength=1,
+                           CWPBB=1,
+                           CWPP=1,
+                           CWPTBP=0.5,
+                           CBTON=False,
+                           CBTBB=1,
+                           BeamAngle=20,
+                           SpeedOfSound=1490,
+                           SystemBootPower=1.8,
+                           SystemWakeUpTime=0.4,
+                           SystemInitPower=2.8,
+                           SystemInitTime=0.25,
+                           BroadbandPower=True,
+                           SystemSavePower=1.8,
+                           SystemSaveTime=0.15,
+                           SystemSleepPower=0.024,
+                           BeamDiameter=0.075,
+                           CyclesPerElement=12,
+                           Temperature=10.0,
+                           Salinity=35.0,
+                           XdcrDepth=0.0,
+                           CBI_NumEns=4096,
+                           CBI_BurstInterval=3600,
+                           CBI=True)
+
+    batteryUsage = rti_python.ADCP.Predictor.Power.calculate_number_batteries(PowerUsage=power,
+                                              DeploymentDuration=30,
+                                              BatteryCapacity=440.0,
+                                              BatteryDerate=0.85,
+                                              BatterySelfDischarge=0.05)
+
+    assert pytest.approx(power, 0.01) == 65.10
+    assert pytest.approx(batteryUsage, 0.01) == 0.174
+
+
+def test__calculate_power_bt_30():
+    power = rti_python.ADCP.Predictor.Power.calculate_burst_power(CEI=0.249,
+                           DeploymentDuration=30,
+                           Beams=4,
+                           SystemFrequency=288000,
+                           CWPON=True,
+                           CWPBL=1,
+                           CWPBS=4,
+                           CWPBN=30,
+                           CWPBB_LagLength=1,
+                           CWPBB=1,
+                           CWPP=1,
+                           CWPTBP=0.5,
+                           CBTON=True,
+                           CBTBB=1,
+                           BeamAngle=20,
+                           SpeedOfSound=1490,
+                           SystemBootPower=1.8,
+                           SystemWakeUpTime=0.4,
+                           SystemInitPower=2.8,
+                           SystemInitTime=0.25,
+                           BroadbandPower=True,
+                           SystemSavePower=1.8,
+                           SystemSaveTime=0.15,
+                           SystemSleepPower=0.024,
+                           BeamDiameter=0.075,
+                           CyclesPerElement=12,
+                           Temperature=10.0,
+                           Salinity=35.0,
+                           XdcrDepth=0.0,
+                           CBI_NumEns=4096,
+                           CBI_BurstInterval=3600,
+                           CBI=True)
+
+    batteryUsage = rti_python.ADCP.Predictor.Power.calculate_number_batteries(PowerUsage=power,
+                                              DeploymentDuration=30,
+                                              BatteryCapacity=440.0,
+                                              BatteryDerate=0.85,
+                                              BatterySelfDischarge=0.05)
+
+    assert pytest.approx(power, 0.01) == 12475.41
+    assert pytest.approx(batteryUsage, 0.01) == 33.36

@@ -29,7 +29,8 @@ class NmeaData:
         self.GPHDG = None
         self.latitude = 0.0
         self.longitude = 0.0
-        self.speed_knots = 0.0
+        self.speed_knots = 0.0                              # Speed in Knots
+        self.speed_m_s = 0.0                                # Speed in m/s
         self.heading = 0.0
         self.datetime = None                              # Date and Time from GGA
 
@@ -68,6 +69,7 @@ class NmeaData:
             if isinstance(nmea_msg, pynmea2.types.talker.VTG):
                 self.GPVTG = nmea_msg
                 self.speed_knots = nmea_msg.spd_over_grnd_kts
+                self.speed_m_s = nmea_msg.spd_over_grnd_kts * 0.51444444444444
             if isinstance(nmea_msg, pynmea2.types.talker.RMC):
                 self.GPRMC = nmea_msg
             if isinstance(nmea_msg, pynmea2.types.talker.GLL):

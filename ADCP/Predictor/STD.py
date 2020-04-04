@@ -135,6 +135,7 @@ def _calculate_std(_CWPP_, _CWPBS_, _CWPBB_LagLength_,
 
 
     # rho
+    # Nominal Correlation
     rho = 0.0
     if _CWPBB_TransmitPulseType_ < 2:
         if (codeRepeats == 0) or (_SNR_ == 0):
