@@ -1,7 +1,8 @@
 import struct
 import json
 import datetime
-from PyCRC.CRCCCITT import CRCCCITT
+import crc16
+import binascii
 import math
 import logging
 import pandas as pd
@@ -284,8 +285,15 @@ class Ensemble:
 
         header = Ensemble.generate_ens_header(ens_num, payload_size)
 
-        # Generate the Checksum
-        checksum = Ensemble.int32_to_bytes(CRCCCITT().calculate(input_data=bytes(payload)))
+        # Generate the Checksum CITT
+        # Parameters found at https: // pycrc.org / models.html
+        #crc = pycrc.algorithms.Crc(width=16, poly=0x1021,
+        #                           reflect_in=False, xor_in=0x1d0f,
+        #                           reflect_out=False, xor_out=0x0000)
+        #checksum = crc.bit_by_bit_fast(binascii.a2b_hex(bytes(payload)))
+        #checksum = Ensemble.int32_to_bytes(CRCCCITT().calculate(input_data=bytes(payload)))
+        checksum = crc16.crc16xmodem(payload)
+
 
         result = []
         result += header
@@ -413,6 +421,17 @@ class Ensemble:
         result += name.encode()                                         # Name
 
         return result
+
+    @staticmethod
+    def crc16_ccitt(crc, data):
+        msb = crc >> 8
+        lsb = crc & 255
+        for c in data:
+            x = ord(c) ^ msb
+            x ^= (x >> 4)
+            msb = (lsb ^ (x >> 3) ^ (x << 4)) & 255
+            lsb = (x ^ (x << 5)) & 255
+        return (msb << 8) + lsb
 
     @staticmethod
     def array_2d_to_df(vel_array, dt, ss_code, ss_config, blank, bin_size, first_ens_num, last_ens_num):

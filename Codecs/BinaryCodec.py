@@ -16,7 +16,8 @@ from rti_python.Ensemble.BottomTrack import BottomTrack
 from rti_python.Ensemble.NmeaData import NmeaData
 from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
-from PyCRC.CRCCCITT import CRCCCITT
+import crc16
+import binascii
 
 # Buffer to hold the incoming data
 buffer = bytearray()
@@ -121,16 +122,17 @@ class BinaryCodec:
                 # Calculate Checksum
                 # Use only the payload for the checksum
                 ens = ens_data[ens_start + Ensemble().HeaderSize:ens_start + Ensemble().HeaderSize + payload_size[0]]
-                calc_checksum = CRCCCITT().calculate(input_data=bytes(ens))
+                calc_checksum = crc16.crc16xmodem(ens)
 
                 # Verify checksum
                 if checksum[0] == calc_checksum:
                     logging.debug(ens_num[0])
                     return True
                 else:
+                    logging.warning("Ensemble fails checksum. {:#04x} {:#04x}".format(checksum[0], calc_checksum))
                     return False
             else:
-                #logging.warning("Not a complete ensemble.")
+                logging.warning("Incomplete ensemble.")
                 return False
 
         except Exception as e:
