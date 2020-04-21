@@ -14,6 +14,16 @@
         "desc": [
                 "CWPBL n.nn<CR>",
                 "Water Profile Blank (meters).",
+                "Depth to start the first measurement.  This will ignore data before this depth",
+                "",
+                "If you want the absolute minimum value,",
+                "set the value to 0.  The blanking distance can never be 0m.  But this will use",
+                "the smallest value based on the setup.",
+                "To get a smaller blank, make the maximum profile range smaller.  The larger the",
+                "profile range, the longer, the ADCP must transmit.  The ADCP must transmit and ",
+                "receive data on the same transducer.  So you want to shorten the transmit to ",
+                "receive data earlier.  The earlier we receive data, the closer to the transducer",
+                " we can see which will give a smaller blank size.",
                 "",
                 "n.nn = 0 to 100.",
                 "",
@@ -27,6 +37,7 @@
 		"desc": [
 			"CWPBS n.nn<CR>",
 			"Water Profile Bin Size (meters)",
+            "(Cell Size)",
 			"",
 			"n.nn sets the vertical bin size."
 		]
@@ -34,7 +45,7 @@
     "CWPBN": {
         "desc": [
           "CWPBN n<CR> ",
-          "Number of Water Profile Bins.",
+          "Number of Water Profile Bins (cells).",
           "",
           "n = 0 to 200 sets the number bins that will be processed and output."
         ]
@@ -80,7 +91,9 @@
     "CWPP": {
         "desc": [
           "CWPP n<CR>",
-          "Number of Water Profile Pings.",
+          "Number of Water Profile Pings to average together.",
+          "Overall average time = CWPP * CWPTBP",
+          "This overall average time should be less then CEI.",
           "",
           "n = 0 to 10,000 sets the number of pings that will be averaged together during the ensemble."
         ]
@@ -88,7 +101,9 @@
     "CWPTBP": {
         "desc": [
           "CWPTBP n.nnn<CR>",
-          "Water Profile Time Between Pings.",
+          "Water Profile Time Between Pings.  This is used to lengthen or shorten the average interval.",
+          "Overall average time = CWPP * CWPTBP",
+          "This overall average time should be less then CEI.",
           "",
           "n.nn = 0.00 to 86400.00 seconds (24 hours)",
           "Sets the time between the last ping, regardless of ping type, and the next profile ping."
@@ -97,11 +112,12 @@
     "CWPRT": {
         "desc": [
           "CWPRT m,n1,n2<CR>",
-          "Water Ping Range Tracking. Sets Water ping tracking mode ",
-          "and supporting parameters. When enabled the system locates the highest ",
-          "amplitude signal in the profile amplitude data. The system uses very high ",
+          "Water Ping Range Tracking. Search for the surface or bottom. ",
+          "When enabled the system locates the highest ",
+          "amplitude signal in the water profile amplitude data. The system uses very high ",
           "resolution sample data to give precise range to the target. The range data is ",
           "useful for non-directional wave height and bottom depth sounding. ",
+          "",
           "Note: You need to setup the profile to collect more bins than the expected ",
           "maximum range to the surface.",
           "1. Mode m",
@@ -155,13 +171,15 @@
         "desc": [
           "CBTTBP n.nn<CR>",
           "Bottom Track Time Between Pings. ",
+          "The Bottom Track ping may be seen in the Water Profile Ping.",
+          "This time allows the Bottom Track Ping to dissipate before the next Water Profile Ping.",
           "",
           "n.nn = 0.00 to 86400.00 seconds (24 hours) sets the time between the last ping, regardless of ping type, and the next bottom ping."
         ]
     },
     "CBI": {
         "desc": [
-          "CBI HH:MM:SS.hh,n,m<CR>",
+          "CBI HH:MM:SS.hh,n,m,o<CR>",
           "Burst Interval. Used when a precise short time interval is ",
           "required between ensembles followed by a period of sleep.",
           "",
@@ -169,8 +187,17 @@
           "",
           "n = The number of ensembles that are output during each burst. The time between each ensemble is controlled by the CEI command.",
           "",
-          "m = The Burst Pair flag. 0 = false, 1 = true; If Burst Pair is set to 1 the next sub system will be interleaved (alternating pings)",
-          "       with the current sub system during the burst. The CBI commands for the pair should be set to the same value(s).",
+          "m = Sets the Burst Group number. 0 = no grouping, n = 1 to 15 the next n",
+          "       sub systems will be interleaved (alternating pings) with the current sub ",
+          "       system during the burst. The CBI commands for each subsystem in a",
+          "       group should be set to the same value(s). If subsystems are grouped ",
+          "       together the time between ensembles will be CEI / (n+1).",
+          "",
+          "o = Set the Burst ID.  This will used to group ensembles together.  Some bursts",
+          "       maybe only used for water current measurements and not waves measurements",
+          "       but later want to be grouped together.  Used the same Burst ID for all the",
+          "       bursts that you want to group together.  If you interleave a 4 beam and vertical",
+          "       beam, then group the bursts together with the same Burst ID.",
           "",
           "Note: Burst sampling typically requires precise timing intervals. If serial data output is enabled during burst sampling the user needs to ensure",
           "that each data transfer completes before the next ensemble is output. If the length of the data transfer exceeds the time between samples the data",
