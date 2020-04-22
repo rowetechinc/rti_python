@@ -245,6 +245,11 @@
           "CWS n.nnn<CR>",
           "Water Salinity (ppt). ",
           "",
+          "Typical Values:",
+          "Salt Water:          35 ppt",
+          "Fresh Water:       0 ppt",
+          "Estuary Water:   15 ppt",
+          "",
           "Used in the water speed of sound calculation."
         ]
     },
