@@ -8,11 +8,11 @@ import logging
 
 class AdcpSerialPort:
     def __init__(self,
-                 port,
-                 baud=115200,
-                 bytesize=serial.EIGHTBITS,
-                 parity=serial.PARITY_NONE,
-                 stopbits=serial.STOPBITS_ONE):
+                 port: str,
+                 baud: int = 115200,
+                 bytesize: int = serial.EIGHTBITS,
+                 parity: int = serial.PARITY_NONE,
+                 stopbits: int = serial.STOPBITS_ONE):
 
         self.raw_serial = serial.Serial(port=port,
                                         baudrate=baud,
@@ -85,7 +85,6 @@ class AdcpSerialPort:
         def connection_lost(self, exc):
             self.received_lines.append(exc)
             logging.debug("Connection lost: " + str(exc))
-
 
 
 def get_baud_rates():
