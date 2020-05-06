@@ -37,6 +37,9 @@ class AdcpSerialPort:
     def disconnect(self):
         self.raw_serial.close()
 
+    def is_open(self):
+        return self.raw_serial.is_open
+
     def readline(self):
         self.raw_serial.readline()
 

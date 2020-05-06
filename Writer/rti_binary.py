@@ -32,8 +32,8 @@ class RtiBinaryWriter:
             os.chdir(self.folder_path)
 
         # Create a file name
-        file_path = self.create_file_name(self.folder_path, header=header, extension=extension)
-        self.file = open(file_path, "wb")
+        self.file_path = self.create_file_name(self.folder_path, header=header, extension=extension)
+        self.file = open(self.file_path, "wb")
 
         self.bytes_written = 0          # Bytes written for current file
         self.total_bytes = 0            # All bytes written since start
@@ -45,7 +45,7 @@ class RtiBinaryWriter:
         :return:
         """
         try:
-        # Write data
+            # Write data
             self.file.write(data)
 
             # Monitor bytes written
@@ -55,9 +55,9 @@ class RtiBinaryWriter:
             # Check if the file exceeds the max file size
             # If it does, create a new file
             if self.bytes_written > self.max_file_size:
-                file_path = self.create_file_name(self.folder_path, self.header, self.extension)
+                self.file_path = self.create_file_name(self.folder_path, self.header, self.extension)
                 self.close()
-                self.file = open(file_path, "wb")
+                self.file = open(self.file_path, "wb")
                 self.bytes_written = 0
         except Exception as e:
             logging.error("Error writing the file.  ", e)
