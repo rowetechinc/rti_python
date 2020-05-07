@@ -283,7 +283,9 @@ def _calculate_burst_storage_amount(_CEOUTPUT_, _CBI_NumEns_,
     deployment_dur = _DeploymentDuration_ * 3600.0 * 24.0
 
     # Divide total duration by burst duration to get number of burst in the deployment
-    num_bursts = round(deployment_dur / _CBI_BurstInterval_)
+    num_bursts = 0
+    if _CBI_BurstInterval_ != 0:
+        num_bursts = round(deployment_dur / _CBI_BurstInterval_)
 
     return burst_mem * num_bursts
 
