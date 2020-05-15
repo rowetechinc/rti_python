@@ -129,3 +129,6 @@ PlanR/frontend/planr/node_modules/
 Unittest/Waves/*.mat
 Unittest/.pytest*
 Unittest/River/*.hdf5
+
+Utilities/udp_receive/build/
+Utilities/udp_receive/dist/
