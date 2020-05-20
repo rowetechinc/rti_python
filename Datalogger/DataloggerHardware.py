@@ -15,8 +15,10 @@ from typing import List
 def get_serial_ports() -> List[str]:
     return serial_port.get_serial_ports()
 
+
 def get_baud_rates() -> List[str]:
     return serial_port.get_baud_rates()
+
 
 def get_serial_ports_tuple() -> List[tuple]:
     result = []
@@ -26,6 +28,7 @@ def get_serial_ports_tuple() -> List[tuple]:
 
     return result
 
+
 def get_baud_rates_tuple() -> List[tuple]:
     result = []
 
@@ -33,6 +36,7 @@ def get_baud_rates_tuple() -> List[tuple]:
         result.append((baud, baud))
 
     return result
+
 
 class DataLoggerHardware:
 
@@ -78,21 +82,21 @@ class DataLoggerHardware:
         """
 
         # Intializize the config
-        logger_config = {}
-        logger_config["Status"] = "Disconnected"
+        #logger_config = {}
+        #logger_config["Status"] = "Disconnected"
 
         # Make the serial connection
         try:
             self.serial = serial_port.AdcpSerialPort(port, baud)
         except ValueError as ve:
             logging.error("Error opening serial port. " + str(ve))
-            return logger_config
+            return self.rd_config
         except serial.SerialException as se:
             logging.error("Error opening serial port. " + str(se))
-            return logger_config
+            return self.rd_config
         except Exception as e:
             logging.error("Error opening serial port. " + str(e))
-            return logger_config
+            return self.rd_config
 
         # Start the read thread
         #self.serial_thread_alive = True
@@ -102,12 +106,13 @@ class DataLoggerHardware:
         # Check if the connection was made
         if self.serial.is_open():
             # Read the config
-            logger_config = self.read_config()
-            logger_config["Status"] = "Connected"
-            return logger_config
+            self.rd_config = self.read_config()
+            self.rd_config["Status"] = "Connected"
+            return self.rd_config
         
         # No connection made
-        return logger_config
+        self.rd_config["Status"] = "Disconnected"
+        return self.rd_config
 
     def disconnect_serial(self):
         """
