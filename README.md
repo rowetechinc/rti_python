@@ -18,6 +18,8 @@ pip3 install -r requirements.txt -UI --user
  
 Windows
 ```javascript
+set-executionpolicy RemotedSigned
+/venv/Scripts/activate.ps1
 python -m pip install -r requirements.txt -UI --user
 ```
 

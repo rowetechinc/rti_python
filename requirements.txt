@@ -11,3 +11,4 @@ pynmea2
 obsub
 configparser
 tqdm
+crc16
