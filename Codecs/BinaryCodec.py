@@ -91,6 +91,14 @@ class BinaryCodec:
         """
         self.add_data_thread.add(data)
 
+    def buffer_size(self):
+        """
+        Monitor the buffer size.
+        :return: Buffer size to monitor.
+        """
+        global buffer
+        return len(buffer)
+
     @staticmethod
     def verify_ens_data(ens_data, ens_start=0):
         """
