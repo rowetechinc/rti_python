@@ -1,5 +1,8 @@
 rti_python ChangeLog
 
+rti_python - 2.1.5
+ - Added a function in BinaryCodec to monitor the buffer size
+
 rti_python - 2.1.4
  - Added average_mag_dir in EarthVelocity.
 
