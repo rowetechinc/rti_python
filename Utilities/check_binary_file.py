@@ -20,6 +20,7 @@ class RtiCheckFile:
         self.is_voltage_issue = False
         self.is_amplitude_0db_issue = False
         self.is_correlation_100pct_issue = False
+        self.is_datetime_jump_issue = False
         self.file_path = ""
         self.pbar = None
         self.first_ens = None
@@ -30,6 +31,10 @@ class RtiCheckFile:
         self.bad_voltage_count = 0
         self.bad_amp_0db_count = 0
         self.bad_corr_100pct_count = 0
+        self.datetime_jump_count = 0
+        self.ens_delta_time = 0
+        self.ens_bad_delta_time = 0
+        self.prev_ens_datetime = None
 
     def init(self):
         """
@@ -101,7 +106,7 @@ class RtiCheckFile:
         print("---------------------------------------------")
 
         # Check results for any fails
-        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue:
+        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue or self.is_datetime_jump_issue:
             print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             print("*********************************************")
             print(self.found_issue_str)
@@ -110,6 +115,7 @@ class RtiCheckFile:
             print("Total Bad Voltage: " + str(self.bad_voltage_count))
             print("Total Bad Amplitude (0dB): " + str(self.bad_amp_0db_count))
             print("Total Bad Correlation (100%): " + str(self.bad_corr_100pct_count))
+            print("Total Date/Time Jump (" + str(self.ens_delta_time) + "): " + str(self.datetime_jump_count))
             print("*********************************************")
         else:
             if not self.prev_ens_num == 0:
@@ -165,7 +171,7 @@ class RtiCheckFile:
         self.last_ens = ens
 
         # Checking missing Ensemble
-        is_missing_ens, prev_ens, err_str  = RtiCheckFile.check_missing_ens(ens, self.prev_ens_num, self.show_live_errors)
+        is_missing_ens, prev_ens, err_str = RtiCheckFile.check_missing_ens(ens, self.prev_ens_num, self.show_live_errors)
         self.prev_ens_num = prev_ens        # Log previous ens
         if is_missing_ens:
             self.is_missing_ens = True
@@ -201,6 +207,13 @@ class RtiCheckFile:
             self.found_issues += 1
             self.found_issue_str += err_str + "\n"
             self.bad_corr_100pct_count += 1
+
+        is_datetime_jump_issue, err_str, self.prev_ens_datetime, self.ens_delta_time = self.check_datetime_jump(ens, self.show_live_errors, self.prev_ens_datetime, self.ens_delta_time)
+        if is_datetime_jump_issue:
+            self.is_datetime_jump_issue = True
+            self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.datetime_jump_count += 1
 
         # Count the number of ensembles
         self.ens_count += 1
@@ -287,7 +300,7 @@ class RtiCheckFile:
         found_issue = False
 
         if ens.IsEnsembleData:
-            if ens.SystemSetup.Voltage > 36 or ens.SystemSetup.Voltage < 12:
+            if ens.SystemSetup.Voltage > 38 or ens.SystemSetup.Voltage < 12:
                 err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tVoltage: [" + str(ens.SystemSetup.Voltage) + "]"
 
                 # Display the error if turned on
@@ -298,6 +311,46 @@ class RtiCheckFile:
                 found_issue = True
 
         return found_issue, err_str
+
+    @staticmethod
+    def check_datetime_jump(ens, show_live_errors, prev_ens_dt, ens_delta_time=0):
+        """
+        Check if the datetime has jumped.  Determine the time between ensembles.
+        Then verify that all additional ensembles are the same time apart.
+        :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :return: True = Found an issue, Err String, Ensemble DT
+        """
+        err_str = ""
+        found_issue = False
+        dt = 0
+        ens_datetime = None
+
+        if ens.IsEnsembleData:
+            if not prev_ens_dt or prev_ens_dt == 0:
+                # Get the current datetime
+                ens_datetime = ens.EnsembleData.datetime()
+                dt = 0
+            else:
+                # Get the current datetime
+                ens_datetime = ens.EnsembleData.datetime()
+
+                # Calculate the difference in time between the previous and this ensemble
+                dt = (ens_datetime - prev_ens_dt).total_seconds()
+
+                # Verify the times are available
+                # Then verify the ensemble delta time are the same from last ensemble
+                if ens_delta_time != 0 and dt != 0 and ens_delta_time != dt:
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tDateTime Jump: [DT:" + str(dt) + " Curr:" + str(ens_datetime) + " Prev: " + str(prev_ens_dt) + "]"
+
+                    # Display the error if turned on
+                    if show_live_errors:
+                        print(err_str)
+
+                    # Record the error
+                    found_issue = True
+
+        return found_issue, err_str, ens_datetime, dt
 
     @staticmethod
     def check_amplitude_0db(ens, show_live_errors):
