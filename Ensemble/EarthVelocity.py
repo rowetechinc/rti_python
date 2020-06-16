@@ -2,6 +2,7 @@ from rti_python.Ensemble.Ensemble import Ensemble
 import logging
 import math
 import numpy as np
+from pandas import DataFrame
 
 
 class EarthVelocity:
@@ -218,14 +219,16 @@ class EarthVelocity:
 
         return str_result
 
-    def encode_df(self, dt, ss_code, ss_config, blank, bin_size):
+    def encode_df(self, dt, ss_code, ss_config, vel_bad_val=Ensemble.BadVelocity, mag_bad_val=Ensemble.BadVelocity, include_bad_vel=True, include_bad_mag=True):
         """
         Encode into Dataframe array format.
         :param dt: Datetime object.
         :param ss_code: Subsystem code.
         :param ss_config: Subsystem Configuration
-        :param blank: Blank or first bin position in meters.
-        :param bin_size: Bin size in meters.
+        :param vel_bad_val: Change bad velocity value for Earth Velocity
+        :param mag_bad_val: Change bad velocity value for Magnitude value
+        :param include_bad_vel: Include the velocity if it is bad, or remove it
+        :param include_bad_mag: Include the magnitude if it is bad, or remove it
         :return: List of CSV lines.
         """
         df_result = []
@@ -235,17 +238,41 @@ class EarthVelocity:
                 # Get the value
                 val = self.Velocities[bin_num][beam]
 
-                # Create the Dataframe array
-                df_result.append([dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val])
+                # Check if we are including bad velocities
+                if Ensemble.is_bad_velocity(val):
+                    if include_bad_vel:
+                        # Replace the bad velocity value
+                        val = vel_bad_val
+
+                        # Create the Dataframe array
+                        df_result.append([dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, val])
+                else:
+                    # Create the Dataframe array
+                    df_result.append([dt, Ensemble.CSV_EARTH_VEL, ss_code, ss_config, bin_num, beam, val])
 
         # Generate Magnitude and Direction CSV
         for bin_num in range(self.num_elements):
             mag = self.Magnitude[bin_num]
             dir = self.Direction[bin_num]
-            df_result.append([dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, beam, blank, bin_size, mag])
-            df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, blank, bin_size, dir])
 
-        return df_result
+            # Check if we are including bad magnitude
+            if Ensemble.is_bad_velocity(mag):
+                if include_bad_mag:
+                    # Replace the bad magnitude value
+                    mag = mag_bad_val
+
+                    # Set the df values
+                    df_result.append([dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, beam, mag])
+                    df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, dir])
+            else:
+                # Set the df values
+                df_result.append([dt, Ensemble.CSV_MAG, ss_code, ss_config, bin_num, beam, mag])
+                df_result.append([dt, Ensemble.CSV_DIR, ss_code, ss_config, bin_num, beam, dir])
+
+            # Create the column names
+            df_earth_columns = ["dt", "type", "ss_code", "ss_config", "bin_num", "beam", "val"]
+
+        return DataFrame(df_result, columns=df_earth_columns)
 
     def is_good_bin(self, bin_num: int) -> bool:
         """
