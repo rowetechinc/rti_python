@@ -5,13 +5,15 @@ from tqdm import tqdm
 from obsub import event
 import logging
 
+
 class RtiCheckFile:
     """
-    Check for any issues in ensemble file.
+    Check for any issues in binary ensemble file.
     """
 
     def __init__(self):
         self.ens_count = 0
+        self.bad_ens = 0
         self.found_issues = 0
         self.found_issue_str = ""
         self.prev_ens_num = 0
@@ -21,6 +23,7 @@ class RtiCheckFile:
         self.is_amplitude_0db_issue = False
         self.is_correlation_100pct_issue = False
         self.is_datetime_jump_issue = False
+        self.is_tilt_issue = False
         self.file_path = ""
         self.pbar = None
         self.first_ens = None
@@ -34,7 +37,9 @@ class RtiCheckFile:
         self.datetime_jump_count = 0
         self.ens_delta_time = 0
         self.ens_bad_delta_time = 0
+        self.tilt_issue = 0
         self.prev_ens_datetime = None
+        self.is_upward = False
 
     def init(self):
         """
@@ -106,15 +111,18 @@ class RtiCheckFile:
         print("---------------------------------------------")
 
         # Check results for any fails
-        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue or self.is_datetime_jump_issue:
+        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue or self.is_datetime_jump_issue or self.is_tilt_issue:
             print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             print("*********************************************")
             print(self.found_issue_str)
+            print("*********************************************")
+            print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             print("Total Bad Status: " + str(self.bad_status_count))
             print("Total Missing Ensembles: " + str(self.missing_ens_count))
             print("Total Bad Voltage: " + str(self.bad_voltage_count))
             print("Total Bad Amplitude (0dB): " + str(self.bad_amp_0db_count))
             print("Total Bad Correlation (100%): " + str(self.bad_corr_100pct_count))
+            print("Total Extreme Tilt: " + str(self.tilt_issue))
             print("Total Date/Time Jump (" + str(self.ens_delta_time) + "): " + str(self.datetime_jump_count))
             print("*********************************************")
         else:
@@ -122,6 +130,12 @@ class RtiCheckFile:
                 print("File " + file_path + " checked and is all GOOD.")
             else:
                 print("No RTB Ensembles Found in: " + self.file_path)
+
+        # Upward or Downward Looking
+        if self.is_upward:
+            print("ADCP is Upward Looking")
+        else:
+            print("ADCP is Downward Looking")
 
         # Print info on first and last ensembles
         if self.first_ens and self.first_ens.IsEnsembleData:
@@ -135,10 +149,10 @@ class RtiCheckFile:
             print("Last ENS:\t[" + str(last_ens_num) + "] " + last_ens_dt)
 
         # Print total number of ensembles in the file
-        print("Total number of bad ensembles in file: " + str(self.found_issues))
-        print("Total number of ensembles in file: " + str(self.ens_count))
+        print("Total number of bad ensembles in file: " + str(self.bad_ens))
+        print("Total number of ensembles in file:     " + str(self.ens_count))
         if self.ens_count > 0:
-            print("Percentage of ensembles found bad: " + str(round((self.found_issues / self.ens_count)*100.0, 3)) + "%")
+            print("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count)*100.0, 3)) + "%")
 
         print("---------------------------------------------")
         print("---------------------------------------------")
@@ -149,7 +163,7 @@ class RtiCheckFile:
         :param sender: NOT USED
         :param total_size: Total size.
         :param bytes_read: Total Bytes read.
-        :param block_size: Number of bytes read in this iteration.
+        :param file_name: File name being read..
         :return:
         """
         if self.pbar is None:
@@ -179,7 +193,7 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.missing_ens_count += 1
 
-        # Check status
+        # Check ensemble status
         is_status_issue, err_str = self.check_status(ens, self.show_live_errors)
         if is_status_issue:
             self.is_status_issue = True
@@ -187,6 +201,7 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.bad_status_count += 1
 
+        # Check if voltage is bad
         is_voltage_issue, err_str = self.check_voltage(ens, self.show_live_errors)
         if is_voltage_issue:
             self.is_voltage_issue = True
@@ -194,6 +209,7 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.bad_voltage_count += 1
 
+        # Check if amplitude is bad
         is_amplitude_0db_issue, err_str = self.check_amplitude_0db(ens, self.show_live_errors)
         if is_amplitude_0db_issue:
             self.is_amplitude_0db_issue = True
@@ -201,6 +217,7 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.bad_amp_0db_count += 1
 
+        # Check correlation is bad
         is_correlation_100pct_issue, err_str = self.check_correlation_1pct(ens, self.show_live_errors)
         if is_correlation_100pct_issue:
             self.is_correlation_100pct_issue = True
@@ -208,6 +225,7 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.bad_corr_100pct_count += 1
 
+        # Check for datetime jump
         is_datetime_jump_issue, err_str, self.prev_ens_datetime, self.ens_delta_time = self.check_datetime_jump(ens, self.show_live_errors, self.prev_ens_datetime, self.ens_delta_time)
         if is_datetime_jump_issue:
             self.is_datetime_jump_issue = True
@@ -215,8 +233,24 @@ class RtiCheckFile:
             self.found_issue_str += err_str + "\n"
             self.datetime_jump_count += 1
 
+        # Check correlation is bad
+        is_tilt_issue, err_str = self.check_tilt_extreme(ens, self.show_live_errors)
+        if is_tilt_issue:
+            self.is_tilt_issue = True
+            self.found_issues += 1
+            self.found_issue_str += err_str + "\n"
+            self.tilt_issue += 1
+
+        # Check if upward looking
+        if ens.IsAncillaryData:
+            self.is_upward = ens.AncillaryData.is_upward_facing()
+
         # Count the number of ensembles
         self.ens_count += 1
+
+        # Cound Bad ensembles
+        if is_missing_ens or is_status_issue or is_amplitude_0db_issue or is_correlation_100pct_issue or is_datetime_jump_issue or is_voltage_issue or is_tilt_issue:
+            self.bad_ens += 1
 
         # Update the progress bar
         #self.pbar.update(1)
@@ -299,7 +333,7 @@ class RtiCheckFile:
         err_str = ""
         found_issue = False
 
-        if ens.IsEnsembleData:
+        if ens.IsEnsembleData and ens.IsSystemSetup:
             if ens.SystemSetup.Voltage > 38 or ens.SystemSetup.Voltage < 12:
                 err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tVoltage: [" + str(ens.SystemSetup.Voltage) + "]"
 
@@ -439,6 +473,48 @@ class RtiCheckFile:
 
                 # Record the error
                 found_issue = True
+
+        return found_issue, err_str
+
+    @staticmethod
+    def check_tilt_extreme(ens, show_live_errors, max_tilt=50.0):
+        """
+        Check if the tilts exceed the given max_tilt in degrees.
+        If the tilt is extreme, bin mapping will not profile completely.
+        :param ens: Ensemble data.
+        :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :param max_tilt: Check for this maximum tilt value in degrees.
+        :return: True = Found an issue
+        """
+        err_str = ""
+        found_issue = False
+
+        # Check the Pitch for extreme
+        if ens.IsEnsembleData and ens.IsAncillaryData:
+            if ens.AncillaryData.Pitch > max_tilt:
+                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tPitch Tilt Extreme: [" + str(ens.AncillaryData.Pitch) + "]"
+
+                # Display the error if turned on
+                if show_live_errors:
+                    print(err_str)
+
+                # Record the error
+                found_issue = True
+
+        # Check the Roll for extreme
+        if ens.AncillaryData.Roll > max_tilt:
+            # Add new line if pitch error also found
+            if found_issue:
+                err_str += "/n"
+
+            err_str += "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
+
+            # Display the error if turned on
+            if show_live_errors:
+                print(err_str)
+
+            # Record the error
+            found_issue = True
 
         return found_issue, err_str
 
