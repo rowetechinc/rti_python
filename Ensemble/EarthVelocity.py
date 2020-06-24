@@ -69,11 +69,11 @@ class EarthVelocity:
         """
         # Remove the vessel speed
         for bin_num in range(len(self.Velocities)):
-            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][0]):
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][0]) and not Ensemble.is_bad_velocity(bt_east):
                 self.Velocities[bin_num][0] = self.Velocities[bin_num][0] + bt_east            # Remove vessel speed
-            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][1]):
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][1]) and not Ensemble.is_bad_velocity(bt_north):
                 self.Velocities[bin_num][1] = self.Velocities[bin_num][1] + bt_north           # Remove vessel speed
-            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][2]):
+            if not Ensemble.is_bad_velocity(self.Velocities[bin_num][2]) and not Ensemble.is_bad_velocity(bt_vert):
                 self.Velocities[bin_num][2] = self.Velocities[bin_num][2] + bt_vert            # Remove vessel speed
 
         # Generate the new vectors after removing the vessel speed
