@@ -1,4 +1,4 @@
-from rti_python.Writer.rti_sql import rti_sql
+from rti_python.Writer.rti_sql import RtiSQL
 from rti_python.Ensemble import Ensemble
 
 from datetime import datetime, date, time
@@ -17,7 +17,17 @@ class RtiProjects:
                  user='user',
                  pw='pw'):
 
-        # Construct connection string
+        """
+        Maintain projects in a database.  The project will have ensembles associated with it.
+        :param host: Host name/URL for MySQL server. Is using SQLite, set the SQLite database file name.
+        :param dbname: Database name on MySQL server.
+        :param user: User name to access MySQL server.
+        :param pw: Password to access MySQL server.
+        """
+
+        self.is_sqlite = False
+
+        # Construct connection string from MySQL/Postgres
         self.sql_conn_string = "host=\'{0}\' port=\'{1}\' dbname=\'{2}\' user=\'{3}\' password=\'{4}\'".format(host, port, dbname, user, pw)
 
         # Sql connection when doing batch inserts
@@ -29,6 +39,7 @@ class RtiProjects:
         """
         Add the given project name to the projects table.
         :param prj_name: Project name
+        :param prj_file_path: Path for the project to find the raw data.
         :return: TRUE = Project added.  FALSE = Project already exists and could not add.
         """
         # Check if the project exist
@@ -37,15 +48,17 @@ class RtiProjects:
         if project_exist == 0:
             # Add project to database
             dt = datetime.now()
-            sql = rti_sql(self.sql_conn_string)
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
 
+            # Postgres uses %s and sqlite uses ? in the query string
             query = 'INSERT INTO projects (name, path, created, modified) VALUES (%s,%s,%s,%s) RETURNING ID;'
-
             sql.cursor.execute(query, (prj_name, prj_file_path, dt, dt))
             prj_idx = sql.cursor.fetchone()[0]
+
             sql.conn.commit()
             print(prj_idx)
             sql.close()
+
             return prj_idx
         elif project_exist > 0:
             # Send a warning and make them give a new name
@@ -55,16 +68,15 @@ class RtiProjects:
         """
         Check if the given project name exist in the projects table.
         :param prj_name: Project Name.
-        :return: TRUE = Project exists.
+        :return: Project ID.  If the value is negative, then it does not exist.
         """
         idx = -1
 
         # Make connection
         try:
-            sql = rti_sql(self.sql_conn_string)
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
             print("Unable to connect to the database")
-            sql.close()
             return -1
 
         # Check if the project exists
@@ -96,7 +108,7 @@ class RtiProjects:
 
         # Make connection
         try:
-            sql = rti_sql(self.sql_conn_string)
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
             print("Unable to connect to the database")
             return result
@@ -116,7 +128,7 @@ class RtiProjects:
     def begin_batch(self, prj_name):
         # Make connection
         try:
-            self.batch_sql = rti_sql(self.sql_conn_string)
+            self.batch_sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
             print("Unable to connect to the database")
 

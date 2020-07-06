@@ -64,6 +64,7 @@ class Ensemble:
     CSV_BT_XDCR_DEPTH = "BT_XdcrDepth"
     CSV_BT_STATUS = "BT_Status"
     CSV_BT_RANGE = "BT_Range"
+    CSV_BT_AVG_RANGE = "BT_Avg_Range"
     CSV_BT_BEAM_VEL = "BT_BeamVel"
     CSV_BT_BEAM_GOOD = "BT_BeamGood"
     CSV_BT_INSTR_VEL = "BT_InstrVel"

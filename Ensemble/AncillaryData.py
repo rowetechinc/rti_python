@@ -1,5 +1,6 @@
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+from pandas import DataFrame
 
 
 class AncillaryData:
@@ -125,18 +126,45 @@ class AncillaryData:
         str_result = []
 
         # Create the CSV strings
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, blank, bin_size, self.FirstPingTime))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, blank, bin_size, self.LastPingTime))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, blank, bin_size, self.Heading))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, blank, bin_size, self.Pitch))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, blank, bin_size, self.Roll))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, blank, bin_size, self.WaterTemp))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, blank, bin_size, self.SystemTemp))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, blank, bin_size, self.Pressure))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, blank, bin_size, self.TransducerDepth))
-        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, blank, bin_size, self.SpeedOfSound))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.FirstPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.LastPingTime))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Heading))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Pitch))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Roll))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.WaterTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.SystemTemp))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Pressure))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.TransducerDepth))
+        str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.SpeedOfSound))
 
         return str_result
+
+    def encode_df(self, dt, ss_code, ss_config):
+        """
+        Encode into Dataframe format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: Dataframe of the data.
+        """
+        df_result = []
+
+        # Create the Dataframe strings
+        df_result.append([dt, Ensemble.CSV_FIRST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.FirstPingTime])
+        df_result.append([dt, Ensemble.CSV_LAST_PING_TIME, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.LastPingTime])
+        df_result.append([dt, Ensemble.CSV_HEADING, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Heading])
+        df_result.append([dt, Ensemble.CSV_PITCH, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Pitch])
+        df_result.append([dt, Ensemble.CSV_ROLL, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Roll])
+        df_result.append([dt, Ensemble.CSV_WATER_TEMP, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.WaterTemp])
+        df_result.append([dt, Ensemble.CSV_SYS_TEMP, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.SystemTemp])
+        df_result.append([dt, Ensemble.CSV_PRESSURE, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.Pressure])
+        df_result.append([dt, Ensemble.CSV_XDCR_DEPTH, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.TransducerDepth])
+        df_result.append([dt, Ensemble.CSV_SOS, ss_code, ss_config, 0, 0, self.FirstBinRange, self.BinSize, self.SpeedOfSound])
+
+        # Create the column names
+        df_earth_columns = ["dt", "type", "ss_code", "ss_config", "bin_num", "beam", "blank", "bin_size", "val"]
+
+        return DataFrame(df_result, columns=df_earth_columns)
 
     def is_upward_facing(self):
         """

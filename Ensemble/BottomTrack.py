@@ -1,5 +1,6 @@
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+from pandas import DataFrame
 
 
 class BottomTrack:
@@ -378,3 +379,29 @@ class BottomTrack:
             str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BT_EARTH_GOOD, ss_code, ss_config, 0, beams, blank, bin_size, self.EarthGood[beams]))
 
         return str_result
+
+    def encode_df(self, dt, ss_code, ss_config):
+        """
+        Encode into Dataframe array format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :param vel_bad_val: Change bad velocity value for Earth Velocity
+        :param mag_bad_val: Change bad velocity value for Magnitude value
+        :param include_bad_vel: Include the velocity if it is bad, or remove it
+        :param include_bad_mag: Include the magnitude if it is bad, or remove it
+        :return: List of CSV lines.
+        """
+        df_result = []
+
+        for beams in range(len(self.Range)):
+            df_result.append([dt, Ensemble.CSV_BT_RANGE, ss_code, ss_config, 0, beams, self.Range[beams]])
+
+        df_result.append([dt, Ensemble.CSV_BT_AVG_RANGE, ss_code, ss_config, 0, 0, self.avg_range()])
+
+        # Create the column names
+        df_earth_columns = ["dt", "type", "ss_code", "ss_config", "bin_num", "beam", "val"]
+
+        return DataFrame(df_result, columns=df_earth_columns)
+
+        return df_result

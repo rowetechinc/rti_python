@@ -24,7 +24,7 @@ class RtiCheckFile:
         self.is_correlation_100pct_issue = False
         self.is_datetime_jump_issue = False
         self.is_tilt_issue = False
-        self.file_path = ""
+        self.file_paths = ""
         self.pbar = None
         self.first_ens = None
         self.last_ens = None
@@ -49,7 +49,7 @@ class RtiCheckFile:
         self.prev_ens_num = 0
         #self.is_missing_ens = False
         #self.is_status_issue = False
-        self.file_path = ""
+        self.file_paths = ""
         self.pbar = None
         self.first_ens = None
         self.last_ens = None
@@ -59,11 +59,13 @@ class RtiCheckFile:
         Create a dialog box to select the files.
         Then process the files.
         :param show_live_error: TRUE = Show the errors as they are found.
-        :return:
+        :return: Return the list of all the files processed.
         """
 
         files = self.select_files()
         self.process(files, show_live_error)
+
+        return files
 
     def select_files(self):
         """
@@ -73,21 +75,22 @@ class RtiCheckFile:
         # Dialog to ask for a file to select
         root = tk.Tk()
         root.withdraw()
-        self.file_path = filedialog.askopenfilenames()
+        self.file_paths = filedialog.askopenfilenames()
 
-        return self.file_path
+        return self.file_paths
 
-    def process(self, file_path, show_live_error=False):
+    def process(self, file_paths, show_live_error=False):
         """
         Read the files and look for any issues in the files.
+        :param file_paths: Path to file to process.
         :param show_live_error: TRUE = Show the errors as they are found.
         :return:
         """
-        self.file_path = file_path
+        self.file_paths = file_paths
         self.show_live_errors = show_live_error
 
-        if self.file_path:
-            for file in self.file_path:
+        if self.file_paths:
+            for file in self.file_paths:
                 reader = ReadBinaryFile()
                 reader.ensemble_event += self.ens_handler               # Wait for ensembles
                 reader.file_progress += self.file_progress_handler      # Monitor file progress
@@ -103,8 +106,7 @@ class RtiCheckFile:
     def print_summary(self, file_path):
         """
         Print a summary of the results.
-        :param file_path: File path for the complete file
-        :param show_live_error: TRUE = Show the errors as they are found.
+        :param file_path: File path for the file processed.
         :return:
         """
         print("---------------------------------------------")
@@ -129,7 +131,7 @@ class RtiCheckFile:
             if not self.prev_ens_num == 0:
                 print("File " + file_path + " checked and is all GOOD.")
             else:
-                print("No RTB Ensembles Found in: " + self.file_path)
+                print("No RTB Ensembles Found in: " + self.file_paths)
 
         # Upward or Downward Looking
         if self.is_upward:
@@ -477,7 +479,7 @@ class RtiCheckFile:
         return found_issue, err_str
 
     @staticmethod
-    def check_tilt_extreme(ens, show_live_errors, max_tilt=50.0):
+    def check_tilt_extreme(ens, show_live_errors, max_tilt=30.0):
         """
         Check if the tilts exceed the given max_tilt in degrees.
         If the tilt is extreme, bin mapping will not profile completely.
@@ -491,8 +493,42 @@ class RtiCheckFile:
 
         # Check the Pitch for extreme
         if ens.IsEnsembleData and ens.IsAncillaryData:
-            if ens.AncillaryData.Pitch > max_tilt:
-                err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tPitch Tilt Extreme: [" + str(ens.AncillaryData.Pitch) + "]"
+            if ens.AncillaryData.is_upward_facing():
+                # Upward looking, if roll is greater than max tilt
+                # Good tilt is 0 to max_tilt
+                if ens.AncillaryData.Roll > max_tilt:
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Pitch) + "]"
+
+                    # Display the error if turned on
+                    if show_live_errors:
+                        print(err_str)
+
+                    # Record the error
+                    found_issue = True
+            else:
+                # Downward facing 180-max_tilt to 180 is OK
+                if ens.AncillaryData.Roll < 180.0 - max_tilt:
+                    err_str = "Error in ensemble: " + str(
+                        ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(
+                        ens.AncillaryData.Pitch) + "]"
+
+                    # Display the error if turned on
+                    if show_live_errors:
+                        print(err_str)
+
+                    # Record the error
+                    found_issue = True
+
+            # Check the Roll for extreme
+            # Roll is -180 to 180
+            # Upward looking, if roll is greater than max tilt
+            # Good tilt is 0-max_tilt to max_tilt
+            if ens.AncillaryData.Pitch < (0.0 - max_tilt) or ens.AncillaryData.Pitch > max_tilt:
+                # Add new line if pitch error also found
+                if found_issue:
+                    err_str += "/n"
+
+                err_str += "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tPitch Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
 
                 # Display the error if turned on
                 if show_live_errors:
@@ -500,21 +536,6 @@ class RtiCheckFile:
 
                 # Record the error
                 found_issue = True
-
-        # Check the Roll for extreme
-        if ens.AncillaryData.Roll > max_tilt:
-            # Add new line if pitch error also found
-            if found_issue:
-                err_str += "/n"
-
-            err_str += "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
-
-            # Display the error if turned on
-            if show_live_errors:
-                print(err_str)
-
-            # Record the error
-            found_issue = True
 
         return found_issue, err_str
 

@@ -1,5 +1,6 @@
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+from pandas import DataFrame
 
 
 class SystemSetup:
@@ -162,3 +163,20 @@ class SystemSetup:
 
         return str_result
 
+    def encode_df(self, dt, ss_code, ss_config):
+        """
+        Encode into Dataframe format.
+        :param dt: Datetime object.
+        :param ss_code: Subsystem code.
+        :param ss_config: Subsystem Configuration
+        :return: List of CSV lines.
+        """
+        df_result = []
+
+        # Create the CSV strings
+        df_result.append([dt, Ensemble.CSV_VOLTAGE, ss_code, ss_config, 0, 0, self.Voltage])
+
+        # Create the column names
+        df_earth_columns = ["dt", "type", "ss_code", "ss_config", "bin_num", "beam", "val"]
+
+        return DataFrame(df_result, columns=df_earth_columns)

@@ -1,6 +1,9 @@
 import psycopg2
+import sqlite3
 import pandas as pd
 import numpy as np
+import os
+import logging
 
 """
 Update tables
@@ -10,14 +13,16 @@ ALTER TABLE ensembles ADD COLUMN modified timestamp;
 """
 
 
-class rti_sql:
+class RtiSQL:
 
-    def __init__(self, conn):
+    def __init__(self, conn: str, is_sqlite: bool = False):
         """
-        Make a connection to the database
-        :param conn: "host='localhost' dbname='my_database' user='postgres' password='secret'"
+        Make a connection to the database.  You can use MySQL/Postgres or SQLite.
+        :param conn: MySQL -> "host='localhost' dbname='my_database' user='postgres' password='secret'". SQLite -> "/path/to/example.db"
+        :param is_sqlite: If set True, it will use the SQLite database, false will use MySQL
         """
         self.conn_string = conn
+        self.is_sqlite = is_sqlite
         self.conn = None
         self.cursor = None
 
@@ -26,14 +31,28 @@ class rti_sql:
 
     def sql_conn(self, conn_string):
         # print the connection string we will use to connect
-        print("Connecting to database\n	->%s" % (conn_string))
+        logging.debug("Connecting to database\n	->%s" % (conn_string))
 
         # get a connection, if a connect cannot be made an exception will be raised here
-        self.conn = psycopg2.connect(conn_string)
+        if self.is_sqlite:
+            # SQLite connection
+            # Make a connection and create the tables
+            #if not os.path.exists(self.conn_string):
+            self.conn = sqlite3.connect(self.conn_string)
+            # conn.cursor will return a cursor object, you can use this cursor to perform queries
+            self.cursor = self.conn.cursor()
+            logging.debug("Connected!\n")
 
-        # conn.cursor will return a cursor object, you can use this cursor to perform queries
-        self.cursor = self.conn.cursor()
-        print("Connected!\n")
+            # Create the table in the projects db if they do not exist
+            self.create_tables()
+            #else:
+            #    self.conn = sqlite3.connect(self.conn_string)
+        else:
+            # MySQL connection
+            self.conn = psycopg2.connect(conn_string)
+            # conn.cursor will return a cursor object, you can use this cursor to perform queries
+            self.cursor = self.conn.cursor()
+            logging.debug("Connected!\n")
 
     def close(self):
         self.cursor.close()
@@ -45,7 +64,7 @@ class rti_sql:
         :param query: Query to execute on the database.
         :return: Results of query.  It is iterable.
         """
-        print(query)
+        logging.debug(query)
         self.cursor.execute(query)      # Send query
         self.conn.commit()
 
@@ -69,18 +88,29 @@ class rti_sql:
         return self.conn.commit()
 
     def create_tables(self):
+        logging.debug("Creating Tables in Database")
+
+        auto_increment_str = "SERIAL"
+        if self.is_sqlite:
+            auto_increment_str = "INTEGER"
+
+        # Check if the connection is made
+        if not self.cursor:
+            logging.error("Database connection not made yet.")
+            return
+
         # Project
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS projects (id SERIAL PRIMARY KEY, '
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS projects (id ' + auto_increment_str + ' PRIMARY KEY,' 
                             'name text NOT NULL, '
                             'path text,'
                             'meta json,'
                             'created timestamp, '
                             'modified timestamp);')
-        print("Projects table created")
+        logging.debug("Projects table created")
 
         # Ensemble Tables
         # Ensemble
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS ensembles (id SERIAL PRIMARY KEY, '
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS ensembles (id ' + auto_increment_str + ' PRIMARY KEY, '
                             'ensNum integer NOT NULL, '
                             'numBins integer, '
                             'numBeams integer, '
@@ -135,10 +165,10 @@ class rti_sql:
                             'meta json,'
                             'created timestamp, '
                             'modified timestamp);')
-        print("Ensemble Table created")
+        logging.debug("Ensemble Table created")
 
         # Bottom Track
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS bottomtrack (id SERIAL PRIMARY KEY,'
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS bottomtrack (id ' + auto_increment_str + ' PRIMARY KEY,'
                             'ensIndex integer NOT NULL, '
                             'firstPingTime real, '
                             'lastPingTime real, '
@@ -216,10 +246,10 @@ class rti_sql:
                             'meta json,'
                             'created timestamp, '
                             'modified timestamp);')
-        print("Bottom Track table created")
+        logging.debug("Bottom Track table created")
 
-        # Bottom Track
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS rangetracking (id SERIAL PRIMARY KEY,'
+        # Range Track
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS rangetracking (id ' + auto_increment_str + ' PRIMARY KEY,'
                             'ensIndex integer NOT NULL, '
                             'numBeams integer, '
                             'snrBeam0 real, '
@@ -257,10 +287,10 @@ class rti_sql:
                             'meta json,'
                             'created timestamp, '
                             'modified timestamp);')
-        print("Range Tracking table created")
+        logging.debug("Range Tracking table created")
 
         # Beam Velocity
-        query = 'CREATE TABLE IF NOT EXISTS beamVelocity (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS beamVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -272,10 +302,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Beam Velocity table created")
+        logging.debug("Beam Velocity table created")
 
         # Instrument Velocity
-        query = 'CREATE TABLE IF NOT EXISTS instrumentVelocity (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS instrumentVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -287,10 +317,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Instrument Velocity table created")
+        logging.debug("Instrument Velocity table created")
 
         # Earth Velocity
-        query = 'CREATE TABLE IF NOT EXISTS earthVelocity (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS earthVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -302,10 +332,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Earth Velocity table created")
+        logging.debug("Earth Velocity table created")
 
         # Amplitude
-        query = 'CREATE TABLE IF NOT EXISTS amplitude (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS amplitude (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -317,10 +347,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Amplitude table created")
+        logging.debug("Amplitude table created")
 
         # Correlation
-        query = 'CREATE TABLE IF NOT EXISTS correlation (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS correlation (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -332,10 +362,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Correlation table created")
+        logging.debug("Correlation table created")
 
         # Good Beam Ping
-        query = 'CREATE TABLE IF NOT EXISTS goodBeamPing (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS goodBeamPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -347,10 +377,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Good Beam Ping table created")
+        logging.debug("Good Beam Ping table created")
 
         # Good Earth Ping
-        query = 'CREATE TABLE IF NOT EXISTS goodEarthPing (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS goodEarthPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'beam integer NOT NULL, ' \
                 'meta json,' \
@@ -362,10 +392,10 @@ class rti_sql:
         query = query[:-2]          # Remove final comma
         query += ');'
         self.cursor.execute(query)
-        print("Good Earth Ping table created")
+        logging.debug("Good Earth Ping table created")
 
         # NMEA
-        query = 'CREATE TABLE IF NOT EXISTS nmea (id SERIAL PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS nmea (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'nmea text, ' \
                 'GPGGA text, ' \
@@ -386,9 +416,9 @@ class rti_sql:
                 'created timestamp, ' \
                 'modified timestamp);'
         self.cursor.execute(query)
-        print("NMEA table created")
+        logging.debug("NMEA table created")
 
-        print("Table Creation Complete")
+        logging.debug("Table Creation Complete")
         self.conn.commit()
 
     def ss_query(self, ss_code=None, ss_config=None):
@@ -635,7 +665,6 @@ class rti_sql:
             return
 
         return df
-
 
     def get_subsystem_configs(self, project_idx):
         """
