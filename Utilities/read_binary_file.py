@@ -50,7 +50,8 @@ class ReadBinaryFile:
 
                 # Keep track of bytes read
                 bytes_read += BLOCK_SIZE
-                self.file_progress(bytes_read, file_size, ens_file_path)
+                #self.file_progress(bytes_read, file_size, ens_file_path)
+                self.file_progress(BLOCK_SIZE, file_size, ens_file_path)
 
         # Process whatever is remaining in the buffer
         self.process_playback_ens(DELIMITER + buff)

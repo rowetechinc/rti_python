@@ -72,7 +72,7 @@ class RtiSqliteProjects:
         try:
             sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
-            print("Unable to connect to the database")
+            logging.error("Unable to connect to the database")
             return -1
 
         # Check if the project exists
@@ -86,7 +86,7 @@ class RtiSqliteProjects:
                 idx = result[0][0]          # Index found
 
         except Exception as e:
-            print("Unable to run query", e)
+            logging.error("Unable to run query", e)
             sql.close()
             return -2
 
@@ -106,14 +106,14 @@ class RtiSqliteProjects:
         try:
             sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
-            print("Unable to connect to the database")
+            logging.error("Unable to connect to the database")
             return result
 
         # Get all projects
         try:
             result = sql.query('SELECT * FROM projects;')
         except Exception as e:
-            print("Unable to run query", e)
+            logging.error("Unable to run query", e)
             return result
 
         # Close connection
@@ -126,7 +126,7 @@ class RtiSqliteProjects:
         try:
             self.batch_sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
         except Exception as e:
-            print("Unable to connect to the database")
+            logging.error("Unable to connect to the database")
 
         # Get the index for the given project name
         self.batch_prj_id = self.batch_sql.query('SELECT id FROM projects WHERE name=\'{0}\''.format(prj_name))
@@ -135,13 +135,13 @@ class RtiSqliteProjects:
     def end_batch(self):
 
         # Commit the batch
-        self.batch_sql.commit();
+        self.batch_sql.commit()
 
         # Close connection
-        self.batch_sql.close()
+        #self.batch_sql.close()
 
         # Set the connection to none
-        self.batch_sql = None
+        #self.batch_sql = None
 
     def add_ensemble(self, ens, burst_num=0):
         '''
@@ -155,7 +155,7 @@ class RtiSqliteProjects:
             try:
                 ens_idx = self.add_ensemble_ds(ens, burst_num)
             except Exception as ex:
-                print("Error adding Ensemble, Ancillary and System Setup Dataset to project.", ex)
+                logging.error("Error adding Ensemble, Ancillary and System Setup Dataset to project.", ex)
                 return
 
             # Correlation
@@ -167,7 +167,7 @@ class RtiSqliteProjects:
                                      ens.Correlation.element_multiplier,
                                      ens_idx)
             except Exception as ex:
-                print("Error adding Correlation to project.", ex)
+                logging.error("Error adding Correlation to project.", ex)
 
             # Amplitude
             try:
@@ -178,7 +178,7 @@ class RtiSqliteProjects:
                                      ens.Amplitude.element_multiplier,
                                      ens_idx)
             except Exception as ex:
-                print("Error adding Amplitude to project.", ex)
+                logging.error("Error adding Amplitude to project.", ex)
 
             # Beam Velocity
             try:
@@ -189,7 +189,7 @@ class RtiSqliteProjects:
                                      ens.BeamVelocity.element_multiplier,
                                      ens_idx)
             except Exception as ex:
-                print("Error adding Beam Velocity to project.", ex)
+                logging.error("Error adding Beam Velocity to project.", ex)
 
             # Instrument Velocity
             try:
@@ -200,7 +200,7 @@ class RtiSqliteProjects:
                                      ens.InstrumentVelocity.element_multiplier,
                                      ens_idx)
             except Exception as ex:
-                print("Error adding Instrument Velocity to project.", ex)
+                logging.error("Error adding Instrument Velocity to project.", ex)
 
             # Earth Velocity
             try:
@@ -211,7 +211,7 @@ class RtiSqliteProjects:
                                      ens.EarthVelocity.element_multiplier,
                                      ens_idx)
             except Exception as ex:
-                print("Error adding Earth Velocity to project.", ex)
+                logging.error("Error adding Earth Velocity to project.", ex)
 
             # Good Beam Ping
             try:
@@ -223,7 +223,7 @@ class RtiSqliteProjects:
                                      ens_idx,
                                      bad_val=0)
             except Exception as ex:
-                print("Error adding Good Beam to project.", ex)
+                logging.error("Error adding Good Beam to project.", ex)
 
             # Good Earth Ping
             try:
@@ -235,21 +235,21 @@ class RtiSqliteProjects:
                                      ens_idx,
                                      bad_val=0)
             except Exception as ex:
-                print("Error adding Good Earth to project.", ex)
+                logging.error("Error adding Good Earth to project.", ex)
 
             # Bottom Track
             try:
                 if ens.IsBottomTrack:
                     self.add_bottomtrack_ds(ens, ens_idx)
             except Exception as ex:
-                print("Error adding Bottom Track to project.", ex)
+                logging.error("Error adding Bottom Track to project.", ex)
 
             # Range Tracking
             try:
                 if ens.IsRangeTracking:
                     self.add_rangetracking_ds(ens, ens_idx)
             except Exception as ex:
-                print("Error adding Range Tracking to project.", ex)
+                logging.error("Error adding Range Tracking to project.", ex)
 
             # NMEA
             try:
@@ -263,10 +263,10 @@ class RtiSqliteProjects:
                         day = ens.EnsembleData.Day
                     self.add_nmea_ds(ens, ens_idx, year=year, month=month, day=day)
             except Exception as ex:
-                print("Error adding NMEA to project.", ex)
+                logging.error("Error adding NMEA to project.", ex)
 
         else:
-            print("Batch import not started.  Please call begin_batch() first.")
+            logging.error("Batch import not started.  Please call begin_batch() first.")
 
     def add_ensemble_ds(self, ens, burst_num=0):
         """
@@ -392,10 +392,10 @@ class RtiSqliteProjects:
         #print("rti_projects:add_ensemble_ds() Ens Index: " + str(ens_idx))
 
         # Monitor how many inserts have been done so it does not get too big
-        self.batch_count += 1
-        if self.batch_count > 10:
-            self.batch_sql.commit()
-            self.batch_count = 0
+        #self.batch_count += 1
+        #if self.batch_count > 10:
+        #    self.batch_sql.commit()
+        #    self.batch_count = 0
 
         return ens_idx
 
@@ -612,10 +612,10 @@ class RtiSqliteProjects:
                                               dt))
 
         # Monitor how many inserts have been done so it does not get too big
-        self.batch_count += 1
-        if self.batch_count > 10:
-            self.batch_sql.commit()
-            self.batch_count = 0
+        #self.batch_count += 1
+        #if self.batch_count > 10:
+        #    self.batch_sql.commit()
+        #    self.batch_count = 0
 
     def add_rangetracking_ds(self, ens, ens_idx):
         if not ens.IsRangeTracking:
@@ -729,10 +729,10 @@ class RtiSqliteProjects:
                                               dt))
 
         # Monitor how many inserts have been done so it does not get too big
-        self.batch_count += 1
-        if self.batch_count > 10:
-            self.batch_sql.commit()
-            self.batch_count = 0
+        #self.batch_count += 1
+        #if self.batch_count > 10:
+        #    self.batch_sql.commit()
+        #    self.batch_count = 0
 
     def add_nmea_ds(self, ens, ens_idx, year=2017, month=1, day=1):
         """
@@ -829,10 +829,10 @@ class RtiSqliteProjects:
                                               dt))
 
         # Monitor how many inserts have been done so it does not get too big
-        self.batch_count += 1
-        if self.batch_count > 10:
-            self.batch_sql.commit()
-            self.batch_count = 0
+        #self.batch_count += 1
+        #if self.batch_count > 10:
+        #    self.batch_sql.commit()
+        #    self.batch_count = 0
 
         return ens_idx
 
@@ -849,6 +849,7 @@ class RtiSqliteProjects:
         # Get Date and time for created and modified
         dt = datetime.now()
 
+        """
         beam0_avail = False
         beam1_avail = False
         beam2_avail = False
@@ -947,9 +948,334 @@ class RtiSqliteProjects:
                      "VALUES ( ?, ?, {2}, ?, ?);".format(table, query_b3_label, query_b3_val)
             #print(query)
             self.batch_sql.cursor.execute(query, (ens_idx, 3, dt, dt))
+            """
+        for beam in range(element_multiplier):
+            for bin_num in range(num_elements):
+                val = data[bin_num][beam]
+                query = "INSERT INTO {0} (" \
+                        "ensIndex, " \
+                        "beam, " \
+                        "bin, " \
+                        "created, " \
+                        "modified, " \
+                        "val)" \
+                        "VALUES ( ?, ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, beam, bin_num, dt, dt, val))
 
-        # Monitor how many inserts have been done so it does not get too big
-        self.batch_count += 1
-        if self.batch_count > 10:
-            self.batch_sql.commit()
-            self.batch_count = 0
+    def create_tables(self):
+        logging.debug("Creating Tables in Database")
+
+        try:
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
+        except Exception as e:
+            logging.error("Unable to connect to the database")
+
+        auto_increment_str = "INTEGER"
+
+        # Check if the connection is made
+        if not sql.cursor:
+            logging.error("Database connection not made yet.")
+            return
+
+        # Project
+        sql.cursor.execute('CREATE TABLE IF NOT EXISTS projects (id ' + auto_increment_str + ' PRIMARY KEY,' 
+                            'name text NOT NULL, '
+                            'path text,'
+                            'meta json,'
+                            'created timestamp, '
+                            'modified timestamp);')
+        logging.debug("Projects table created")
+
+        # Ensemble Tables
+        # Ensemble
+        sql.cursor.execute('CREATE TABLE IF NOT EXISTS ensembles (id ' + auto_increment_str + ' PRIMARY KEY, '
+                            'ensNum integer NOT NULL, '
+                            'numBins integer, '
+                            'numBeams integer, '
+                            'desiredPings integer, '
+                            'actualPings integer, '
+                            'status integer, '
+                            'dateTime timestamp, '
+                            'serialNumber text, '
+                            'firmware text,'
+                            'subsystemCode character,'
+                            'subsystemConfig integer, '
+                            'rangeFirstBin real, '
+                            'binSize real, '
+                            'firstPingTime real, '
+                            'lastPingTime real, '
+                            'heading real, '
+                            'pitch real, '
+                            'roll real, '
+                            'waterTemp real, '
+                            'sysTemp real, '
+                            'salinity real, '
+                            'pressure real, '
+                            'xdcrDepth real, '
+                            'sos real, '
+                            'rawMagFieldStrength real,'
+                            'pitchGravityVector real, '
+                            'rollGravityVector real, '
+                            'verticalGravityVector real, '
+                            'BtSamplesPerSecond real, '
+                            'BtSystemFreqHz real, '
+                            'BtCPCE real, '
+                            'BtNCE real, '
+                            'BtRepeatN real, '
+                            'WpSamplesPerSecond real, '
+                            'WpSystemFreqHz real, '
+                            'WpCPCE real, '
+                            'WpNCE real, '
+                            'WpRepeatN real, '
+                            'WpLagSamples real, '
+                            'Voltage real, '
+                            'XmtVoltage real, '
+                            'BtBroadband real, '
+                            'BtLagLength real, '
+                            'BtNarrowband real, '
+                            'BtBeamMux real, '
+                            'WpBroadband real, '
+                            'WpLagLength real, '
+                            'WpTransmitBandwidth real, '
+                            'WpReceiveBandwidth real, '
+                            'burstNum integer, '
+                            'project_id integer, '
+                            'meta json,'
+                            'created timestamp, '
+                            'modified timestamp);')
+        logging.debug("Ensemble Table created")
+
+        # Bottom Track
+        sql.cursor.execute('CREATE TABLE IF NOT EXISTS bottomtrack (id ' + auto_increment_str + ' PRIMARY KEY,'
+                            'ensIndex integer NOT NULL, '
+                            'firstPingTime real, '
+                            'lastPingTime real, '
+                            'heading real, '
+                            'pitch real, '
+                            'roll real, '
+                            'waterTemp real, '
+                            'salinity real, '
+                            'xdcrDepth real, '
+                            'pressure real, '
+                            'sos real, '
+                            'status integer, '
+                            'numBeams integer, '
+                            'pingCount integer, '
+                            'rangeBeam0 real, '
+                            'rangeBeam1 real, '
+                            'rangeBeam2 real, '
+                            'rangeBeam3 real, '
+                            'snrBeam0 real, '
+                            'snrBeam1 real, '
+                            'snrBeam2 real, '
+                            'snrBeam3 real, '
+                            'ampBeam0 real, '
+                            'ampBeam1 real, '
+                            'ampBeam2 real, '
+                            'ampBeam3 real, '
+                            'corrBeam0 real, '
+                            'corrBeam1 real, '
+                            'corrBeam2 real, '
+                            'corrBeam3 real, '
+                            'beamVelBeam0 real, '
+                            'beamVelBeam1 real, '
+                            'beamVelBeam2 real, '
+                            'beamVelBeam3 real, '
+                            'beamGoodBeam0 integer, '
+                            'beamGoodBeam1 integer, '
+                            'beamGoodBeam2 integer, '
+                            'beamGoodBeam3 integer, '
+                            'instrVelBeam0 real, '
+                            'instrVelBeam1 real, '
+                            'instrVelBeam2 real, '
+                            'instrVelBeam3 real, '
+                            'instrGoodBeam0 integer, '
+                            'instrGoodBeam1 integer, '
+                            'instrGoodBeam2 integer, '
+                            'instrGoodBeam3 integer, '
+                            'earthVelBeam0 real, '
+                            'earthVelBeam1 real, '
+                            'earthVelBeam2 real, '
+                            'earthVelBeam3 real, '
+                            'earthGoodBeam0 integer, '
+                            'earthGoodBeam1 integer, '
+                            'earthGoodBeam2 integer, '
+                            'earthGoodBeam3 integer, '
+                            'snrPulseCoherentBeam0 real, '
+                            'snrPulseCoherentBeam1 real, '
+                            'snrPulseCoherentBeam2 real, '
+                            'snrPulseCoherentBeam3 real, '
+                            'ampPulseCoherentBeam0 real, '
+                            'ampPulseCoherentBeam1 real, '
+                            'ampPulseCoherentBeam2 real, '
+                            'ampPulseCoherentBeam3 real, '
+                            'velPulseCoherentBeam0 real, '
+                            'velPulseCoherentBeam1 real, '
+                            'velPulseCoherentBeam2 real, '
+                            'velPulseCoherentBeam3 real, '
+                            'noisePulseCoherentBeam0 real, '
+                            'noisePulseCoherentBeam1 real, '
+                            'noisePulseCoherentBeam2 real, '
+                            'noisePulseCoherentBeam3 real, '
+                            'corrPulseCoherentBeam0 real, '
+                            'corrPulseCoherentBeam1 real, '
+                            'corrPulseCoherentBeam2 real, '
+                            'corrPulseCoherentBeam3 real, '
+                            'meta json,'
+                            'created timestamp, '
+                            'modified timestamp);')
+        logging.debug("Bottom Track table created")
+
+        # Range Track
+        sql.cursor.execute('CREATE TABLE IF NOT EXISTS rangetracking (id ' + auto_increment_str + ' PRIMARY KEY,'
+                            'ensIndex integer NOT NULL, '
+                            'numBeams integer, '
+                            'snrBeam0 real, '
+                            'snrBeam1 real, '
+                            'snrBeam2 real, '
+                            'snrBeam3 real, '
+                            'rangeBeam0 real, '
+                            'rangeBeam1 real, '
+                            'rangeBeam2 real, '
+                            'rangeBeam3 real, '
+                            'pingsBeam0 integer, '
+                            'pingsBeam1 integer, '
+                            'pingsBeam2 integer, '
+                            'pingsBeam3 integer, '
+                            'amplitudeBeam0 real, '
+                            'amplitudeBeam1 real, '
+                            'amplitudeBeam2 real, '
+                            'amplitudeBeam3 real, '
+                            'correlationBeam0 real, '
+                            'correlationBeam1 real, '
+                            'correlationBeam2 real, '
+                            'correlationBeam3 real, '
+                            'beamVelocityBeam0 real, '
+                            'beamVelocityBeam1 real, '
+                            'beamVelocityBeam2 real, '
+                            'beamVelocityBeam3 real, '
+                            'instrVelBeam0 real, '
+                            'instrVelBeam1 real, '
+                            'instrVelBeam2 real, '
+                            'instrVelBeam3 real, '
+                            'earthVelBeam0 real, '
+                            'earthVelBeam1 real, '
+                            'earthVelBeam2 real, '
+                            'earthVelBeam3 real, '
+                            'meta json,'
+                            'created timestamp, '
+                            'modified timestamp);')
+        logging.debug("Range Tracking table created")
+
+        # Beam Velocity
+        query = 'CREATE TABLE IF NOT EXISTS beamVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, ' \
+                'val real);'
+        sql.cursor.execute(query)
+        logging.debug("Beam Velocity table created")
+
+        # Instrument Velocity
+        query = 'CREATE TABLE IF NOT EXISTS instrumentVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, ' \
+                'val real);'
+        sql.cursor.execute(query)
+        logging.debug("Instrument Velocity table created")
+
+        # Earth Velocity
+        query = 'CREATE TABLE IF NOT EXISTS earthVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, ' \
+                'val real);'
+        sql.cursor.execute(query)
+        logging.debug("Earth Velocity table created")
+
+        # Amplitude
+        query = 'CREATE TABLE IF NOT EXISTS amplitude (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, ' \
+                'val real);'
+        sql.cursor.execute(query)
+        logging.debug("Amplitude table created")
+
+        # Correlation
+        query = 'CREATE TABLE IF NOT EXISTS correlation (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, ' \
+                'val real);'
+        sql.cursor.execute(query)
+        logging.debug("Correlation table created")
+
+        # Good Beam Ping
+        query = 'CREATE TABLE IF NOT EXISTS goodBeamPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, '\
+                'val integer); '
+        sql.cursor.execute(query)
+        logging.debug("Good Beam Ping table created")
+
+        # Good Earth Ping
+        query = 'CREATE TABLE IF NOT EXISTS goodEarthPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'beam integer NOT NULL, ' \
+                'bin integer NOT NULL, ' \
+                'meta json,' \
+                'created timestamp, ' \
+                'modified timestamp, '  \
+                'val integer);'
+        sql.cursor.execute(query)
+        logging.debug("Good Earth Ping table created")
+
+        # NMEA
+        query = 'CREATE TABLE IF NOT EXISTS nmea (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'nmea text, ' \
+                'GPGGA text, ' \
+                'GPVTG text,' \
+                'GPRMC text, ' \
+                'GPRMF text, ' \
+                'GPGLL text, ' \
+                'GPGSV text, ' \
+                'GPGSA text, ' \
+                'GPHDT text,' \
+                'GPHDG text,' \
+                'latitude DECIMAL(8,6), ' \
+                'longitude DECIMAL(9,6), ' \
+                'speed_knots real, ' \
+                'heading real, ' \
+                'meta json,' \
+                'datetime timestamp, ' \
+                'created timestamp, ' \
+                'modified timestamp);'
+        sql.cursor.execute(query)
+        logging.debug("NMEA table created")
+
+        sql.cursor.execute("PRAGMA synchronous = OFF")
+
+        logging.debug("Table Creation Complete")
+        sql.conn.commit()
