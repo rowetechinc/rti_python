@@ -6,7 +6,7 @@ import sys
 
 from PyQt5 import QtWidgets
 
-from Comm.view_serial import view_serial
+from rti_python.Comm.view_serial import view_serial
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
