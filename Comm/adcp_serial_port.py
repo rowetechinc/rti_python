@@ -43,7 +43,7 @@ class AdcpSerialPort:
     def readline(self):
         self.raw_serial.readline()
 
-    def read(self, size):
+    def read(self, size: int):
         return self.raw_serial.read(size)
 
     def write(self, data):
@@ -65,7 +65,7 @@ class AdcpSerialPort:
         # Send STOP command
         self.send_cmd("STOP")
 
-    def send_cmd(self, cmd, use_cr=True):
+    def send_cmd(self, cmd, use_cr: bool=True):
         # Add a carriage return to the end of the command
         if use_cr:
             cmd = cmd + '\r'
