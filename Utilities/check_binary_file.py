@@ -40,6 +40,8 @@ class RtiCheckFile:
         self.tilt_issue = 0
         self.prev_ens_datetime = None
         self.is_upward = False
+        self.error_output_str = []
+        self.summary_str = []
 
     def init(self):
         """
@@ -84,7 +86,7 @@ class RtiCheckFile:
         Read the files and look for any issues in the files.
         :param file_paths: Path to file to process.
         :param show_live_error: TRUE = Show the errors as they are found.
-        :return:
+        :return: Summary containing a list of all the output.
         """
         self.file_paths = file_paths
         self.show_live_errors = show_live_error
@@ -103,61 +105,84 @@ class RtiCheckFile:
                 # Close the progress bar
                 self.pbar.close()
 
+    def get_summary(self):
+        """
+        Get the summary of the file check.
+        :return: Dictionary containing lists of strings in "summary" and "errors".
+        """
+        # Remove any blank entries
+        self.error_output_str = list(filter(None, self.error_output_str))
+        self.summary_str = list(filter(None, self.summary_str))
+
+        return { "summary": self.summary_str, "errors": self.error_output_str }
+
     def print_summary(self, file_path):
         """
         Print a summary of the results.
         :param file_path: File path for the file processed.
         :return:
         """
-        print("---------------------------------------------")
-        print("---------------------------------------------")
+        self.summary_str.append("---------------------------------------------")
+        self.summary_str.append("---------------------------------------------")
 
         # Check results for any fails
-        if self.is_missing_ens or self.is_status_issue or self.is_voltage_issue or self.is_amplitude_0db_issue or self.is_correlation_100pct_issue or self.is_datetime_jump_issue or self.is_tilt_issue:
-            print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
-            print("*********************************************")
-            print(self.found_issue_str)
-            print("*********************************************")
-            print(str(self.found_issues) + " ISSUES FOUND WITH FILES")
-            print("Total Bad Status: " + str(self.bad_status_count))
-            print("Total Missing Ensembles: " + str(self.missing_ens_count))
-            print("Total Bad Voltage: " + str(self.bad_voltage_count))
-            print("Total Bad Amplitude (0dB): " + str(self.bad_amp_0db_count))
-            print("Total Bad Correlation (100%): " + str(self.bad_corr_100pct_count))
-            print("Total Extreme Tilt: " + str(self.tilt_issue))
-            print("Total Date/Time Jump (" + str(self.ens_delta_time) + "): " + str(self.datetime_jump_count))
-            print("*********************************************")
+        if self.is_missing_ens or \
+                self.is_status_issue or \
+                self.is_voltage_issue or \
+                self.is_amplitude_0db_issue or \
+                self.is_correlation_100pct_issue or \
+                self.is_datetime_jump_issue or \
+                self.is_tilt_issue:
+            #self.summary_str.append(str(self.found_issues) + " ISSUES FOUND WITH FILES")
+            #self.summary_str.append("*********************************************")
+            #self.summary_str.append(self.found_issue_str)
+            self.summary_str.append("*********************************************")
+            self.summary_str.append(str(self.found_issues) + " ISSUES FOUND WITH FILES")
+            self.summary_str.append("Total Bad Status: " + str(self.bad_status_count))
+            self.summary_str.append("Total Missing Ensembles: " + str(self.missing_ens_count))
+            self.summary_str.append("Total Bad Voltage: " + str(self.bad_voltage_count))
+            self.summary_str.append("Total Bad Amplitude (0dB): " + str(self.bad_amp_0db_count))
+            self.summary_str.append("Total Bad Correlation (100%): " + str(self.bad_corr_100pct_count))
+            self.summary_str.append("Total Extreme Tilt: " + str(self.tilt_issue))
+            self.summary_str.append("Total Date/Time Jump (" + str(self.ens_delta_time) + "): " + str(self.datetime_jump_count))
+            self.summary_str.append("*********************************************")
         else:
             if not self.prev_ens_num == 0:
-                print("File " + file_path + " checked and is all GOOD.")
+                self.summary_str.append("File " + file_path + " checked and is all GOOD.")
             else:
-                print("No RTB Ensembles Found in: " + self.file_paths)
+                self.summary_str.append("No RTB Ensembles Found in: " + self.file_paths)
 
         # Upward or Downward Looking
         if self.is_upward:
-            print("ADCP is Upward Looking")
+            self.summary_str.append("ADCP is Upward Looking")
         else:
-            print("ADCP is Downward Looking")
+            self.summary_str.append("ADCP is Downward Looking")
 
         # Print info on first and last ensembles
         if self.first_ens and self.first_ens.IsEnsembleData:
             first_ens_dt = self.first_ens.EnsembleData.datetime_str()
             first_ens_num = self.first_ens.EnsembleData.EnsembleNumber
-            print("First ENS:\t[" + str(first_ens_num) + "] " + first_ens_dt)
+            self.summary_str.append("First ENS:\t[" + str(first_ens_num) + "] " + first_ens_dt)
 
         if self.last_ens and self.last_ens.IsEnsembleData:
             last_ens_dt = self.last_ens.EnsembleData.datetime_str()
             last_ens_num = self.last_ens.EnsembleData.EnsembleNumber
-            print("Last ENS:\t[" + str(last_ens_num) + "] " + last_ens_dt)
+            self.summary_str.append("Last ENS:\t[" + str(last_ens_num) + "] " + last_ens_dt)
 
         # Print total number of ensembles in the file
-        print("Total number of bad ensembles in file: " + str(self.bad_ens))
-        print("Total number of ensembles in file:     " + str(self.ens_count))
+        self.summary_str.append("Total number of bad ensembles in file: " + str(self.bad_ens))
+        self.summary_str.append("Total number of ensembles in file:     " + str(self.ens_count))
         if self.ens_count > 0:
-            print("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count)*100.0, 3)) + "%")
+            self.summary_str.append("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count)*100.0, 3)) + "%")
 
-        print("---------------------------------------------")
-        print("---------------------------------------------")
+        self.summary_str.append("---------------------------------------------")
+        self.summary_str.append("---------------------------------------------")
+
+        # Print the summary
+        for line in self.summary_str:
+            print(line)
+
+        return self.summary_str
 
     def file_progress_handler(self, sender, bytes_read, total_size, file_name):
         """
@@ -188,6 +213,7 @@ class RtiCheckFile:
 
         # Checking missing Ensemble
         is_missing_ens, prev_ens, err_str = RtiCheckFile.check_missing_ens(ens, self.prev_ens_num, self.show_live_errors)
+        self.error_output_str.append(err_str)     # Keep track of all the errors
         self.prev_ens_num = prev_ens        # Log previous ens
         if is_missing_ens:
             self.is_missing_ens = True
@@ -197,6 +223,7 @@ class RtiCheckFile:
 
         # Check ensemble status
         is_status_issue, err_str = self.check_status(ens, self.show_live_errors)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_status_issue:
             self.is_status_issue = True
             self.found_issues += 1
@@ -205,6 +232,7 @@ class RtiCheckFile:
 
         # Check if voltage is bad
         is_voltage_issue, err_str = self.check_voltage(ens, self.show_live_errors)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_voltage_issue:
             self.is_voltage_issue = True
             self.found_issues += 1
@@ -213,6 +241,7 @@ class RtiCheckFile:
 
         # Check if amplitude is bad
         is_amplitude_0db_issue, err_str = self.check_amplitude_0db(ens, self.show_live_errors)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_amplitude_0db_issue:
             self.is_amplitude_0db_issue = True
             self.found_issues += 1
@@ -221,6 +250,7 @@ class RtiCheckFile:
 
         # Check correlation is bad
         is_correlation_100pct_issue, err_str = self.check_correlation_1pct(ens, self.show_live_errors)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_correlation_100pct_issue:
             self.is_correlation_100pct_issue = True
             self.found_issues += 1
@@ -229,6 +259,7 @@ class RtiCheckFile:
 
         # Check for datetime jump
         is_datetime_jump_issue, err_str, self.prev_ens_datetime, self.ens_delta_time = self.check_datetime_jump(ens, self.show_live_errors, self.prev_ens_datetime, self.ens_delta_time)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_datetime_jump_issue:
             self.is_datetime_jump_issue = True
             self.found_issues += 1
@@ -237,6 +268,7 @@ class RtiCheckFile:
 
         # Check correlation is bad
         is_tilt_issue, err_str = self.check_tilt_extreme(ens, self.show_live_errors)
+        self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_tilt_issue:
             self.is_tilt_issue = True
             self.found_issues += 1
@@ -271,7 +303,7 @@ class RtiCheckFile:
             logging.debug(str(ens.EnsembleData.EnsembleNumber))
 
     @staticmethod
-    def check_status(ens, show_live_errors):
+    def check_status(ens, show_live_errors=False):
         """
         Check the status for any errors.
         :param ens: Ensemble data.

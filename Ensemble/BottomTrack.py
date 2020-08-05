@@ -179,18 +179,46 @@ class BottomTrack:
         logging.debug(self.SpeedOfSound)
         logging.debug(self.EarthVelocity)
 
+    def get_vessel_speed(self):
+        """
+        This will calculate the vessel speed (magnitude).  You will
+        need 3 beams of good data to calculate the vessel speed.
+
+        If you do not have 3 beams or any of the velocities for a
+        beam are bad, this will return BAD_VELOCITY.
+
+        :return: Vessel speed or BAD_VELOCITY.
+        """
+        # At least 3 beams needed
+        if int(self.NumBeams) >= 3 and len(self.EarthVelocity) >= 3:
+            return Ensemble.calculate_magnitude(self.EarthVelocity[0], self.EarthVelocity[1], self.EarthVelocity[2])
+
+        return Ensemble.BadVelocity
+
+    def get_vessel_direction(self):
+        """
+        This will calculate the vessel direction.  You will
+        need 2 beams of good data to calculate the vessel speed.
+
+        If you do not have 2 beams or any of the velocities for a
+        beam are bad, this will return BAD_VELOCITY.
+
+        :return: Vessel speed or BAD_VELOCITY.
+        """
+        # At least 3 beams needed
+        if int(self.NumBeams) >= 2 and len(self.EarthVelocity) >= 2:
+            return Ensemble.calculate_direction(self.EarthVelocity[0], self.EarthVelocity[1])
+
+        return Ensemble.BadVelocity
+
     def avg_range(self):
-        # Average the ranges
-        #range_count = 0
-        #range_accum = 0.0
-        #for beam in range(int(self.NumBeams)):
-        #    if self.Range[beam] > 0.0:
-        #        range_count += 1
-        #        range_accum += self.Range[beam]
-        #if range_count > 0:
-        #    return range_accum / range_count
-        #else:
-        #    return 0.0
+        """
+        Return the average range (depth to the bottom).  This will determine the good values
+        for the range and average them together.
+
+        :return: Average range.
+        """
+        # Average the range
         return Ensemble.get_avg_range(self.Range)
 
     def status_str(self):

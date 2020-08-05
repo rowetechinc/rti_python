@@ -2,6 +2,9 @@ from rti_python.Writer.rti_sql import RtiSQL
 from rti_python.Ensemble import Ensemble
 import logging
 from datetime import datetime, date, time
+from tqdm import tqdm
+from pathlib import Path, PurePath
+from rti_python.Utilities.read_binary_file import ReadBinaryFile
 
 
 class RtiSqliteProjects:
@@ -16,6 +19,8 @@ class RtiSqliteProjects:
         Maintain projects in a database.  The project will have ensembles associated with it.
         :param file_path: Is using SQLite, set the SQLite database file name.
         """
+        self.REVISION = "A"
+
         # Construct connection string for SQLite
         self.sql_conn_string = file_path
         self.is_sqlite = True
@@ -24,6 +29,60 @@ class RtiSqliteProjects:
         self.batch_sql = None
         self.batch_prj_id = 0
         self.batch_count = 0
+
+    def load_files(self, file_paths):
+        """
+        Load the files given.  This will go through the list of files
+        and add all the data to the sqlite database file.
+        :param file_paths: List of file paths.
+        """
+        if self.file_paths:
+
+            # Create the tables in the database if they do not exist
+            self.create_tables()
+
+            for file in self.file_paths:
+                reader = ReadBinaryFile()
+                reader.ensemble_event += self.ens_handler               # Wait for ensembles
+                reader.file_progress += self.file_progress_handler      # Monitor file progress
+
+                # Get the file name and file path
+                prj_name = Path(file).stem
+                prj_path = file
+
+                # Create the project from the file name
+                self.add_prj_sql(str(prj_name), prj_path)
+
+                # Begin the batch writing to the database
+                self.begin_batch(str(prj_name))
+
+                # Read the file for ensembles
+                reader.playback(file)
+
+                # End any remaining batch
+                self.end_batch()
+
+    def ens_handler(self, sender, ens):
+        """
+        Handle the incoming ensembles from the file playback.
+        :param sender: NOT USED
+        :param ens: Ensemble data.
+        """
+        self.add_ensemble(ens)
+
+    def file_progress_handler(self, sender, bytes_read, total_size, file_name):
+        """
+        Monitor the file playback progress.
+        :param sender: NOT USED
+        :param total_size: Total size.
+        :param bytes_read: Total Bytes read.
+        :param file_name: File name being read..
+        :return:
+        """
+        if self.pbar is None:
+            self.pbar = tqdm(total=total_size)
+
+        self.pbar.update(int(bytes_read))
 
     def add_prj_sql(self, prj_name, prj_file_path):
         """
@@ -41,8 +100,8 @@ class RtiSqliteProjects:
             sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
 
             # Postgres uses %s and sqlite uses ? in the query string
-            query = 'INSERT INTO projects (name, path, created, modified) VALUES (?,?,?,?);'
-            sql.cursor.execute(query, [prj_name, prj_file_path, dt, dt])
+            query = 'INSERT INTO projects (name, path, created, modified, revision) VALUES (?,?,?,?,?);'
+            sql.cursor.execute(query, [prj_name, prj_file_path, dt, dt, self.REVISION])
 
             # Get the index of the project
             result = sql.query('SELECT id FROM projects WHERE name = \'{0}\' LIMIT 1;'.format(prj_name))
@@ -121,6 +180,34 @@ class RtiSqliteProjects:
 
         return result
 
+    def get_summary(self, prj_idx):
+        """
+        Get the project summary based on the project index given.
+        :param prj_idx: Project Index.
+        :return: JSON of project summary.
+        """
+        result = {}
+
+        # Make connection
+        try:
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
+        except Exception as e:
+            logging.error("Unable to connect to the database")
+            return result
+
+        # Get all projects
+        try:
+            sql_query_str = 'SELECT summary FROM projects WHERE id = {0};'.format(prj_idx)
+            result = sql.query(sql_query_str)
+        except Exception as e:
+            logging.error("Unable to run query", e)
+            return result
+
+        # Close connection
+        sql.close()
+
+        return result
+
     def begin_batch(self, prj_name):
         # Make connection
         try:
@@ -142,6 +229,23 @@ class RtiSqliteProjects:
 
         # Set the connection to none
         #self.batch_sql = None
+
+    def add_summary(self, json_summary, project_id):
+        """
+        Add a file summary to a project.  This will set a JSON summary to the summary columan and
+        modify the datetime for the project.
+        :param json_summary: JSON summary of the data or file.
+        :param project_id: Project ID to modify
+        """
+        if self.batch_sql is not None:
+            try:
+                # Postgres uses %s and sqlite uses ? in the query string
+                query = 'UPDATE projects SET summary = ?, modified = ? WHERE id=?;'
+                self.batch_sql.cursor.execute(query, [json_summary, datetime.now(), project_id])
+
+            except Exception as ex:
+                logging.error("Error adding summary to project.", ex)
+                return
 
     def add_ensemble(self, ens, burst_num=0):
         '''
@@ -210,6 +314,9 @@ class RtiSqliteProjects:
                                      ens.EarthVelocity.num_elements,
                                      ens.EarthVelocity.element_multiplier,
                                      ens_idx)
+
+                    # Add the magnitude and direction table data
+                    self.add_mag_dir(ens, ens_idx)
             except Exception as ex:
                 logging.error("Error adding Earth Velocity to project.", ex)
 
@@ -330,10 +437,11 @@ class RtiSqliteProjects:
                     'WpTransmitBandwidth, ' \
                     'WpReceiveBandwidth, ' \
                     'burstNum, ' \
+                    'isUpwardLooking, ' \
                     'project_id, ' \
                     'created, ' \
                     'modified)' \
-                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
+                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
 
         self.batch_sql.cursor.execute(ens_query, (ens.EnsembleData.EnsembleNumber,
                                                   ens.EnsembleData.NumBins,
@@ -384,6 +492,7 @@ class RtiSqliteProjects:
                                                   ens.SystemSetup.WpLagLength,
                                                   ens.SystemSetup.WpTransmitBandwidth,
                                                   ens.SystemSetup.WpReceiveBandwidth,
+                                                  ens.AncillaryData.is_upward_facing(),
                                                   burst_num,
                                                   self.batch_prj_id[0][0],
                                                   dt,
@@ -545,6 +654,9 @@ class RtiSqliteProjects:
                 '{12}, ' \
                 '{13}, ' \
                 '{14}, ' \
+                'vesselSpeed, ' \
+                'vesselDirection, ' \
+                'avgRange, ' \
                 'created, ' \
                 "modified)" \
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?," \
@@ -563,7 +675,12 @@ class RtiSqliteProjects:
                 "{27}," \
                 "{28}," \
                 "{29}," \
-                "?,?);".format(query_range_label,
+                "?," \
+                "?," \
+                "?," \
+                "?," \
+                "?" \
+                ");".format(query_range_label,
                                  query_snr_label,
                                  query_amp_label,
                                  query_corr_label,
@@ -608,6 +725,9 @@ class RtiSqliteProjects:
                                               int(ens.BottomTrack.Status),
                                               int(ens.BottomTrack.NumBeams),
                                               int(ens.BottomTrack.ActualPingCount),
+                                              ens.BottomTrack.get_vessel_speed(),
+                                              ens.BottomTrack.get_vessel_direction(),
+                                              ens.BottomTrack.avg_range(),
                                               dt,
                                               dt))
 
@@ -676,8 +796,8 @@ class RtiSqliteProjects:
         query_corr_val = query_corr_val[:-2]                    # Remove final comma
         query_beam_vel_label = query_beam_vel_label[:-2]        # Remove final comma
         query_beam_vel_val = query_beam_vel_val[:-2]            # Remove final comma
-        query_beam_ping_label = query_pings_label[:-2]      # Remove final comma
-        query_beam_ping_val = query_pings_val[:-2]          # Remove final comma
+        query_beam_ping_label = query_pings_label[:-2]          # Remove final comma
+        query_beam_ping_val = query_pings_val[:-2]              # Remove final comma
         query_instr_vel_label = query_instr_vel_label[:-2]      # Remove final comma
         query_instr_vel_val = query_instr_vel_val[:-2]          # Remove final comma
         query_earth_vel_label = query_earth_vel_label[:-2]      # Remove final comma
@@ -846,121 +966,93 @@ class RtiSqliteProjects:
         :param ens_idx: Ensemble index in Ensembles table.
         :param bad_val: If a value is bad or missing, replace it with this value.
         """
-        # Get Date and time for created and modified
-        dt = datetime.now()
 
-        """
-        beam0_avail = False
-        beam1_avail = False
-        beam2_avail = False
-        beam3_avail = False
-        query_b0_label = ""
-        query_b0_val = ""
-        query_b1_label = ""
-        query_b1_val = ""
-        query_b2_label = ""
-        query_b2_val = ""
-        query_b3_label = ""
-        query_b3_val = ""
-        for bin_num in range(num_elements):
-            if element_multiplier > 0:
-                query_b0_label += "Bin{0}, ".format(bin_num)
-                if data[bin_num][0]:
-                    query_b0_val += "{0}, ".format(data[bin_num][0])
-                else:
-                    query_b0_val += "{0}, ".format(bad_val)
-                beam0_avail = True
-
-            if element_multiplier > 1:
-                query_b1_label += "Bin{0}, ".format(bin_num)
-                if data[bin_num][1]:
-                    query_b1_val += "{0}, ".format(data[bin_num][1])
-                else:
-                    query_b1_val += "{0}, ".format(bad_val)
-                beam1_avail = True
-
-            if element_multiplier > 2:
-                query_b2_label += "Bin{0}, ".format(bin_num)
-                if data[bin_num][2]:
-                    query_b2_val += "{0}, ".format(data[bin_num][2])
-                else:
-                    query_b2_val += "{0}, ".format(bad_val)
-                beam2_avail = True
-
-            if element_multiplier > 3:
-                query_b3_label += "Bin{0}, ".format(bin_num)
-                if data[bin_num][3]:
-                    query_b3_val += "{0}, ".format(data[bin_num][3])
-                else:
-                    query_b3_val += "{0}, ".format(bad_val)
-                beam3_avail = True
-
-        query_b0_label = query_b0_label[:-2]        # Remove final comma
-        query_b0_val = query_b0_val[:-2]            # Remove final comma
-        query_b1_label = query_b1_label[:-2]        # Remove final comma
-        query_b1_val = query_b1_val[:-2]            # Remove final comma
-        query_b2_label = query_b2_label[:-2]        # Remove final comma
-        query_b2_val = query_b2_val[:-2]            # Remove final comma
-        query_b3_label = query_b3_label[:-2]        # Remove final comma
-        query_b3_val = query_b3_val[:-2]            # Remove final comma
-
-        # Add line for each beam
-        if beam0_avail:
-            query = "INSERT INTO {0} (" \
-                    "ensIndex, " \
-                    "beam, " \
-                    "{1}, " \
-                    "created, " \
-                    "modified) " \
-                     "VALUES ( ?, ?, {2}, ?, ?);".format(table, query_b0_label, query_b0_val)
-            #print(query)
-            self.batch_sql.cursor.execute(query, (ens_idx, 0, dt, dt))
-
-        if beam1_avail:
-            query = "INSERT INTO {0} (" \
-                    "ensIndex, " \
-                    "beam, " \
-                    "{1}, " \
-                    "created, " \
-                    "modified) " \
-                     "VALUES ( ?, ?, {2}, ?, ?);".format(table, query_b1_label, query_b1_val)
-            #print(query)
-            self.batch_sql.cursor.execute(query, (ens_idx, 1, dt, dt))
-
-        if beam2_avail:
-            query = "INSERT INTO {0} (" \
-                    "ensIndex, " \
-                    "beam, " \
-                    "{1}, " \
-                    "created, " \
-                    "modified) " \
-                     "VALUES ( ?, ?, {2}, ?, ?);".format(table, query_b2_label, query_b2_val)
-            #print(query)
-            self.batch_sql.cursor.execute(query, (ens_idx, 2, dt, dt))
-
-        if beam3_avail:
-            query = "INSERT INTO {0} (" \
-                    "ensIndex, " \
-                    "beam, " \
-                    "{1}, " \
-                    "created, " \
-                    "modified) " \
-                     "VALUES ( ?, ?, {2}, ?, ?);".format(table, query_b3_label, query_b3_val)
-            #print(query)
-            self.batch_sql.cursor.execute(query, (ens_idx, 3, dt, dt))
-            """
-        for beam in range(element_multiplier):
+        # Vertical beam data
+        if element_multiplier == 1:
             for bin_num in range(num_elements):
-                val = data[bin_num][beam]
+                val0 = data[bin_num][0]
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
-                        "beam, " \
                         "bin, " \
-                        "created, " \
-                        "modified, " \
-                        "val)" \
+                        "beam0) " \
+                        "VALUES ( ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0))
+
+        # 2 Beam data
+        elif element_multiplier == 2:
+            for bin_num in range(num_elements):
+                val0 = data[bin_num][0]
+                val1 = data[bin_num][1]
+                query = "INSERT INTO {0} (" \
+                        "ensIndex, " \
+                        "bin, " \
+                        "beam0, " \
+                        "beam1) " \
+                        "VALUES ( ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1))
+
+        # 3 Beam data
+        elif element_multiplier == 3:
+            for bin_num in range(num_elements):
+                val0 = data[bin_num][0]
+                val1 = data[bin_num][1]
+                val2 = data[bin_num][2]
+                query = "INSERT INTO {0} (" \
+                        "ensIndex, " \
+                        "bin, " \
+                        "beam0, " \
+                        "beam1, " \
+                        "beam2) " \
+                        "VALUES ( ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1, val2))
+
+        # 4 Beam data
+        elif element_multiplier == 4:
+            for bin_num in range(num_elements):
+                val0 = data[bin_num][0]
+                val1 = data[bin_num][1]
+                val2 = data[bin_num][2]
+                val3 = data[bin_num][3]
+                query = "INSERT INTO {0} (" \
+                        "ensIndex, " \
+                        "bin, " \
+                        "beam0, " \
+                        "beam1, " \
+                        "beam2, " \
+                        "beam3) " \
                         "VALUES ( ?, ?, ?, ?, ?, ?);".format(table)
-                self.batch_sql.cursor.execute(query, (ens_idx, beam, bin_num, dt, dt, val))
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1, val2, val3))
+
+    def add_mag_dir(self, ens, ens_idx):
+        if ens.IsEarthVelocity and ens.IsBottomTrack and ens.EarthVelocity.num_elements >= 3:
+
+            # Create a temp to hold to original vectors before ship speed removed
+            raw_mags = ens.EarthVelocity.Magnitude
+            raw_dirs = ens.EarthVelocity.Direction
+
+            # Get the bottom track earth velocity to remove the ship speed
+            bt_east = ens.BottomTrack.EarthVelocity[0]
+            bt_north = ens.BottomTrack.EarthVelocity[1]
+            bt_vert = ens.BottomTrack.EarthVelocity[2]
+
+            # Remove the ship speed
+            # This will also regenerate the velocity vectors
+            ens.EarthVelocity.remove_vessel_speed(bt_east=bt_east, bt_north=bt_north, bt_vert=bt_vert)
+
+            for bin_num in range(ens.EarthVelocity.num_elements):
+                raw_mag = raw_mags[bin_num]
+                raw_dir = raw_dirs[bin_num]
+                removed_mag = ens.EarthVelocity.Magnitude[bin_num]
+                removed_dir = ens.EarthVelocity.Direction[bin_num]
+                query = "INSERT INTO {0} (" \
+                        "ensIndex, " \
+                        "bin, " \
+                        "rawMag, " \
+                        "rawDir, " \
+                        "mag, " \
+                        "dir) " \
+                        "VALUES ( ?, ?, ?, ?, ?, ?);".format("WpMagDir")
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, raw_mag, raw_dir, removed_mag, removed_dir))
 
     def create_tables(self):
         logging.debug("Creating Tables in Database")
@@ -982,8 +1074,13 @@ class RtiSqliteProjects:
                             'name text NOT NULL, '
                             'path text,'
                             'meta json,'
+                            'summary json,'
+                            'location json, '
+                            'adcp_config json,'
+                            'transect json, '
                             'created timestamp, '
-                            'modified timestamp);')
+                            'modified timestamp,'
+                            'revision text);')
         logging.debug("Projects table created")
 
         # Ensemble Tables
@@ -1039,6 +1136,7 @@ class RtiSqliteProjects:
                             'WpTransmitBandwidth real, '
                             'WpReceiveBandwidth real, '
                             'burstNum integer, '
+                            'isUpwardLooking boolean, '
                             'project_id integer, '
                             'meta json,'
                             'created timestamp, '
@@ -1121,6 +1219,9 @@ class RtiSqliteProjects:
                             'corrPulseCoherentBeam1 real, '
                             'corrPulseCoherentBeam2 real, '
                             'corrPulseCoherentBeam3 real, '
+                            'vesselSpeed real, '
+                            'vesselDirection real, '
+                            'avgRange real, '
                             'meta json,'
                             'created timestamp, '
                             'modified timestamp);')
@@ -1170,84 +1271,96 @@ class RtiSqliteProjects:
         # Beam Velocity
         query = 'CREATE TABLE IF NOT EXISTS beamVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, ' \
-                'val real);'
+                'bin integer NOT NULL, ' \
+                'beam0 real, ' \
+                'beam1 real, ' \
+                'beam2 real, ' \
+                'beam3 real);'
         sql.cursor.execute(query)
         logging.debug("Beam Velocity table created")
 
         # Instrument Velocity
         query = 'CREATE TABLE IF NOT EXISTS instrumentVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, ' \
-                'val real);'
+                'bin integer NOT NULL, ' \
+                'beam0 real, ' \
+                'beam1 real, ' \
+                'beam2 real, ' \
+                'beam3 real);'
         sql.cursor.execute(query)
         logging.debug("Instrument Velocity table created")
 
         # Earth Velocity
         query = 'CREATE TABLE IF NOT EXISTS earthVelocity (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, ' \
-                'val real);'
+                'bin integer NOT NULL, ' \
+                'beam0 real, ' \
+                'beam1 real, ' \
+                'beam2 real, ' \
+                'beam3 real);'
         sql.cursor.execute(query)
         logging.debug("Earth Velocity table created")
 
         # Amplitude
         query = 'CREATE TABLE IF NOT EXISTS amplitude (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, ' \
-                'val real);'
+                'bin integer NOT NULL, ' \
+                'beam0 real, ' \
+                'beam1 real, ' \
+                'beam2 real, ' \
+                'beam3 real);'
         sql.cursor.execute(query)
         logging.debug("Amplitude table created")
 
         # Correlation
         query = 'CREATE TABLE IF NOT EXISTS correlation (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, ' \
-                'val real);'
+                'bin integer NOT NULL, ' \
+                'beam0 real, ' \
+                'beam1 real, ' \
+                'beam2 real, ' \
+                'beam3 real);'
         sql.cursor.execute(query)
         logging.debug("Correlation table created")
 
         # Good Beam Ping
         query = 'CREATE TABLE IF NOT EXISTS goodBeamPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, '\
-                'val integer); '
+                'bin integer NOT NULL, ' \
+                'beam0 integer, ' \
+                'beam1 integer, ' \
+                'beam2 integer, ' \
+                'beam3 integer);'
         sql.cursor.execute(query)
         logging.debug("Good Beam Ping table created")
 
         # Good Earth Ping
         query = 'CREATE TABLE IF NOT EXISTS goodEarthPing (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
-                'beam integer NOT NULL, ' \
-                'bin integer NOT NULL, ' \
                 'meta json,' \
-                'created timestamp, ' \
-                'modified timestamp, '  \
-                'val integer);'
+                'bin integer NOT NULL, ' \
+                'beam0 integer, ' \
+                'beam1 integer, ' \
+                'beam2 integer, ' \
+                'beam3 integer);'
+        sql.cursor.execute(query)
+        logging.debug("Good Earth Ping table created")
+
+        # Water Profile Magnitude and Direction
+        query = 'CREATE TABLE IF NOT EXISTS WpMagDir (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+                'ensIndex integer NOT NULL, ' \
+                'meta json,' \
+                'bin integer NOT NULL, ' \
+                'mag real, ' \
+                'dir real, ' \
+                'rawMag real, ' \
+                'rawDir real);'
         sql.cursor.execute(query)
         logging.debug("Good Earth Ping table created")
 

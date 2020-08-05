@@ -126,46 +126,10 @@ class EarthVelocity:
 
         for bin_num in range(len(earth_vel)):
             # Calculate the magnitude and direction
-            mag.append(EarthVelocity.calculate_magnitude(earth_vel[bin_num][0], earth_vel[bin_num][1], earth_vel[bin_num][2]))
-            dir.append(EarthVelocity.calculate_direction(earth_vel[bin_num][0], earth_vel[bin_num][1]))
+            mag.append(Ensemble.calculate_magnitude(earth_vel[bin_num][0], earth_vel[bin_num][1], earth_vel[bin_num][2]))
+            dir.append(Ensemble.calculate_direction(earth_vel[bin_num][0], earth_vel[bin_num][1]))
 
         return mag, dir
-
-    @staticmethod
-    def calculate_magnitude(east, north, vertical):
-        """
-        Calculate the magnitude of the water current.
-        :param east: Earth East Velocity
-        :param north: Earth North Velocity
-        :param vertical: Earth Vertical Velocity
-        :return: Magnitude value
-        """
-
-        if not Ensemble.is_bad_velocity(east) and not Ensemble.is_bad_velocity(north) and not Ensemble.is_bad_velocity(vertical):
-            return math.sqrt((east*east) + (north*north) + (vertical*vertical))
-        else:
-            return Ensemble.BadVelocity
-
-    @staticmethod
-    def calculate_direction(east, north):
-        """
-        Calculate the direction of the water current.
-        This will return a value between 0 and 360.
-        :param east: Earth East Velocity
-        :param north: Earth North Velocity
-        :return: Direction of the water
-        """
-        if not Ensemble.is_bad_velocity(east) and not Ensemble.is_bad_velocity(north):
-            bin_dir = (math.atan2(east, north)) * (180.0 / math.pi)
-
-            # The range is -180 to 180
-            # This moves it to 0 to 360
-            if bin_dir < 0.0:
-                bin_dir = 360.0 + bin_dir
-
-            return bin_dir
-        else:
-            return Ensemble.BadVelocity
 
     def encode(self):
         """

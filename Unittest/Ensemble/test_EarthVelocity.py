@@ -188,14 +188,14 @@ def test_magnitude():
     east = 1.33
     north = 1.45
     vert = 0.3
-    result = EarthVelocity.calculate_magnitude(east, north, vert)
+    result = Ensemble.calculate_magnitude(east, north, vert)
     assert 1.99 == pytest.approx(result, 0.01)
 
 
 def test_direction():
     east = 1.33
     north = 1.45
-    result = EarthVelocity.calculate_direction(east, north)
+    result = Ensemble.calculate_direction(east, north)
     assert 42.52 == pytest.approx(result, 0.01)
 
 
