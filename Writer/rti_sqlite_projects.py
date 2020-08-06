@@ -781,10 +781,10 @@ class RtiSqliteProjects:
             query_pings_val += "{0}, ".format(int(ens.RangeTracking.Pings[beam]))
 
             query_instr_vel_label += "instrVelBeam{0}, ".format(beam)
-            query_instr_vel_val += "{0}, ".format(ens.BottomTrack.InstrumentVelocity[beam])
+            query_instr_vel_val += "{0}, ".format(ens.RangeTracking.InstrumentVelocity[beam])
 
             query_earth_vel_label += "earthVelBeam{0}, ".format(beam)
-            query_earth_vel_val += "{0}, ".format(ens.BottomTrack.EarthVelocity[beam])
+            query_earth_vel_val += "{0}, ".format(ens.RangeTracking.EarthVelocity[beam])
 
         query_range_label = query_range_label[:-2]              # Remove final comma
         query_range_val = query_range_val[:-2]                  # Remove final comma
@@ -796,8 +796,8 @@ class RtiSqliteProjects:
         query_corr_val = query_corr_val[:-2]                    # Remove final comma
         query_beam_vel_label = query_beam_vel_label[:-2]        # Remove final comma
         query_beam_vel_val = query_beam_vel_val[:-2]            # Remove final comma
-        query_beam_ping_label = query_pings_label[:-2]          # Remove final comma
-        query_beam_ping_val = query_pings_val[:-2]              # Remove final comma
+        query_pings_label = query_pings_label[:-2]          # Remove final comma
+        query_pings_val = query_pings_val[:-2]              # Remove final comma
         query_instr_vel_label = query_instr_vel_label[:-2]      # Remove final comma
         query_instr_vel_val = query_instr_vel_val[:-2]          # Remove final comma
         query_earth_vel_label = query_earth_vel_label[:-2]      # Remove final comma
@@ -817,7 +817,7 @@ class RtiSqliteProjects:
                 '{7}, ' \
                 'created, ' \
                 "modified)" \
-                "VALUES(?," \
+                "VALUES(?,?," \
                 "{8}," \
                 "{9}," \
                 "{10}," \
@@ -826,7 +826,9 @@ class RtiSqliteProjects:
                 "{13}," \
                 "{14}," \
                 "{15}," \
-                "?,?);".format(query_range_label,
+                "?," \
+                "?" \
+                ");".format(query_range_label,
                                  query_snr_label,
                                  query_amp_label,
                                  query_corr_label,
@@ -839,12 +841,12 @@ class RtiSqliteProjects:
                                  query_amp_val,
                                  query_corr_val,
                                  query_beam_vel_val,
-                                 query_beam_ping_val,
+                                 query_pings_val,
                                  query_instr_vel_val,
                                  query_earth_vel_val)
 
         self.batch_sql.cursor.execute(query, (ens_idx,
-                                              int(ens.BottomTrack.NumBeams),
+                                              int(ens.RangeTracking.NumBeams),
                                               dt,
                                               dt))
 
@@ -860,7 +862,6 @@ class RtiSqliteProjects:
         """
         if not ens.IsNmeaData:
             return
-
 
         # Get Date and time for created and modified
         dt = datetime.now()
@@ -1243,18 +1244,18 @@ class RtiSqliteProjects:
                             'pingsBeam1 integer, '
                             'pingsBeam2 integer, '
                             'pingsBeam3 integer, '
-                            'amplitudeBeam0 real, '
-                            'amplitudeBeam1 real, '
-                            'amplitudeBeam2 real, '
-                            'amplitudeBeam3 real, '
-                            'correlationBeam0 real, '
-                            'correlationBeam1 real, '
-                            'correlationBeam2 real, '
-                            'correlationBeam3 real, '
-                            'beamVelocityBeam0 real, '
-                            'beamVelocityBeam1 real, '
-                            'beamVelocityBeam2 real, '
-                            'beamVelocityBeam3 real, '
+                            'ampBeam0 real, '
+                            'ampBeam1 real, '
+                            'ampBeam2 real, '
+                            'ampBeam3 real, '
+                            'corrBeam0 real, '
+                            'corrBeam1 real, '
+                            'corrBeam2 real, '
+                            'corrBeam3 real, '
+                            'beamVelBeam0 real, '
+                            'beamVelBeam1 real, '
+                            'beamVelBeam2 real, '
+                            'beamVelBeam3 real, '
                             'instrVelBeam0 real, '
                             'instrVelBeam1 real, '
                             'instrVelBeam2 real, '

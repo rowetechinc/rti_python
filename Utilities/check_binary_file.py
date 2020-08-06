@@ -169,6 +169,8 @@ class RtiCheckFile:
             last_ens_num = self.last_ens.EnsembleData.EnsembleNumber
             self.summary_str.append("Last ENS:\t[" + str(last_ens_num) + "] " + last_ens_dt)
 
+        self.summary_str.append(("Ensemble Time Delta: " + str(self.ens_delta_time)))
+
         # Print total number of ensembles in the file
         self.summary_str.append("Total number of bad ensembles in file: " + str(self.bad_ens))
         self.summary_str.append("Total number of ensembles in file:     " + str(self.ens_count))
@@ -409,7 +411,7 @@ class RtiCheckFile:
                 # Verify the times are available
                 # Then verify the ensemble delta time are the same from last ensemble
                 if ens_delta_time != 0 and dt != 0 and ens_delta_time != dt:
-                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tDateTime Jump: [DT:" + str(dt) + " Curr:" + str(ens_datetime) + " Prev: " + str(prev_ens_dt) + "]"
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tDateTime Jump: [Actual DT: " + str(ens_delta_time) + " DT:" + str(dt) + " Curr:" + str(ens_datetime) + " Prev: " + str(prev_ens_dt) + "]"
 
                     # Display the error if turned on
                     if show_live_errors:
