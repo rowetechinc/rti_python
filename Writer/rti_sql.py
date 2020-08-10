@@ -145,6 +145,11 @@ class RtiSQL:
                         'WHERE ensembles.project_id = %s AND earthvelocity.beam = %s ' \
                         '{} {}' \
                         'ORDER BY ensembles.ensnum ASC;'.format(bin_nums, ss_code_str, ss_config_str)
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             print(ens_query)
             self.cursor.execute(ens_query, (project_idx, beam))
             vel_results = self.cursor.fetchall()
@@ -182,6 +187,11 @@ class RtiSQL:
                         'FROM ensembles ' \
                         'INNER JOIN bottomtrack ON ensembles.id = bottomtrack.ensindex ' \
                         'WHERE ensembles.project_id = %s ORDER BY ensembles.ensnum ASC;'
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             vel_results = self.cursor.fetchall()
             self.conn.commit()
@@ -222,6 +232,11 @@ class RtiSQL:
                         'WHERE ensembles.project_id = %s ' \
                         '{} {}' \
                         'ORDER BY ensembles.ensnum ASC;'.format(ss_code_str, ss_config_str)
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             vel_results = self.cursor.fetchall()
             self.conn.commit()
@@ -248,6 +263,11 @@ class RtiSQL:
         try:
             # Get all the ensembles for the project
             ens_query = 'SELECT ensnum, datetime, serialnumber, firmware, numbins, numbeams, subsystemconfig FROM ensembles WHERE project_id = %s ORDER BY ensnum ASC;'
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             results = self.cursor.fetchall()
             self.conn.commit()
@@ -284,6 +304,11 @@ class RtiSQL:
                         'WHERE ensembles.project_id = %s ' \
                         '{} {}' \
                         'ORDER BY ensembles.ensnum ASC;'.format(ss_code_str, ss_config_str)
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             results = self.cursor.fetchall()
             self.conn.commit()
@@ -301,6 +326,8 @@ class RtiSQL:
         """
         Get voltage ensemble data.
         :param project_idx: Project index.
+        :param ss_code: Subsystem Code.  If not set, then all subsystem codes' data will be retrieved.
+        :param ss_config: Subsystem Configuration Number: if not set, then all the configurations' data will be retrieved.
         :return: Compass data in the project.
         """
 
@@ -314,6 +341,11 @@ class RtiSQL:
                         'WHERE ensembles.project_id = %s ' \
                         '{} {}' \
                         'ORDER BY ensembles.ensnum ASC;'.format(ss_code_str, ss_config_str)
+
+            # Sqlite uses ? instead of %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             results = self.cursor.fetchall()
             self.conn.commit()
@@ -323,7 +355,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return None
 
         return df
 
@@ -338,6 +370,11 @@ class RtiSQL:
         try:
             # Get all the ensembles for the project
             ens_query = 'SELECT subsystemcode, subsystemconfig  FROM ensembles WHERE project_id = %s ORDER BY ensnum ASC;'
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
             self.cursor.execute(ens_query, (project_idx,))
             results = self.cursor.fetchall()
             self.conn.commit()
@@ -356,9 +393,8 @@ class RtiSQL:
         return df.drop_duplicates()
 
 if __name__ == "__main__":
-    #conn_string = "host='localhost' port='5432' dbname='rti' user='test' password='123456'"
-    conn_string = "host='184.177.73.234' port='32770' dbname='rti' user='rowetech' password='rowetechinc123'"
-    sql = rti_sql(conn_string)
+    conn_string = "host='localhost' port='5432' dbname='rti' user='test' password='123456'"
+    sql = RtiSQL(conn_string)
     sql.create_tables()
     sql.close()
 
