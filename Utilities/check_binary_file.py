@@ -1,4 +1,4 @@
-import tkinter as tk
+from mttkinter import mtTkinter
 from tkinter import filedialog
 from rti_python.Utilities.read_binary_file import ReadBinaryFile
 from tqdm import tqdm
@@ -75,9 +75,13 @@ class RtiCheckFile:
         :return: List of all the files selected.
         """
         # Dialog to ask for a file to select
-        root = tk.Tk()
+        root = mtTkinter.Tk()
+        root.overrideredirect(True)         # Used to Bring window to front and focused
+        root.geometry('0x0+0+0')            # Used to Bring window to front and focused
+        root.focus_force()                  # Used to Bring window to front and focused
+        filetypes = [("DB files", "*.db"), ("ENS Files", "*.ens"), ("BIN Files", "*.bin"), ('All Files', '*.*')]
+        self.file_paths = filedialog.askopenfilenames(parent=root, title="Select Binary Files to Playback", filetypes=filetypes)
         root.withdraw()
-        self.file_paths = filedialog.askopenfilenames()
 
         return self.file_paths
 
