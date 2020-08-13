@@ -535,7 +535,7 @@ class RtiCheckFile:
                 # Upward looking, if roll is greater than max tilt
                 # Good tilt is 0 to max_tilt
                 if ens.AncillaryData.Roll > max_tilt:
-                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Pitch) + "]"
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
 
                     # Display the error if turned on
                     if show_live_errors:
@@ -545,10 +545,10 @@ class RtiCheckFile:
                     found_issue = True
             else:
                 # Downward facing 180-max_tilt to 180 is OK
-                if ens.AncillaryData.Roll < 180.0 - max_tilt:
+                if (180.0 - max_tilt) > ens.AncillaryData.Roll > (-180.0 + max_tilt):
                     err_str = "Error in ensemble: " + str(
                         ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(
-                        ens.AncillaryData.Pitch) + "]"
+                        ens.AncillaryData.Roll) + "]"
 
                     # Display the error if turned on
                     if show_live_errors:

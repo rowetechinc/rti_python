@@ -869,12 +869,15 @@ class RtiSqliteProjects:
         # GPS DateTime
         ens_date = date(year, month, day)
         gps_time = ens.NmeaData.datetime
-        gps_datetime = datetime.combine(ens_date, gps_time)
+        if ens_date and gps_time:
+            gps_datetime = datetime.combine(ens_date, gps_time)
+        else:
+            gps_datetime = ens.NmeaData.datetime
 
         # Combine all the sentences into a long string
-        sent = ""
-        for nmea_sent in ens.NmeaData.nmea_sentences:
-            sent = sent + nmea_sent
+        nmea_sent = ""
+        for sent in ens.NmeaData.nmea_sentences:
+            nmea_sent = nmea_sent + sent
 
         # Set null if does not exist
         gga = str(ens.NmeaData.GPGGA)
@@ -941,10 +944,10 @@ class RtiSqliteProjects:
                                               gsa,
                                               hdt,
                                               hdg,
-                                              ens.NmeaData.latitude,
-                                              ens.NmeaData.longitude,
-                                              ens.NmeaData.speed_knots,
-                                              ens.NmeaData.heading,
+                                              float(ens.NmeaData.latitude),
+                                              float(ens.NmeaData.longitude),
+                                              float(ens.NmeaData.speed_knots),
+                                              float(ens.NmeaData.heading),
                                               gps_datetime,
                                               dt,
                                               dt))
@@ -1366,6 +1369,7 @@ class RtiSqliteProjects:
         logging.debug("Good Earth Ping table created")
 
         # NMEA
+        # Use Decimal(9,6) for Longitude and Decimal(8,6) for latitude to prevent rounding issues
         query = 'CREATE TABLE IF NOT EXISTS nmea (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'nmea text, ' \
@@ -1378,8 +1382,8 @@ class RtiSqliteProjects:
                 'GPGSA text, ' \
                 'GPHDT text,' \
                 'GPHDG text,' \
-                'latitude DECIMAL(8,6), ' \
-                'longitude DECIMAL(9,6), ' \
+                'latitude Decimal(8,6), ' \
+                'longitude Decimal(9,6), ' \
                 'speed_knots real, ' \
                 'heading real, ' \
                 'meta json,' \

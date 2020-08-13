@@ -1,6 +1,7 @@
 import pynmea2
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+from decimal import *
 
 
 class NmeaData:
