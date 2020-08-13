@@ -170,6 +170,40 @@ class RtiSQL:
 
         return df
 
+    def get_mag(self, project_idx, ss_code=None, ss_config=None):
+        ss_code_str, ss_config_str = self.ss_query(ss_code, ss_config)
+
+        # Get all projects
+        try:
+            # Get all the ensembles for the project
+            ens_query = 'SELECT ensembles.dateTime, ensembles.subsystemCode, ensembles.SubsystemConfig, ' \
+                        'WpMagDir.bin, ensembles.rangeFirstBin, ensembles.binSize, WpMagDir.mag ' \
+                        'FROM ensembles ' \
+                        'INNER JOIN WpMagDir ON ensembles.id = WpMagDir.ensindex ' \
+                        'WHERE ensembles.project_id = %s ' \
+                        '{} {}' \
+                        'ORDER BY ensembles.dateTime ASC;'.format(ss_code_str, ss_config_str)
+
+            # Sqlite uses ? where sql uses %s
+            if self.is_sqlite:
+                ens_query = ens_query.replace("%s", "?")
+
+            print(ens_query)
+            self.cursor.execute(ens_query, (project_idx, ))
+            mag_results = self.cursor.fetchall()
+            self.conn.commit()
+
+        except Exception as e:
+            print("Unable to run query", e)
+            return
+
+        # Make a dataframe
+        df = pd.DataFrame(mag_results)
+        if not df.empty:
+            df.columns = ['datetime', "ss_code", "ss_config", "bin_num", "blank", "bin_size", 'val']
+
+        return df
+
     def get_bottom_track_vel(self, project_idx):
         """
         Get Bottom track velocities.
@@ -224,9 +258,9 @@ class RtiSQL:
         # Get all projects
         try:
             # Get all the ensembles for the project
-            ens_query = 'SELECT ensembles.ensnum, ensembles.numbeams, ensembles.numbins, ' \
+            ens_query = 'SELECT ensembles.ensnum, ensembles.dateTime, ensembles.numbeams, ensembles.numbins, ' \
                         'ensembles.binsize, ensembles.rangefirstbin, ' \
-                        'rangebeam0, rangebeam1, rangebeam2, rangebeam3 ' \
+                        'rangebeam0, rangebeam1, rangebeam2, rangebeam3, avgRange ' \
                         'FROM ensembles ' \
                         'INNER JOIN bottomtrack ON ensembles.id = bottomtrack.ensindex ' \
                         'WHERE ensembles.project_id = %s ' \
@@ -248,7 +282,7 @@ class RtiSQL:
         # Make a dataframe
         df = pd.DataFrame(vel_results)
         if not df.empty:
-            df.columns = ['ensnum', 'NumBeams', 'NumBins', 'BinSize', 'RangeFirstBin', 'RangeBeam0', 'RangeBeam1', 'RangeBeam2', 'RangeBeam3']
+            df.columns = ['ensnum', 'datetime', 'NumBeams', 'NumBins', 'BinSize', 'RangeFirstBin', 'RangeBeam0', 'RangeBeam1', 'RangeBeam2', 'RangeBeam3', 'avgRange']
 
         return df
 
