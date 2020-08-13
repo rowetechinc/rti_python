@@ -177,7 +177,7 @@ class RtiSQL:
         try:
             # Get all the ensembles for the project
             ens_query = 'SELECT ensembles.dateTime, ensembles.subsystemCode, ensembles.SubsystemConfig, ' \
-                        'WpMagDir.bin, ensembles.rangeFirstBin, ensembles.binSize, WpMagDir.mag ' \
+                        'WpMagDir.bin, ensembles.rangeFirstBin, ensembles.binSize, ensembles.isUpwardLooking, WpMagDir.mag ' \
                         'FROM ensembles ' \
                         'INNER JOIN WpMagDir ON ensembles.id = WpMagDir.ensindex ' \
                         'WHERE ensembles.project_id = %s ' \
@@ -200,7 +200,7 @@ class RtiSQL:
         # Make a dataframe
         df = pd.DataFrame(mag_results)
         if not df.empty:
-            df.columns = ['datetime', "ss_code", "ss_config", "bin_num", "blank", "bin_size", 'val']
+            df.columns = ['datetime', "ss_code", "ss_config", "bin_num", "blank", "bin_size", "isUpwardLooking", 'mag']
 
         return df
 
