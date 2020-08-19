@@ -9,8 +9,11 @@ from rti_python.Utilities.read_binary_file import ReadBinaryFile
 
 class RtiSqliteProjects:
     """
-    Handle the projects.
-    Create projects and add data to the projects.
+    This is used to create the database file and add ensembles to the database.
+    This is not intended to playback of the file.
+
+    Projects within the database are used to separate river transects, waves bursts
+    or other data when collected at the same time.
     """
 
     def __init__(self, file_path='C:\\rti_capture\\project.db'):
@@ -382,9 +385,6 @@ class RtiSqliteProjects:
         if not ens.IsEnsembleData or not ens.IsAncillaryData or not ens.IsSystemSetup:
             return
 
-        # Get Date and time for created and modified
-        dt = datetime.now()
-
         # Add line for each dataset type
         ens_query = "INSERT INTO ensembles (" \
                     "ensnum, " \
@@ -438,10 +438,8 @@ class RtiSqliteProjects:
                     'WpReceiveBandwidth, ' \
                     'burstNum, ' \
                     'isUpwardLooking, ' \
-                    'project_id, ' \
-                    'created, ' \
-                    'modified)' \
-                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
+                    'project_id)' \
+                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
 
         self.batch_sql.cursor.execute(ens_query, (ens.EnsembleData.EnsembleNumber,
                                                   ens.EnsembleData.NumBins,
@@ -494,9 +492,7 @@ class RtiSqliteProjects:
                                                   ens.SystemSetup.WpReceiveBandwidth,
                                                   ens.AncillaryData.is_upward_facing(),
                                                   burst_num,
-                                                  self.batch_prj_id[0][0],
-                                                  dt,
-                                                  dt))
+                                                  self.batch_prj_id[0][0]))
         ens_idx = self.batch_sql.cursor.lastrowid
         #print("rti_projects:add_ensemble_ds() Ens Index: " + str(ens_idx))
 
@@ -511,9 +507,6 @@ class RtiSqliteProjects:
     def add_bottomtrack_ds(self, ens, ens_idx):
         if not ens.IsBottomTrack:
             return
-
-        # Get Date and time for created and modified
-        dt = datetime.now()
 
         query_range_label = ""
         query_range_val = ""
@@ -677,8 +670,6 @@ class RtiSqliteProjects:
                 "{29}," \
                 "?," \
                 "?," \
-                "?," \
-                "?," \
                 "?" \
                 ");".format(query_range_label,
                                  query_snr_label,
@@ -727,9 +718,7 @@ class RtiSqliteProjects:
                                               int(ens.BottomTrack.ActualPingCount),
                                               ens.BottomTrack.get_vessel_speed(),
                                               ens.BottomTrack.get_vessel_direction(),
-                                              ens.BottomTrack.avg_range(),
-                                              dt,
-                                              dt))
+                                              ens.BottomTrack.avg_range()))
 
         # Monitor how many inserts have been done so it does not get too big
         #self.batch_count += 1
@@ -740,9 +729,6 @@ class RtiSqliteProjects:
     def add_rangetracking_ds(self, ens, ens_idx):
         if not ens.IsRangeTracking:
             return
-
-        # Get Date and time for created and modified
-        dt = datetime.now()
 
         query_range_label = ""
         query_range_val = ""
@@ -814,9 +800,7 @@ class RtiSqliteProjects:
                 '{4}, ' \
                 '{5}, ' \
                 '{6}, ' \
-                '{7}, ' \
-                'created, ' \
-                "modified)" \
+                '{7}) ' \
                 "VALUES(?,?," \
                 "{8}," \
                 "{9}," \
@@ -825,9 +809,7 @@ class RtiSqliteProjects:
                 "{12}," \
                 "{13}," \
                 "{14}," \
-                "{15}," \
-                "?," \
-                "?" \
+                "{15}" \
                 ");".format(query_range_label,
                                  query_snr_label,
                                  query_amp_label,
@@ -846,9 +828,7 @@ class RtiSqliteProjects:
                                  query_earth_vel_val)
 
         self.batch_sql.cursor.execute(query, (ens_idx,
-                                              int(ens.RangeTracking.NumBeams),
-                                              dt,
-                                              dt))
+                                              int(ens.RangeTracking.NumBeams)))
 
         # Monitor how many inserts have been done so it does not get too big
         #self.batch_count += 1
@@ -862,9 +842,6 @@ class RtiSqliteProjects:
         """
         if not ens.IsNmeaData:
             return
-
-        # Get Date and time for created and modified
-        dt = datetime.now()
 
         # GPS DateTime
         ens_date = date(year, month, day)
@@ -928,10 +905,8 @@ class RtiSqliteProjects:
                 "longitude, "\
                 "speed_knots, " \
                 "heading, " \
-                "datetime, " \
-                "created, " \
-                "modified) " \
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                "datetime) " \
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
         #print(query)
 
         self.batch_sql.cursor.execute(query, (ens_idx,
@@ -948,9 +923,7 @@ class RtiSqliteProjects:
                                               float(ens.NmeaData.longitude),
                                               float(ens.NmeaData.speed_knots),
                                               float(ens.NmeaData.heading),
-                                              gps_datetime,
-                                              dt,
-                                              dt))
+                                              gps_datetime))
 
         # Monitor how many inserts have been done so it does not get too big
         #self.batch_count += 1
@@ -1055,7 +1028,7 @@ class RtiSqliteProjects:
                         "rawDir, " \
                         "mag, " \
                         "dir) " \
-                        "VALUES ( ?, ?, ?, ?, ?, ?);".format("WpMagDir")
+                        "VALUES ( ?, ?, ?, ?, ?, ?);".format("earthMagDir")
                 self.batch_sql.cursor.execute(query, (ens_idx, bin_num, raw_mag, raw_dir, removed_mag, removed_dir))
 
     def create_tables(self):
@@ -1143,9 +1116,7 @@ class RtiSqliteProjects:
                             'burstNum integer, '
                             'isUpwardLooking boolean, '
                             'project_id integer, '
-                            'meta json,'
-                            'created timestamp, '
-                            'modified timestamp);')
+                            'meta json);')
         logging.debug("Ensemble Table created")
 
         # Bottom Track
@@ -1227,9 +1198,7 @@ class RtiSqliteProjects:
                             'vesselSpeed real, '
                             'vesselDirection real, '
                             'avgRange real, '
-                            'meta json,'
-                            'created timestamp, '
-                            'modified timestamp);')
+                            'meta json);')
         logging.debug("Bottom Track table created")
 
         # Range Track
@@ -1268,9 +1237,7 @@ class RtiSqliteProjects:
                             'earthVelBeam1 real, '
                             'earthVelBeam2 real, '
                             'earthVelBeam3 real, '
-                            'meta json,'
-                            'created timestamp, '
-                            'modified timestamp);')
+                            'meta json);')
         logging.debug("Range Tracking table created")
 
         # Beam Velocity
@@ -1358,7 +1325,7 @@ class RtiSqliteProjects:
         logging.debug("Good Earth Ping table created")
 
         # Water Profile Magnitude and Direction
-        query = 'CREATE TABLE IF NOT EXISTS WpMagDir (id ' + auto_increment_str + ' PRIMARY KEY, ' \
+        query = 'CREATE TABLE IF NOT EXISTS earthMagDir (id ' + auto_increment_str + ' PRIMARY KEY, ' \
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
@@ -1388,9 +1355,7 @@ class RtiSqliteProjects:
                 'speed_knots real, ' \
                 'heading real, ' \
                 'meta json,' \
-                'datetime timestamp, ' \
-                'created timestamp, ' \
-                'modified timestamp);'
+                'datetime timestamp);'
         sql.cursor.execute(query)
         logging.debug("NMEA table created")
 
