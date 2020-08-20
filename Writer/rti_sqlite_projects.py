@@ -265,6 +265,12 @@ class RtiSqliteProjects:
                 logging.error("Error adding Ensemble, Ancillary and System Setup Dataset to project.", ex)
                 return
 
+            bin_size = None
+            blank = None
+            if ens.IsAncillaryData:
+                bin_size = ens.AncillaryData.BinSize
+                blank = ens.AncillaryData.FirstBinRange
+
             # Correlation
             try:
                 if ens.IsCorrelation:
@@ -272,7 +278,9 @@ class RtiSqliteProjects:
                                      ens.Correlation.Correlation,
                                      ens.Correlation.num_elements,
                                      ens.Correlation.element_multiplier,
-                                     ens_idx)
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
             except Exception as ex:
                 logging.error("Error adding Correlation to project.", ex)
 
@@ -283,7 +291,9 @@ class RtiSqliteProjects:
                                      ens.Amplitude.Amplitude,
                                      ens.Amplitude.num_elements,
                                      ens.Amplitude.element_multiplier,
-                                     ens_idx)
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
             except Exception as ex:
                 logging.error("Error adding Amplitude to project.", ex)
 
@@ -294,7 +304,9 @@ class RtiSqliteProjects:
                                      ens.BeamVelocity.Velocities,
                                      ens.BeamVelocity.num_elements,
                                      ens.BeamVelocity.element_multiplier,
-                                     ens_idx)
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
             except Exception as ex:
                 logging.error("Error adding Beam Velocity to project.", ex)
 
@@ -305,7 +317,9 @@ class RtiSqliteProjects:
                                      ens.InstrumentVelocity.Velocities,
                                      ens.InstrumentVelocity.num_elements,
                                      ens.InstrumentVelocity.element_multiplier,
-                                     ens_idx)
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
             except Exception as ex:
                 logging.error("Error adding Instrument Velocity to project.", ex)
 
@@ -316,10 +330,15 @@ class RtiSqliteProjects:
                                      ens.EarthVelocity.Velocities,
                                      ens.EarthVelocity.num_elements,
                                      ens.EarthVelocity.element_multiplier,
-                                     ens_idx)
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
 
                     # Add the magnitude and direction table data
-                    self.add_mag_dir(ens, ens_idx)
+                    self.add_mag_dir(ens,
+                                     ens_idx,
+                                     bin_size,
+                                     blank)
             except Exception as ex:
                 logging.error("Error adding Earth Velocity to project.", ex)
 
@@ -331,6 +350,8 @@ class RtiSqliteProjects:
                                      ens.GoodBeam.num_elements,
                                      ens.GoodBeam.element_multiplier,
                                      ens_idx,
+                                     bin_size,
+                                     blank,
                                      bad_val=0)
             except Exception as ex:
                 logging.error("Error adding Good Beam to project.", ex)
@@ -343,6 +364,8 @@ class RtiSqliteProjects:
                                      ens.GoodEarth.num_elements,
                                      ens.GoodEarth.element_multiplier,
                                      ens_idx,
+                                     bin_size,
+                                     blank,
                                      bad_val=0)
             except Exception as ex:
                 logging.error("Error adding Good Earth to project.", ex)
@@ -931,7 +954,7 @@ class RtiSqliteProjects:
 
         return ens_idx
 
-    def add_dataset(self, table, data, num_elements, element_multiplier, ens_idx, bad_val=Ensemble.Ensemble.BadVelocity):
+    def add_dataset(self, table, data, num_elements, element_multiplier, ens_idx, bin_size, blank, bad_val=Ensemble.Ensemble.BadVelocity):
         """
         Add a dataset to the database.  Give the table name, data, number of beams and bins and the ensemble index.
         :param table: Table name as a string.
@@ -946,25 +969,39 @@ class RtiSqliteProjects:
         if element_multiplier == 1:
             for bin_num in range(num_elements):
                 val0 = data[bin_num][0]
+
+                # If values are given, calculate bin depth
+                bin_depth = bin_num
+                if blank and bin_size:
+                    bin_depth = blank + (bin_size * bin_num)
+
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
                         "bin, " \
+                        "binDepth, " \
                         "beam0) " \
-                        "VALUES ( ?, ?, ?);".format(table)
-                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0))
+                        "VALUES ( ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0))
 
         # 2 Beam data
         elif element_multiplier == 2:
             for bin_num in range(num_elements):
                 val0 = data[bin_num][0]
                 val1 = data[bin_num][1]
+
+                # If values are given, calculate bin depth
+                bin_depth = bin_num
+                if blank and bin_size:
+                    bin_depth = blank + (bin_size * bin_num)
+
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
                         "bin, " \
+                        "binDepth, " \
                         "beam0, " \
                         "beam1) " \
-                        "VALUES ( ?, ?, ?, ?);".format(table)
-                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1))
+                        "VALUES ( ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0, val1))
 
         # 3 Beam data
         elif element_multiplier == 3:
@@ -972,14 +1009,21 @@ class RtiSqliteProjects:
                 val0 = data[bin_num][0]
                 val1 = data[bin_num][1]
                 val2 = data[bin_num][2]
+
+                # If values are given, calculate bin depth
+                bin_depth = bin_num
+                if blank and bin_size:
+                    bin_depth = blank + (bin_size * bin_num)
+
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
                         "bin, " \
+                        "binDepth, " \
                         "beam0, " \
                         "beam1, " \
                         "beam2) " \
-                        "VALUES ( ?, ?, ?, ?, ?);".format(table)
-                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1, val2))
+                        "VALUES ( ?, ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0, val1, val2))
 
         # 4 Beam data
         elif element_multiplier == 4:
@@ -988,17 +1032,24 @@ class RtiSqliteProjects:
                 val1 = data[bin_num][1]
                 val2 = data[bin_num][2]
                 val3 = data[bin_num][3]
+
+                # If values are given, calculate bin depth
+                bin_depth = bin_num
+                if blank and bin_size:
+                    bin_depth = blank + (bin_size * bin_num)
+
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
                         "bin, " \
+                        "binDepth, " \
                         "beam0, " \
                         "beam1, " \
                         "beam2, " \
                         "beam3) " \
-                        "VALUES ( ?, ?, ?, ?, ?, ?);".format(table)
-                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, val0, val1, val2, val3))
+                        "VALUES ( ?, ?, ?, ?, ?, ?, ?);".format(table)
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0, val1, val2, val3))
 
-    def add_mag_dir(self, ens, ens_idx):
+    def add_mag_dir(self, ens, ens_idx, bin_size, blank):
         if ens.IsEarthVelocity and ens.IsBottomTrack and ens.EarthVelocity.num_elements >= 3:
 
             # Create a temp to hold to original vectors before ship speed removed
@@ -1015,6 +1066,11 @@ class RtiSqliteProjects:
             ens.EarthVelocity.remove_vessel_speed(bt_east=bt_east, bt_north=bt_north, bt_vert=bt_vert)
 
             for bin_num in range(ens.EarthVelocity.num_elements):
+                # If values are given, calculate bin depth
+                bin_depth = bin_num
+                if blank and bin_size:
+                    bin_depth = blank + (bin_size * bin_num)
+
                 raw_mag = raw_mags[bin_num]
                 raw_dir = raw_dirs[bin_num]
                 removed_mag = ens.EarthVelocity.Magnitude[bin_num]
@@ -1022,12 +1078,13 @@ class RtiSqliteProjects:
                 query = "INSERT INTO {0} (" \
                         "ensIndex, " \
                         "bin, " \
+                        "binDepth, " \
                         "rawMag, " \
                         "rawDir, " \
                         "mag, " \
                         "dir) " \
-                        "VALUES ( ?, ?, ?, ?, ?, ?);".format("earthMagDir")
-                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, raw_mag, raw_dir, removed_mag, removed_dir))
+                        "VALUES ( ?, ?, ?, ?, ?, ?, ?);".format("earthMagDir")
+                self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, raw_mag, raw_dir, removed_mag, removed_dir))
 
     def create_tables(self):
         logging.debug("Creating Tables in Database")
@@ -1243,6 +1300,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 real, ' \
                 'beam1 real, ' \
                 'beam2 real, ' \
@@ -1255,6 +1313,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 real, ' \
                 'beam1 real, ' \
                 'beam2 real, ' \
@@ -1267,6 +1326,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 real, ' \
                 'beam1 real, ' \
                 'beam2 real, ' \
@@ -1279,6 +1339,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 real, ' \
                 'beam1 real, ' \
                 'beam2 real, ' \
@@ -1291,6 +1352,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 real, ' \
                 'beam1 real, ' \
                 'beam2 real, ' \
@@ -1303,6 +1365,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 integer, ' \
                 'beam1 integer, ' \
                 'beam2 integer, ' \
@@ -1315,6 +1378,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'beam0 integer, ' \
                 'beam1 integer, ' \
                 'beam2 integer, ' \
@@ -1327,6 +1391,7 @@ class RtiSqliteProjects:
                 'ensIndex integer NOT NULL, ' \
                 'meta json,' \
                 'bin integer NOT NULL, ' \
+                'binDepth real, ' \
                 'mag real, ' \
                 'dir real, ' \
                 'rawMag real, ' \
