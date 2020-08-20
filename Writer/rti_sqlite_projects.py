@@ -649,9 +649,7 @@ class RtiSqliteProjects:
                 '{14}, ' \
                 'vesselSpeed, ' \
                 'vesselDirection, ' \
-                'avgRange, ' \
-                'created, ' \
-                "modified)" \
+                'avgRange)' \
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?," \
                 "{15}," \
                 "{16}," \
