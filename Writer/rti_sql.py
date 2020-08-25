@@ -177,9 +177,9 @@ class RtiSQL:
         try:
             # Get all the ensembles for the project
             ens_query = 'SELECT ensembles.dateTime, ensembles.subsystemCode, ensembles.SubsystemConfig, ' \
-                        'WpMagDir.bin, ensembles.rangeFirstBin, ensembles.binSize, ensembles.isUpwardLooking, WpMagDir.mag ' \
+                        'earthMagDir.bin, ensembles.rangeFirstBin, ensembles.binSize, ensembles.isUpwardLooking, earthMagDir.mag ' \
                         'FROM ensembles ' \
-                        'INNER JOIN WpMagDir ON ensembles.id = WpMagDir.ensindex ' \
+                        'INNER JOIN earthMagDir ON ensembles.id = earthMagDir.ensindex ' \
                         'WHERE ensembles.project_id = %s ' \
                         '{} {}' \
                         'ORDER BY ensembles.dateTime ASC;'.format(ss_code_str, ss_config_str)
