@@ -853,11 +853,11 @@ class Ensemble:
 
         # Number of bytes in the data type
         datatype_size = 4
-        if ds_type is 50:      # Byte Datatype
+        if ds_type == 50:      # Byte Datatype
             datatype_size = 1
-        elif ds_type is 20:    # Int Datatype
+        elif ds_type == 20:    # Int Datatype
             datatype_size = 4
-        elif ds_type is 10:    # Float Datatype
+        elif ds_type == 10:    # Float Datatype
             datatype_size = 4
 
         return ((num_elements * element_multipler) * datatype_size) + Ensemble.GetBaseDataSize(name_len)
