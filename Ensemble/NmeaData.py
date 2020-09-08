@@ -1,6 +1,7 @@
 import pynmea2
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+from pygeodesy import ellipsoidalVincenty
 from decimal import *
 
 
@@ -136,6 +137,31 @@ class NmeaData:
 
         return str_result
 
+    def get_new_position(self, distance: float, bearing: float):
+        """
+        This function is typically used to create a ship track plot with a vector to represent the
+        water current.  The distance will be the magnitude of the water currents, the bearing will be the
+        direction of the water currents.  This will allow you to plot the LatLon and also a vector off this
+        LatLon point.
+        :param distance: Distance (magnitude)
+        :param bearing: Direction to travel
+        :return The new position based on the input and current position. (lat, lon)
+        """
+        # Choose a ellipsoid
+        LatLon = ellipsoidalVincenty.LatLon
+
+        # Verify we have a latitude and longitude value
+        if self.latitude and self.longitude:
+            # Set the current location
+            curr_loc = LatLon(self.latitude, self.longitude)
+
+            # Get the new position based on distance and bearing
+            new_loc = curr_loc.destination(distance=distance, bearing=bearing)
+
+            # Return lat, lon
+            return new_loc.lat, new_loc.lon
+
+        return 0.0, 0.0
 
 
 

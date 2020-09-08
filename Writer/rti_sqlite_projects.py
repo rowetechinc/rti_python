@@ -408,6 +408,12 @@ class RtiSqliteProjects:
         if not ens.IsEnsembleData or not ens.IsAncillaryData or not ens.IsSystemSetup:
             return
 
+        # Get the average magnitude and direction
+        avg_mag = 0.0
+        avg_dir = 0.0
+        if ens.IsEarthVelocity:
+            avg_mag, avg_dir = ens.EarthVelocity.average_mag_dir()
+
         # Add line for each dataset type
         ens_query = "INSERT INTO ensembles (" \
                     "ensnum, " \
@@ -459,10 +465,12 @@ class RtiSqliteProjects:
                     'WpLagLength, ' \
                     'WpTransmitBandwidth, ' \
                     'WpReceiveBandwidth, ' \
+                    'AvgMagnitude, ' \
+                    'AvgDirection, ' \
                     'burstNum, ' \
                     'isUpwardLooking, ' \
                     'project_id)' \
-                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
+                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
 
         self.batch_sql.cursor.execute(ens_query, (ens.EnsembleData.EnsembleNumber,
                                                   ens.EnsembleData.NumBins,
@@ -513,6 +521,8 @@ class RtiSqliteProjects:
                                                   ens.SystemSetup.WpLagLength,
                                                   ens.SystemSetup.WpTransmitBandwidth,
                                                   ens.SystemSetup.WpReceiveBandwidth,
+                                                  avg_mag,
+                                                  avg_dir,
                                                   ens.AncillaryData.is_upward_facing(),
                                                   burst_num,
                                                   self.batch_prj_id[0][0]))
@@ -1168,6 +1178,8 @@ class RtiSqliteProjects:
                             'WpLagLength real, '
                             'WpTransmitBandwidth real, '
                             'WpReceiveBandwidth real, '
+                            'AvgMagnitude real,'
+                            'AvgDirection real,'
                             'burstNum integer, '
                             'isUpwardLooking boolean, '
                             'project_id integer, '

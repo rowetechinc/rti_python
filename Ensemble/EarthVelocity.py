@@ -92,7 +92,7 @@ class EarthVelocity:
         Generate the average Magnitude and direction for the entire ensemble.
         Assume the ship speed has already been removed.
         This will also filter for all bad velocities when taking the average.
-        :return: [Avg_MAG, Avg_DIR] Average Magnitude and Direction
+        :return: [Avg_MAG, Avg_DIR] Average Magnitude and Direction.  None if no value can be calculated
         """
         # Get the average magnitude for all the bins
         # Ignore bad velocity
@@ -104,6 +104,12 @@ class EarthVelocity:
         dir_no_bad_vel = np.array(self.Direction)                               # Convert to NP Array
         dir_no_bad_vel[dir_no_bad_vel >= Ensemble.BadVelocity] = np.nan         # Replace bad velocity with Nan
         avg_dir = np.nanmean(dir_no_bad_vel)                                    # Take average
+
+        # Return None if the result is NaN
+        if np.isnan(avg_mag):
+            avg_mag = None
+        if np.isnan(avg_dir):
+            avg_dir = None
 
         # Return Average Magnitude, Direction
         return avg_mag, avg_dir

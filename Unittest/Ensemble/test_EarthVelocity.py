@@ -3,6 +3,7 @@ import datetime
 import re
 from rti_python.Ensemble.Ensemble import Ensemble
 from rti_python.Ensemble.EarthVelocity import EarthVelocity
+import numpy as np
 
 
 def test_generate_header():
@@ -354,3 +355,46 @@ def test_encode_csv_vector_no_gen():
             assert True
         else:
             assert False
+
+def test_avg_mag_dir():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    vel.Magnitude = [5.0, 5.0, 5.0, 5.0]
+    vel.Direction = [1.2, 1.2, 1.2, 1.2]
+
+    avg_mag, avg_dir = vel.average_mag_dir()
+
+    assert avg_mag == pytest.approx(5, 0.001)
+    assert avg_dir == pytest.approx(1.2, 0.001)
+
+
+def test_avg_mag_dir_nan():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    vel.Magnitude = [5.0, 5.0, 5.0, 5.0, np.NaN]
+    vel.Direction = [1.2, 1.2, 1.2, 1.2, np.NaN]
+
+    avg_mag, avg_dir = vel.average_mag_dir()
+
+    assert avg_mag == pytest.approx(5, 0.001)
+    assert avg_dir == pytest.approx(1.2, 0.001)
+
+def test_avg_mag_dir_nan():
+    num_bins = 30
+    num_beams = 4
+
+    vel = EarthVelocity(num_bins, num_beams)
+
+    vel.Magnitude = [np.NaN, np.NaN]
+    vel.Direction = [np.NaN, np.NaN]
+
+    avg_mag, avg_dir = vel.average_mag_dir()
+
+    assert avg_mag is None
+    assert avg_dir is None
