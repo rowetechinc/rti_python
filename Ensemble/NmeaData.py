@@ -147,13 +147,28 @@ class NmeaData:
         :param bearing: Direction to travel
         :return The new position based on the input and current position. (lat, lon)
         """
+        return NmeaData.get_new_lat_lon_position(self.latitude, self.longitude, distance, bearing)
+
+    @staticmethod
+    def get_new_lat_lon_position(latitude: float, longitude: float, distance: float, bearing: float):
+        """
+        This function is typically used to create a ship track plot with a vector to represent the
+        water current.  The distance will be the magnitude of the water currents, the bearing will be the
+        direction of the water currents.  This will allow you to plot the LatLon and also a vector off this
+        LatLon point.
+        :param latitude: Start latitude position
+        :param longitude: Start longitude position
+        :param distance: Distance (magnitude)
+        :param bearing: Direction to travel
+        :return The new position based on the input and current position. (lat, lon)
+        """
         # Choose a ellipsoid
         LatLon = ellipsoidalVincenty.LatLon
 
         # Verify we have a latitude and longitude value
-        if self.latitude and self.longitude:
+        if latitude and longitude:
             # Set the current location
-            curr_loc = LatLon(self.latitude, self.longitude)
+            curr_loc = LatLon(latitude, longitude)
 
             # Get the new position based on distance and bearing
             new_loc = curr_loc.destination(distance=distance, bearing=bearing)

@@ -102,7 +102,7 @@ class EarthVelocity:
 
         # Get the average direction
         dir_no_bad_vel = np.array(self.Direction)                               # Convert to NP Array
-        dir_no_bad_vel[dir_no_bad_vel  == Ensemble.BadVelocity] = np.nan         # Replace bad velocity with Nan
+        dir_no_bad_vel[dir_no_bad_vel == Ensemble.BadVelocity] = np.nan         # Replace bad velocity with Nan
         avg_dir = np.nanmean(dir_no_bad_vel)                                    # Take average
 
         # Return None if the result is NaN
