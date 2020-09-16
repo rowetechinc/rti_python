@@ -990,7 +990,7 @@ class RtiSqliteProjects:
                         "bin, " \
                         "binDepth, " \
                         "beam0) " \
-                        "VALUES ( ?, ?, ?, ?, ?);".format(table)
+                        "VALUES ( ?, ?, ?, ?);".format(table)
                 self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0))
 
         # 2 Beam data
