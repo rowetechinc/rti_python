@@ -1060,20 +1060,21 @@ class RtiSqliteProjects:
                 self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, val0, val1, val2, val3))
 
     def add_mag_dir(self, ens, ens_idx, bin_size, blank):
-        if ens.IsEarthVelocity and ens.IsBottomTrack and ens.EarthVelocity.num_elements >= 3:
+        if ens.IsEarthVelocity and ens.EarthVelocity.num_elements >= 3:
 
             # Create a temp to hold to original vectors before ship speed removed
             raw_mags = ens.EarthVelocity.Magnitude
             raw_dirs = ens.EarthVelocity.Direction
 
-            # Get the bottom track earth velocity to remove the ship speed
-            bt_east = ens.BottomTrack.EarthVelocity[0]
-            bt_north = ens.BottomTrack.EarthVelocity[1]
-            bt_vert = ens.BottomTrack.EarthVelocity[2]
+            if ens.IsBottomTrack:
+                # Get the bottom track earth velocity to remove the ship speed
+                bt_east = ens.BottomTrack.EarthVelocity[0]
+                bt_north = ens.BottomTrack.EarthVelocity[1]
+                bt_vert = ens.BottomTrack.EarthVelocity[2]
 
-            # Remove the ship speed
-            # This will also regenerate the velocity vectors
-            ens.EarthVelocity.remove_vessel_speed(bt_east=bt_east, bt_north=bt_north, bt_vert=bt_vert)
+                # Remove the ship speed
+                # This will also regenerate the velocity vectors
+                ens.EarthVelocity.remove_vessel_speed(bt_east=bt_east, bt_north=bt_north, bt_vert=bt_vert)
 
             for bin_num in range(ens.EarthVelocity.num_elements):
                 # If values are given, calculate bin depth
