@@ -5,6 +5,7 @@ from datetime import datetime, date, time
 from tqdm import tqdm
 from pathlib import Path, PurePath
 from rti_python.Utilities.read_binary_file import ReadBinaryFile
+from rti_python.River.Transect import Transect
 
 
 class RtiSqliteProjects:
@@ -14,6 +15,10 @@ class RtiSqliteProjects:
 
     Projects within the database are used to separate river transects, waves bursts
     or other data when collected at the same time.
+
+    Revision A: Initial Setup
+    Revision B: Added Transect Table
+
     """
 
     def __init__(self, file_path='C:\\rti_capture\\project.db'):
@@ -22,7 +27,7 @@ class RtiSqliteProjects:
         Maintain projects in a database.  The project will have ensembles associated with it.
         :param file_path: Is using SQLite, set the SQLite database file name.
         """
-        self.REVISION = "A"
+        self.REVISION = "B"
 
         # Construct connection string for SQLite
         self.sql_conn_string = file_path
@@ -219,7 +224,8 @@ class RtiSqliteProjects:
             logging.error("Unable to connect to the database")
 
         # Get the index for the given project name
-        self.batch_prj_id = self.batch_sql.query('SELECT id FROM projects WHERE name=\'{0}\''.format(prj_name))
+        prj_id = self.batch_sql.query('SELECT id FROM projects WHERE name=\'{0}\''.format(prj_name))
+        self.batch_prj_id = prj_id[0][0]
         logging.debug("Batch Project ID: " + str(self.batch_prj_id))
 
     def end_batch(self):
@@ -250,20 +256,32 @@ class RtiSqliteProjects:
                 logging.error("Error adding summary to project.", ex)
                 return
 
-    def add_ensemble(self, ens, burst_num=0):
+    def add_ensemble(self, ens, burst_num=0, is_batch_write=True):
         '''
         Add the ensemble to the database.
         :param ens: Ensemble to store data.
         :param burst_num: Burst number if a waves deployment.
-        :return:
+        :param is_batch_write: If batch writing is not setup, then set to false so a connection can be made.
+        :return: Ensemble index.
         '''
+        ens_idx = 0
+
+        # If you are not using batch writing for bulk writing,
+        # then setup a connection
+        if not self.batch_sql and not is_batch_write:
+            # Make connection
+            try:
+                self.batch_sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
+            except Exception as e:
+                logging.error("Unable to connect to the database")
+
         if self.batch_sql is not None:
             # Ensemble and Ancillary dataset
             try:
                 ens_idx = self.add_ensemble_ds(ens, burst_num)
             except Exception as ex:
                 logging.error("Error adding Ensemble, Ancillary and System Setup Dataset to project.", ex)
-                return
+                return ens_idx
 
             bin_size = None
             blank = None
@@ -398,12 +416,19 @@ class RtiSqliteProjects:
             except Exception as ex:
                 logging.error("Error adding NMEA to project.", ex)
 
+            # Return the index of the ensemble created
+            return ens_idx
+
         else:
             logging.error("Batch import not started.  Please call begin_batch() first.")
+            return ens_idx
 
     def add_ensemble_ds(self, ens, burst_num=0):
         """
         Add the Ensemble dataset to the database.
+        :param ens: Ensemble data.
+        :param burst_num: Burst Number if using bursting
+        :return Return the index to ensemble in the db.
         """
         if not ens.IsEnsembleData or not ens.IsAncillaryData or not ens.IsSystemSetup:
             return
@@ -525,7 +550,7 @@ class RtiSqliteProjects:
                                                   avg_dir,
                                                   ens.AncillaryData.is_upward_facing(),
                                                   burst_num,
-                                                  self.batch_prj_id[0][0]))
+                                                  self.batch_prj_id))
         ens_idx = self.batch_sql.cursor.lastrowid
         #print("rti_projects:add_ensemble_ds() Ens Index: " + str(ens_idx))
 
@@ -1097,6 +1122,21 @@ class RtiSqliteProjects:
                         "VALUES ( ?, ?, ?, ?, ?, ?, ?);".format("earthMagDir")
                 self.batch_sql.cursor.execute(query, (ens_idx, bin_num, bin_depth, raw_mag, raw_dir, removed_mag, removed_dir))
 
+    def add_transect(self, transect: Transect):
+        """
+        Add a transect into the db file.
+        :param transect: Transect information
+        """
+        try:
+            sql = RtiSQL(self.sql_conn_string, is_sqlite=self.is_sqlite)
+            # Postgres uses %s and sqlite uses ? in the query string
+            query = 'UPDATE projects SET summary = ?, modified = ? WHERE id=?;'
+            sql.execute(query, [json_summary, datetime.now(), project_id])
+
+        except Exception as ex:
+            logging.error("Error adding summary to project.", ex)
+            return
+
     def create_tables(self):
         logging.debug("Creating Tables in Database")
 
@@ -1434,6 +1474,47 @@ class RtiSqliteProjects:
                 'datetime timestamp);'
         sql.cursor.execute(query)
         logging.debug("NMEA table created")
+
+        # Project
+        sql.cursor.execute('CREATE TABLE IF NOT EXISTS transects (id ' + auto_increment_str + ' PRIMARY KEY,' 
+                            'siteName text, '
+                            'stationNumber text,'
+                            'location text, '
+                            'party text,'
+                            'boat text,'
+                            'measurementNumber text, '
+                            'comments text, '
+                            'xdcrDepth real, '
+                            'blankDepth real, '
+                            'salinity real, '
+                            'magDeclination real, '
+                            'compassOffset real, '
+                            'gpsXOffset real, '
+                            'gpsYOffset real, '
+                            'gpsConnected text, '
+                            'trackReference text, '
+                            'depthReference text, '
+                            'headingSource text, '
+                            'coordinateSystem text, '
+                            'startEdge text, '
+                            'leftEdgeDistance real, '
+                            'leftEdgeMethod text, '
+                            'rightEdgeDistance real, '
+                            'rightEdgeMethod text, '
+                            'autoEdgeProfile text, '
+                            'showEdgeDialog boolean, '
+                            'topFitType text, '
+                            'topUseCells text, '
+                            'bottomFitType text, '
+                            'bottomUseCells text, '
+                            'ratedDischarge real, '
+                            'measurementQuality text, '
+                            'previousSetTime timestamp, '
+                            'measurementMethod text, '
+                            'startEnsIndex integer, '
+                            'stopEnsIndex integer, '
+                            'created timestamp);')
+        logging.debug("Transect table created")
 
         sql.cursor.execute("PRAGMA synchronous = OFF")
 

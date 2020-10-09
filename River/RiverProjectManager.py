@@ -6,8 +6,6 @@ from rti_python.River.Transect import Transect
 from rti_python.River.RiverProjectMeta import RiverProjectMeta
 
 
-
-
 class RiverProjectManager:
 
     VERSION = 1.0
@@ -20,6 +18,7 @@ class RiverProjectManager:
         """
         # Set Config file
         self.config = rti_config
+        rti_config.init_river_project_config()
 
         # List of all the projects available
         self.projects = {}
@@ -36,6 +35,14 @@ class RiverProjectManager:
         to the list.
         :return:
         """
+        try:
+            # Create the folder path if it does not exist
+            if not os.path.exists(self.config.config['RIVER']['output_dir']):
+                os.mkdir(self.config.config['RIVER']['output_dir'], 0o666)
+                os.chmod(self.config.config['RIVER']['output_dir'], 0o666)
+        except OSError as error:
+            print("Error Creating output directory.", error)
+
         # Look inside the folder for any hdf5 files
         for file in os.listdir(self.config.config['RIVER']['output_dir']):
             if file.endswith(".hdf5"):

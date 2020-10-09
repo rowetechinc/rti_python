@@ -717,6 +717,25 @@ class Ensemble:
         return round(float(blank) + (float(bin_size) * float(bin_num)), 2)
 
     @staticmethod
+    def get_bin_depth_list(blank, bin_size, num_bins):
+        """
+        Give the depth of the given bin number.
+        Bin number is 0 based. So the first bin is bin_num=0
+
+        The depth is the center of the bin.
+
+        :param blank: Blanking distance of depth of the first bin in meters.
+        :param bin_size: Bin size in meters.
+        :param num_bins: Number of bins.
+        :return: List of depths for the each bin to use in plotting.
+        """
+        bin_list = []
+        for bin_num in range(num_bins):
+            bin_list.append(round(float(blank) + (float(bin_size) * float(bin_num)), 2))
+
+        return bin_list
+
+    @staticmethod
     def get_avg_range(range_array):
         """
         Average the array of values.  Do not include the

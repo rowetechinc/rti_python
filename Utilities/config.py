@@ -347,11 +347,17 @@ class RtiConfig:
         if 'RIVER' not in self.config:
             self.config['RIVER'] = {}
             self.config['RIVER']['output_dir'] = os.path.expanduser('~')
+            self.config['RIVER']['auto_save_raw'] = 'True'
             self.write()
 
         # Verify each value exist
         if not self.config.has_option('RIVER', 'output_dir'):
             self.config['RIVER']['output_dir'] = os.path.expanduser('~')
+            self.write()
+
+        # Verify each value exist
+        if not self.config.has_option('RIVER', 'auto_save_raw'):
+            self.config['RIVER']['auto_save_raw'] = 'True'
             self.write()
 
     @staticmethod
