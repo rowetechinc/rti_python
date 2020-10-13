@@ -88,3 +88,24 @@ def test_read_file():
     assert len(project_read.transects) == 1
     assert len(project_read.transects[0].Files) == 2
 
+
+def test_multiple_transects():
+    project_name = "TestProject2"
+    project = QRevRtiProject(project_name)
+    project.path = 'C:\\RTI_Capture\\test_qrev_project'
+
+    transect1 = QRevRtiTransect()
+    transect2 = QRevRtiTransect()
+    file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
+    file_name2 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0_1.pd0'
+    transect1.add_transect_file(file_name1)
+    transect2.add_transect_file(file_name2)
+    project.add_transect(transect1)
+    project.add_transect(transect2)
+
+    # Write the project file
+    project.write_json_file()
+
+    assert os.path.exists(project.path)
+    assert os.path.exists(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+

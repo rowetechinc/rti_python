@@ -380,7 +380,6 @@ class QRevRtiProject(object):
 
 
 """
-
 TRDI MMT File Format
 
 

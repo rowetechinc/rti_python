@@ -270,6 +270,7 @@ class QRevRtiTransect(object):
         self.active_config = json_dict['active_config']
         self.moving_bed_type = json_dict['moving_bed_type']
 
+
 """
 <Transect Type="5" Checked="1" Status="0" SelectAll="1" First="0" Last="0" Error="0">
     <File PathName="C:\RTI_Capture\imperial\Imperal Valley_20170816_095301\Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0" Type="6" TransectNmb="0">Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0</File>
