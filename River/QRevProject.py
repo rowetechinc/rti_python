@@ -1,10 +1,7 @@
-import h5py
 import datetime
 import os
 import json
 import logging
-from rti_python.Utilities.config import RtiConfig
-from rti_python.River.RiverProjectMeta import RiverProjectMeta
 from rti_python.River.QRevTransect import QRevRtiTransect
 
 
@@ -76,6 +73,9 @@ class QRevRtiProject(object):
 
         # Transects
         self.transects = []
+
+        # Moving Bed Transect Tests
+        self.mbt_transects = []
 
         # Discharge Summary
         self.summary = {
@@ -356,21 +356,27 @@ class QRevRtiProject(object):
         return file_path
 
     def read_json_file(self, file_path):
-        with open(file_path) as infile:
-            # Read in the JSON data
-            project_json = json.load(infile)
 
-            # Store the JSON data
-            self.project = project_json['RTI']['project']
-            self.site_info = project_json['RTI']['site_info']
-            self.summary = project_json['RTI']['summary']
-            self.qaqc = project_json['RTI']['qaqc']
+        if os.path.exists(file_path):
 
-            # Add all the transects
-            for json_transect in project_json['RTI']['transects']:
-                transect = QRevRtiTransect()
-                transect.from_json(json_transect)
-                self.transects.append(transect)
+            # Set just the folder path for the project
+            self.path = os.path.dirname(file_path)
+
+            with open(file_path) as infile:
+                # Read in the JSON data
+                project_json = json.load(infile)
+
+                # Store the JSON data
+                self.project = project_json['RTI']['project']
+                self.site_info = project_json['RTI']['site_info']
+                self.summary = project_json['RTI']['summary']
+                self.qaqc = project_json['RTI']['qaqc']
+
+                # Add all the transects
+                for json_transect in project_json['RTI']['transects']:
+                    transect = QRevRtiTransect()
+                    transect.from_json(json_transect)
+                    self.transects.append(transect)
 
 
 """
