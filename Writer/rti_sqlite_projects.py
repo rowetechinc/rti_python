@@ -21,7 +21,10 @@ class RtiSqliteProjects:
 
     """
 
-    def __init__(self, file_path='C:\\rti_capture\\project.db'):
+    # File extension to use with this file
+    FILE_EXT = '.rdb'
+
+    def __init__(self, file_path='C:\\rti_capture\\project.rdb'):
 
         """
         Maintain projects in a database.  The project will have ensembles associated with it.
@@ -32,24 +35,28 @@ class RtiSqliteProjects:
         # Construct connection string for SQLite
         self.sql_conn_string = file_path
         self.is_sqlite = True
+        self.file_path = file_path
 
         # Sql connection when doing batch inserts
         self.batch_sql = None
         self.batch_prj_id = 0
         self.batch_count = 0
 
+        self.pbar = None
+
     def load_files(self, file_paths):
         """
         Load the files given.  This will go through the list of files
         and add all the data to the sqlite database file.
-        :param file_paths: List of file paths.
+
+        :param file_paths: List of file paths to load.
         """
-        if self.file_paths:
+        if file_paths:
 
             # Create the tables in the database if they do not exist
             self.create_tables()
 
-            for file in self.file_paths:
+            for file in file_paths:
                 reader = ReadBinaryFile()
                 reader.ensemble_event += self.ens_handler               # Wait for ensembles
                 reader.file_progress += self.file_progress_handler      # Monitor file progress

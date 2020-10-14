@@ -379,7 +379,7 @@ class CalcDischarge:
                           beam_angle: float,
                           pulse_length: float,
                           pulse_width: float,
-                          top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,,
+                          top_pwr_func_exponent: float = ONE_SIXTH_POWER_LAW,
                           min_amp=MINIMUM_AMPLITUDE,
                           min_corr=MINIMUM_CORRELATION):
         """

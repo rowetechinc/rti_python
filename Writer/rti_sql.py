@@ -157,7 +157,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return pd.DataFrame()
 
         # Make a dataframe
         df = pd.DataFrame(vel_results)
@@ -195,7 +195,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return pd.DataFrame()
 
         # Make a dataframe
         df = pd.DataFrame(mag_results)
@@ -232,7 +232,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return pd.DataFrame()
 
         if vel_results:
             # Make a dataframe
@@ -277,7 +277,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return pd.DataFrame()
 
         # Make a dataframe
         df = pd.DataFrame(vel_results)
@@ -317,7 +317,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return {}
 
         return ens_data
 
@@ -352,17 +352,18 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return
+            return pd.DataFrame()
 
         return df
 
     def get_voltage_data(self, project_idx, ss_code=None, ss_config=None):
         """
         Get voltage ensemble data.
+
         :param project_idx: Project index.
         :param ss_code: Subsystem Code.  If not set, then all subsystem codes' data will be retrieved.
         :param ss_config: Subsystem Configuration Number: if not set, then all the configurations' data will be retrieved.
-        :return: Compass data in the project.
+        :return: Voltage data in the project.
         """
 
         # Set the Subsystem query
@@ -389,7 +390,7 @@ class RtiSQL:
 
         except Exception as e:
             print("Unable to run query", e)
-            return None
+            return pd.DataFrame()
 
         return df
 
