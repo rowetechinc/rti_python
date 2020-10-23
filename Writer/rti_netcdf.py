@@ -1,6 +1,7 @@
 from rti_python.Ensemble.Ensemble import Ensemble
 import logging
 from netCDF4 import Dataset
+from typing import List, Set, Dict, Tuple, Optional
 
 """
 Convert full profile Rowe Technologies Inc. ADCP data ensembles currents to a netCDF4 file.
@@ -14,11 +15,13 @@ class RtiNetcdf:
 
     def __init__(self, cdf_file_path: str):
         self.cdf_file_path = cdf_file_path
+        self.ensemble_count = 0
+        self.netcdf_index = 0
 
         # Create the CDF file
         self.cdf_file = self.setup_netcdf_file(self.cdf_file_path)
 
-    def setup_netcdf_file(self, fname, ens: Ensemble, gens, serial_number, time_type, delta_t):
+    def setup_netcdf_file(self, fname: str, ens: Ensemble, gens: Tuple, serial_number: str, time_type: str, delta_t: str):
         """
         create the netcdf output file, define dimensions and variables
         :param str fname: path and name of netcdf file
@@ -64,7 +67,10 @@ class RtiNetcdf:
 
         self.write_dict_to_cdf_attributes(cdf, ens_data['FLeader'], "TRDI_")
 
-        varobj = cdf.createVariable('Rec', 'u4', 'time', fill_value=intfill)
+        varobj = cdf.createVariable('Rec',              # Name
+                                    'u4',               # Unsigned 32bit integer
+                                    'time',             # Time Dimension created above
+                                    fill_value=intfill)
         varobj.units = "count"
         varobj.long_name = "Ensemble Number"
         # the ensemble number is a two byte LSB and a one byte MSB (for the rollover)
@@ -95,13 +101,22 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('cf_time', 'f8', 'time')
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-                                                                     ens_data['VLeader']['Month'],
-                                                                     ens_data['VLeader']['Day'],
-                                                                     ens_data['VLeader']['Hour'],
-                                                                     ens_data['VLeader']['Minute'],
-                                                                     ens_data['VLeader']['Second'] +
-                                                                     ens_data['VLeader']['Hundredths'] / 100)
+            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
+            #                                                         ens_data['VLeader']['Month'],
+            #                                                         ens_data['VLeader']['Day'],
+            #                                                         ens_data['VLeader']['Hour'],
+            #                                                         ens_data['VLeader']['Minute'],
+            #                                                         ens_data['VLeader']['Second'] +
+            #                                                         ens_data['VLeader']['Hundredths'] / 100)
+
+            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
+                                                                     ens.EnsembleData.Month,
+                                                                     ens.EnsembleData.Day,
+                                                                     ens.EnsembleData.Hour,
+                                                                     ens.EnsembleData.Minute,
+                                                                     ens.EnsembleData.Second +
+                                                                     ens.EnsembleData.HSec / 100)
+
             varobj.standard_name = "time"
             varobj.axis = "T"
         elif time_type == "CF_with_EPIC":
@@ -110,19 +125,37 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('time', 'f8', ('time',))
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-                                                                     ens_data['VLeader']['Month'],
-                                                                     ens_data['VLeader']['Day'],
-                                                                     ens_data['VLeader']['Hour'],
-                                                                     ens_data['VLeader']['Minute'],
-                                                                     ens_data['VLeader']['Second'] +
-                                                                     ens_data['VLeader']['Hundredths'] / 100)
+            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
+            #                                                         ens_data['VLeader']['Month'],
+            #                                                         ens_data['VLeader']['Day'],
+            #                                                         ens_data['VLeader']['Hour'],
+            #                                                         ens_data['VLeader']['Minute'],
+            #                                                         ens_data['VLeader']['Second'] +
+            #                                                         ens_data['VLeader']['Hundredths'] / 100)
+
+            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
+                                                                     ens.EnsembleData.Month,
+                                                                     ens.EnsembleData.Day,
+                                                                     ens.EnsembleData.Hour,
+                                                                     ens.EnsembleData.Minute,
+                                                                     ens.EnsembleData.Second +
+                                                                     ens.EnsembleData.HSec / 100)
+
+            #cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
+            #ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
+            #ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
+            #ens_data['VLeader']['Minute'],
+            #ens_data['VLeader']['Second']
+            #+ ens_data['VLeader']['Hundredths'] / 100)
+
             cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
-            ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
-            ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
-            ens_data['VLeader']['Minute'],
-            ens_data['VLeader']['Second']
-            + ens_data['VLeader']['Hundredths'] / 100)
+                ens.EnsembleData.Year,
+                ens.EnsembleData.Month,
+                ens.EnsembleData.Day,
+                ens.EnsembleData.Hour,
+                ens.EnsembleData.Minute,
+                ens.EnsembleData.Second + ens.EnsembleData.HSec / 100)
+
             varobj.standard_name = "time"
             varobj.axis = "T"
             varobj.type = "UNEVEN"
@@ -159,19 +192,34 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('time', 'f8', ('time',))
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-                                                                     ens_data['VLeader']['Month'],
-                                                                     ens_data['VLeader']['Day'],
-                                                                     ens_data['VLeader']['Hour'],
-                                                                     ens_data['VLeader']['Minute'],
-                                                                     ens_data['VLeader']['Second'] +
-                                                                     ens_data['VLeader']['Hundredths'] / 100)
+            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
+            #                                                         ens_data['VLeader']['Month'],
+            #                                                         ens_data['VLeader']['Day'],
+            #                                                         ens_data['VLeader']['Hour'],
+            #                                                         ens_data['VLeader']['Minute'],
+            #                                                         ens_data['VLeader']['Second'] +
+            #                                                         ens_data['VLeader']['Hundredths'] / 100)
+            varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
+                                                                     ens.EnsembleData.Month,
+                                                                     ens.EnsembleData.Day,
+                                                                     ens.EnsembleData.Hour,
+                                                                     ens.EnsembleData.Minute,
+                                                                     ens.EnsembleData.Second + ens.EnsembleData.HSec / 100)
+
+
+            #cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
+            #ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
+            #ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
+            #ens_data['VLeader']['Minute'],
+            #ens_data['VLeader']['Second']
+            #+ ens_data['VLeader']['Hundredths'] / 100)
             cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
-            ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
-            ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
-            ens_data['VLeader']['Minute'],
-            ens_data['VLeader']['Second']
-            + ens_data['VLeader']['Hundredths'] / 100)
+                ens.EnsembleData.Year,
+                ens.EnsembleData.Month,
+                ens.EnsembleData.Day,
+                ens.EnsembleData.Hour,
+                ens.EnsembleData.Minute,
+                ens.EnsembleData.Second + ens.EnsembleData.HSec / 100)
             varobj.standard_name = "time"
             varobj.axis = "T"
             varobj.type = "UNEVEN"
@@ -185,18 +233,22 @@ class RtiNetcdf:
         # varobj.valid_range = [0 0]
         varobj.NOTE = "distance is calculated from center of bin 1 and bin size"
         bindist = []
-        for idx in range(ens_data['FLeader']['Number_of_Cells']):
-            bindist.append(idx * (ens_data['FLeader']['Depth_Cell_Length_cm'] / 100) +
-                           ens_data['FLeader']['Bin_1_distance_cm'] / 100)
+        #for idx in range(ens_data['FLeader']['Number_of_Cells']):
+        #    bindist.append(idx * (ens_data['FLeader']['Depth_Cell_Length_cm'] / 100) + ens_data['FLeader']['Bin_1_distance_cm'] / 100)
+        for idx in range(ens.EnsembleData.NumBins):
+            bindist.append(idx * (ens.AncillaryData.BinSize) + ens.AncillaryData.FirstBinRange)
         varobj[:] = bindist[:]
 
         varobj = cdf.createVariable('depth', 'f4', ('depth',))  # no fill for ordinates
         varobj.units = "m"
         varobj.long_name = "distance from transducer, depth placeholder"
-        varobj.center_first_bin_m = ens_data['FLeader']['Bin_1_distance_cm'] / 100
+        #varobj.center_first_bin_m = ens_data['FLeader']['Bin_1_distance_cm'] / 100
+        varobj.center_first_bin_m = ens.AncillaryData.FirstBinRange
         varobj.blanking_distance_m = ens_data['FLeader']['Blank_after_Transmit_cm'] / 100
-        varobj.bin_size_m = ens_data['FLeader']['Depth_Cell_Length_cm'] / 100
-        varobj.bin_count = ens_data['FLeader']['Number_of_Cells']
+        #varobj.bin_size_m = ens_data['FLeader']['Depth_Cell_Length_cm'] / 100
+        varobj.bin_size_m = ens.AncillaryData.BinSize
+        #varobj.bin_count = ens_data['FLeader']['Number_of_Cells']
+        varobj.bin_count = ens.EnsembleData.NumBins
         varobj[:] = bindist[:]
 
         varobj = cdf.createVariable('sv', 'f4', ('time',), fill_value=floatfill)
@@ -528,6 +580,213 @@ class RtiNetcdf:
 
         return cdf, cf_units
 
+
+    def add_ens_to_netcdf(self, ens: Ensemble, ens_error):
+
+        nslantbeams = ens.EnsembleData.NumBeams
+
+        if (ens_error is None) and (self.ensemble_count >= ens2process[0]):
+            # write to netCDF
+            if self.netcdf_index == 0:
+                print('--- first ensembles read at %s and TRDI #%d' % (
+                    ens_data['VLeader']['timestr'], ens.EnsembleData.EnsembleNumber))
+
+            varobj = self.cdf_file.variables['Rec']
+            try:
+                varobj[self.netcdf_index] = ens.EnsembleData.EnsembleNumber
+            except:
+                # here we have reached the end of the netCDF file
+                self.cdf_file.close()
+                return
+
+            # time calculations done when vleader is read
+            if time_type == 'EPIC_with_CF':
+                varobj = self.cdf_file.variables['time']
+                varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time']
+                varobj = self.cdf_file.variables['time2']
+                varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time2']
+                varobj = self.cdf_file.variables['cf_time']
+                elapsed = ens_data['VLeader']['dtobj']-t0  # timedelta
+                elapsed_sec = elapsed.total_seconds()
+                varobj[self.netcdf_index] = elapsed_sec
+            elif time_type == 'CF_with_EPIC':
+                varobj = self.cdf_file.variables['time']
+                elapsed = ens_data['VLeader']['dtobj'] - t0  # timedelta
+                elapsed_sec = elapsed.total_seconds()
+                if elapsed_sec == 0:
+                    print('elapsed seconds from ensemble {} is {}'.format(self.ensemble_count, elapsed_sec))
+
+                varobj[self.netcdf_index] = elapsed_sec
+                t1, t2 = cftime2EPICtime(elapsed_sec, cf_units)
+                varobj = self.cdf_file.variables['EPIC_time']
+                varobj[self.netcdf_index] = t1
+                varobj = self.cdf_file.variables['EPIC_time2']
+                varobj[self.netcdf_index] = t2
+            elif time_type == 'EPIC':
+                varobj = self.cdf_file.variables['time']
+                varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time']
+                varobj = self.cdf_file.variables['time2']
+                varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time2']
+            else:  # only CF time, the default
+                varobj = self.cdf_file.variables['time']
+                elapsed = ens_data['VLeader']['dtobj']-t0  # timedelta
+                elapsed_sec = elapsed.total_seconds()
+                varobj[self.netcdf_index] = elapsed_sec
+
+            # diagnostic
+            if (ens2process[1]-ens2process[0]-1) < 100:
+                print('%d %15.8f %s' % (ens.EnsembleData.EnsembleNumber,
+                                        ens_data['VLeader']['julian_day_from_julian'],
+                                        ens_data['VLeader']['timestr']))
+
+            varobj = self.cdf_file.variables['sv']
+            varobj[self.netcdf_index] = ens.AncillaryData.SpeedOfSound
+
+            for i in range(nslantbeams):
+                varname = "vel%d" % (i+1)
+                varobj = self.cdf_file.variables[varname]
+                varobj[self.netcdf_index, :] = ens_data['VData'][i, :]
+
+            for i in range(nslantbeams):
+                varname = "cor%d" % (i+1)
+                varobj = self.cdf_file.variables[varname]
+                varobj[self.netcdf_index, :] = ens_data['CData'][i, :]
+
+            for i in range(nslantbeams):
+                varname = "att%d" % (i+1)
+                varobj = self.cdf_file.variables[varname]
+                varobj[self.netcdf_index, :] = ens_data['IData'][i, :]
+
+            if 'GData' in ens_data:
+                for i in range(nslantbeams):
+                    varname = "PGd%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index, :] = ens_data['GData'][i, :]
+
+            varobj = self.cdf_file.variables['Rec']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Ensemble_Number']
+            varobj = self.cdf_file.variables['Hdg']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Heading']
+            varobj = self.cdf_file.variables['Ptch']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Pitch']
+            varobj = self.cdf_file.variables['Roll']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Roll']
+            varobj = self.cdf_file.variables['HdgSTD']
+            varobj[self.netcdf_index] = ens_data['VLeader']['H/Hdg_Std_Dev']
+            varobj = self.cdf_file.variables['PtchSTD']
+            varobj[self.netcdf_index] = ens_data['VLeader']['P/Pitch_Std_Dev']
+            varobj = self.cdf_file.variables['RollSTD']
+            varobj[self.netcdf_index] = ens_data['VLeader']['R/Roll_Std_Dev']
+            varobj = self.cdf_file.variables['Tx']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Temperature']
+            varobj = self.cdf_file.variables['S']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Salinity']
+            varobj = self.cdf_file.variables['xmitc']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Xmit_Current']
+            varobj = self.cdf_file.variables['xmitv']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Xmit_Voltage']
+            varobj = self.cdf_file.variables['Ambient_Temp']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Ambient_Temp']
+            varobj = self.cdf_file.variables['Pressure+']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(+)']
+            varobj = self.cdf_file.variables['Pressure-']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(-)']
+            varobj = self.cdf_file.variables['Attitude_Temp']
+            varobj[self.netcdf_index] = ens_data['VLeader']['Attitude_Temp']
+            varobj = self.cdf_file.variables['EWD1']
+            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_LSB'])
+            varobj = self.cdf_file.variables['EWD2']
+            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_MSB'])
+            varobj = self.cdf_file.variables['EWD3']
+            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_LSB'])
+            varobj = self.cdf_file.variables['EWD4']
+            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_MSB'])
+
+            if ens_data['FLeader']['Depth_sensor_available'] == 'Yes':
+                varobj = self.cdf_file.variables['Pressure']
+                varobj[netcdf_index] = ens_data['VLeader']['Pressure_deca-pascals']
+                varobj = self.cdf_file.variables['PressVar']
+                varobj[netcdf_index] = ens_data['VLeader']['Pressure_variance_deca-pascals']
+
+            # add bottom track data write to cdf here
+            if 'BTData' in ens_data:
+                if ens_data['BTData']['Mode'] == 0:
+                    varobj = self.cdf_file.variables['BTRmin']
+                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Min']
+                    varobj = self.cdf_file.variables['BTRnear']
+                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Near']
+                    varobj = self.cdf_file.variables['BTRfar']
+                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Far']
+
+                varnames = ('BTWe', 'BTWu', 'BTWv', 'BTWd')
+                for i in range(nslantbeams):
+                    varname = "BTR%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Range'][i]
+                    if ens_data['FLeader']['Coord_Transform'] == 'EARTH':
+                        varobj = self.cdf_file.variables[varnames[i]]
+                    else:
+                        varname = "BTV%d" % (i+1)
+                        varobj = self.cdf_file.variables[varname]
+
+                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Vel'][i]
+                    varname = "BTc%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Corr'][i]
+                    varname = "BTe%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Amp'][i]
+                    varname = "BTp%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens_data['BTData']['BT_PGd'][i]
+                    varname = "BTRSSI%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens_data['BTData']['RSSI_Amp'][i]
+
+                    if ens_data['BTData']['Mode'] == 0:
+                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Vel'][i]
+                        varname = "BTRc%d" % (i+1)
+                        varobj = self.cdf_file.variables[varname]
+                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Corr'][i]
+                        varname = "BTRi%d" % (i+1)
+                        varobj = self.cdf_file.variables[varname]
+                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Amp'][i]
+                        varname = "BTRp%d" % (i+1)
+                        varobj = self.cdf_file.variables[varname]
+                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_PGd'][i]
+
+            if 'VBeamVData' in ens_data:
+                if ens_data['VBeamLeader']['Vertical_Depth_Cells'] == ens_data['FLeader']['Number_of_Cells']:
+                    varobj = self.cdf_file.variables['vel5']
+                    varobj[self.netcdf_index, :] = ens_data['VBeamVData']
+                    varobj = self.cdf_file.variables['cor5']
+                    varobj[self.netcdf_index, :] = ens_data['VBeamCData']
+                    varobj = self.cdf_file.variables['att5']
+                    varobj[self.netcdf_index, :] = ens_data['VBeamIData']
+                    if 'VBeamGData' in ens_data:
+                        varobj = self.cdf_file.variables['PGd5']
+                        varobj[self.netcdf_index, :] = ens_data['VBeamGData']
+
+            if 'WaveParams' in ens_data:
+                # we can get away with this because the key names and var names are the same
+                for key in ens_data['WaveParams']:
+                    varobj = self.cdf_file.variables[key]
+                    varobj[self.netcdf_index] = ens_data['WaveParams'][key]
+
+            if 'WaveSeaSwell' in ens_data:
+                # we can get away with this because the key names and var names are the same
+                for key in ens_data['WaveSeaSwell']:
+                    varobj = self.cdf_file.variables[key]
+                    varobj[self.netcdf_index] = ens_data['WaveSeaSwell'][key]
+
+            self.netcdf_index += 1
+
+        elif ens_error == 'no ID':
+            print('Stopping because ID tracking lost')
+            self.cdf_file.close()
+
+        self.ensemble_count += 1
+
     def to_netcdf(ens_file: str, cdf_file: str, good_ens: [], serial_number: str, time_type: str, delta_t: int ):
         """
         convert from binary pd0 format to netcdf
@@ -540,9 +799,6 @@ class RtiNetcdf:
         :param str delta_t: time between ensembles, in seconds.  15 min profiles would be 900
         :return: count of ensembles read, ending index of netCDF file, error type if file could not be read
         """
-
-
-
 
     def to_netcdf(pd0File, cdfFile, good_ens, serial_number, time_type, delta_t):
         """
