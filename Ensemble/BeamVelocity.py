@@ -89,3 +89,34 @@ class BeamVelocity:
                 str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_BEAM_VEL, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
 
         return str_result
+
+    def pd0_mm_per_sec(self, pd0_beam_num: int):
+        """
+        Convert the Beam Velocity from m/s to mm/s.
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: A list of all the velocities for the given PD0 beam, converted to mm/s for the beam.  The beam will be based on reordering for PD0
+        :rtype: List or None if beam number is not correct.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.element_multiplier:
+            beam2 = [v[2] for v in self.Velocities]     # PD0 0 - RTB 2
+            return [v * 1000.0 for v in beam2]          # Convert to mm/s
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.element_multiplier:
+            beam3 = [v[3] for v in self.Velocities]     # PD0 1 - RTB 3
+            return [v * 1000.0 for v in beam3]          # Convert to mm/s
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.element_multiplier:
+            beam1 = [v[1] for v in self.Velocities]     # PD0 2 - RTB 1
+            return [v * 1000.0 for v in beam1]          # Convert to mm/s
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.element_multiplier:
+            beam0 = [v[0] for v in self.Velocities]     # PD0 3 - RTB 0
+            return [v * 1000.0 for v in beam0]          # Convert to mm/s
+
+        return None

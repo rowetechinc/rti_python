@@ -1,7 +1,8 @@
-from rti_python.Ensemble.Ensemble import Ensemble
 import logging
+import datetime
 from netCDF4 import Dataset
 from typing import List, Set, Dict, Tuple, Optional
+from rti_python.Ensemble.Ensemble import Ensemble
 
 """
 Convert full profile Rowe Technologies Inc. ADCP data ensembles currents to a netCDF4 file.
@@ -101,14 +102,6 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('cf_time', 'f8', 'time')
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-            #                                                         ens_data['VLeader']['Month'],
-            #                                                         ens_data['VLeader']['Day'],
-            #                                                         ens_data['VLeader']['Hour'],
-            #                                                         ens_data['VLeader']['Minute'],
-            #                                                         ens_data['VLeader']['Second'] +
-            #                                                         ens_data['VLeader']['Hundredths'] / 100)
-
             varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
                                                                      ens.EnsembleData.Month,
                                                                      ens.EnsembleData.Day,
@@ -125,14 +118,6 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('time', 'f8', ('time',))
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-            #                                                         ens_data['VLeader']['Month'],
-            #                                                         ens_data['VLeader']['Day'],
-            #                                                         ens_data['VLeader']['Hour'],
-            #                                                         ens_data['VLeader']['Minute'],
-            #                                                         ens_data['VLeader']['Second'] +
-            #                                                         ens_data['VLeader']['Hundredths'] / 100)
-
             varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
                                                                      ens.EnsembleData.Month,
                                                                      ens.EnsembleData.Day,
@@ -140,13 +125,6 @@ class RtiNetcdf:
                                                                      ens.EnsembleData.Minute,
                                                                      ens.EnsembleData.Second +
                                                                      ens.EnsembleData.HSec / 100)
-
-            #cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
-            #ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
-            #ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
-            #ens_data['VLeader']['Minute'],
-            #ens_data['VLeader']['Second']
-            #+ ens_data['VLeader']['Hundredths'] / 100)
 
             cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
                 ens.EnsembleData.Year,
@@ -192,13 +170,6 @@ class RtiNetcdf:
             # for ADCP fast sampled, single ping data, need millisecond resolution
             varobj = cdf.createVariable('time', 'f8', ('time',))
             # for cf convention, always assume UTC for now, and use the UNIX Epoch as the reference
-            #varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens_data['VLeader']['Year'],
-            #                                                         ens_data['VLeader']['Month'],
-            #                                                         ens_data['VLeader']['Day'],
-            #                                                         ens_data['VLeader']['Hour'],
-            #                                                         ens_data['VLeader']['Minute'],
-            #                                                         ens_data['VLeader']['Second'] +
-            #                                                         ens_data['VLeader']['Hundredths'] / 100)
             varobj.units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (ens.EnsembleData.Year,
                                                                      ens.EnsembleData.Month,
                                                                      ens.EnsembleData.Day,
@@ -206,13 +177,6 @@ class RtiNetcdf:
                                                                      ens.EnsembleData.Minute,
                                                                      ens.EnsembleData.Second + ens.EnsembleData.HSec / 100)
 
-
-            #cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
-            #ens_data['VLeader']['Year'], ens_data['VLeader']['Month'],
-            #ens_data['VLeader']['Day'], ens_data['VLeader']['Hour'],
-            #ens_data['VLeader']['Minute'],
-            #ens_data['VLeader']['Second']
-            #+ ens_data['VLeader']['Hundredths'] / 100)
             cf_units = "seconds since %d-%d-%d %d:%d:%f 0:00" % (
                 ens.EnsembleData.Year,
                 ens.EnsembleData.Month,
@@ -233,8 +197,6 @@ class RtiNetcdf:
         # varobj.valid_range = [0 0]
         varobj.NOTE = "distance is calculated from center of bin 1 and bin size"
         bindist = []
-        #for idx in range(ens_data['FLeader']['Number_of_Cells']):
-        #    bindist.append(idx * (ens_data['FLeader']['Depth_Cell_Length_cm'] / 100) + ens_data['FLeader']['Bin_1_distance_cm'] / 100)
         for idx in range(ens.EnsembleData.NumBins):
             bindist.append(idx * (ens.AncillaryData.BinSize) + ens.AncillaryData.FirstBinRange)
         varobj[:] = bindist[:]
@@ -242,12 +204,9 @@ class RtiNetcdf:
         varobj = cdf.createVariable('depth', 'f4', ('depth',))  # no fill for ordinates
         varobj.units = "m"
         varobj.long_name = "distance from transducer, depth placeholder"
-        #varobj.center_first_bin_m = ens_data['FLeader']['Bin_1_distance_cm'] / 100
         varobj.center_first_bin_m = ens.AncillaryData.FirstBinRange
-        varobj.blanking_distance_m = ens_data['FLeader']['Blank_after_Transmit_cm'] / 100
-        #varobj.bin_size_m = ens_data['FLeader']['Depth_Cell_Length_cm'] / 100
+        #varobj.blanking_distance_m = ens_data['FLeader']['Blank_after_Transmit_cm'] / 100
         varobj.bin_size_m = ens.AncillaryData.BinSize
-        #varobj.bin_count = ens_data['FLeader']['Number_of_Cells']
         varobj.bin_count = ens.EnsembleData.NumBins
         varobj[:] = bindist[:]
 
@@ -256,7 +215,7 @@ class RtiNetcdf:
         varobj.long_name = "sound velocity (m s-1)"
         # varobj.valid_range = [1400, 1600]
 
-        for i in range(4):
+        for i in range(ens.EnsembleData.NumBeams):
             varname = "vel%d" % (i + 1)
             varobj = cdf.createVariable(varname, 'f4', ('time', 'depth'), fill_value=floatfill)
             varobj.units = "mm s-1"
@@ -264,7 +223,7 @@ class RtiNetcdf:
             varobj.epic_code = 1277 + i
             # varobj.valid_range = [-32767, 32767]
 
-        for i in range(4):
+        for i in range(ens.EnsembleData.NumBeams):
             varname = "cor%d" % (i + 1)
             varobj = cdf.createVariable(varname, 'u2', ('time', 'depth'), fill_value=intfill)
             varobj.units = "counts"
@@ -272,7 +231,7 @@ class RtiNetcdf:
             varobj.epic_code = 1285 + i
             # varobj.valid_range = [0, 255]
 
-        for i in range(4):
+        for i in range(ens.EnsembleData.NumBeams):
             varname = "att%d" % (i + 1)
             varobj = cdf.createVariable(varname, 'u2', ('time', 'depth'), fill_value=intfill)
             varobj.units = "counts"
@@ -280,8 +239,8 @@ class RtiNetcdf:
             varobj.long_name = "ADCP attenuation of beam %d" % (i + 1)
             # varobj.valid_range = [0, 255]
 
-        if 'GData' in ens_data:
-            for i in range(4):
+        if ens.IsGoodBeam:
+            for i in range(ens.EnsembleData.NumBeams):
                 varname = "PGd%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time', 'depth'), fill_value=intfill)
                 varobj.units = "counts"
@@ -293,13 +252,13 @@ class RtiNetcdf:
         varobj.units = "hundredths of degrees"
         varobj.long_name = "INST Heading"
         varobj.epic_code = 1215
-        varobj.heading_alignment = ens_data['FLeader']['Heading_Alignment_Hundredths_of_Deg']
-        varobj.heading_bias = ens_data['FLeader']['Heading_Bias_Hundredths_of_Deg']
+        #varobj.heading_alignment = ens_data['FLeader']['Heading_Alignment_Hundredths_of_Deg']
+        #varobj.heading_bias = ens_data['FLeader']['Heading_Bias_Hundredths_of_Deg']
         # varobj.valid_range = [0, 36000]
-        if ens_data['FLeader']['Heading_Bias_Hundredths_of_Deg'] == 0:
-            varobj.NOTE_9 = "no heading bias was applied by EB during deployment or by wavesmon"
-        else:
-            varobj.NOTE_9 = "a heading bias was applied by EB during deployment or by wavesmon"
+        #if ens_data['FLeader']['Heading_Bias_Hundredths_of_Deg'] == 0:
+        #    varobj.NOTE_9 = "no heading bias was applied by EB during deployment or by wavesmon"
+        #else:
+        #    varobj.NOTE_9 = "a heading bias was applied by EB during deployment or by wavesmon"
 
         varobj = cdf.createVariable('Ptch', 'f4', ('time',), fill_value=floatfill)
         varobj.units = "hundredths of degrees"
@@ -361,13 +320,17 @@ class RtiNetcdf:
         varobj.units = "C"
         varobj.long_name = "Attitude_Temp"
 
-        for i in range(4):
-            varname = "EWD%d" % (i + 1)
-            varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
-            varobj.units = "binary flag"
-            varobj.long_name = "Error Status Word %d" % (i + 1)
+        varobj = cdf.createVariable('Status', 'i2', ('time',), fill_value=intfill)
+        varobj.units = "STATUS BITS"
+        varobj.long_name = "Status"
 
-        if ens_data['FLeader']['Depth_sensor_available'] == 'Yes':
+        #for i in range(4):
+        #    varname = "EWD%d" % (i + 1)
+        #    varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
+        #    varobj.units = "binary flag"
+        #    varobj.long_name = "Error Status Word %d" % (i + 1)
+
+        if ens.AncillaryData.Pressure > 0:
             varobj = cdf.createVariable('Pressure', 'f4', ('time',), fill_value=floatfill)
             varobj.units = "deca-pascals"
             varobj.long_name = "ADCP Transducer Pressure"
@@ -377,28 +340,27 @@ class RtiNetcdf:
             varobj.units = "deca-pascals"
             varobj.long_name = "ADCP Transducer Pressure Variance"
 
-        if 'BTData' in ens_data:
+        if ens.IsBottomTrack:
             # write globals attributable to BT setup
-            cdf.setncattr('TRDI_BT_pings_per_ensemble', ens_data['BTData']['Pings_per_ensemble'])
-            cdf.setncattr('TRDI_BT_reacquire_delay', ens_data['BTData']['delay_before_reacquire'])
-            cdf.setncattr('TRDI_BT_min_corr_mag', ens_data['BTData']['Corr_Mag_Min'])
-            cdf.setncattr('TRDI_BT_min_eval_mag', ens_data['BTData']['Eval_Amp_Min'])
-            cdf.setncattr('TRDI_BT_min_percent_good', ens_data['BTData']['PGd_Minimum'])
-            cdf.setncattr('TRDI_BT_mode', ens_data['BTData']['Mode'])
-            cdf.setncattr('TRDI_BT_max_err_vel', ens_data['BTData']['Err_Vel_Max'])
+            cdf.setncattr('TRDI_BT_pings_per_ensemble', ens.BottomTrack.ActualPingCount)
+            #cdf.setncattr('TRDI_BT_reacquire_delay', ens_data['BTData']['delay_before_reacquire'])
+            #cdf.setncattr('TRDI_BT_min_corr_mag', ens_data['BTData']['Corr_Mag_Min'])
+            #cdf.setncattr('TRDI_BT_min_eval_mag', ens_data['BTData']['Eval_Amp_Min'])
+            #cdf.setncattr('TRDI_BT_min_percent_good', ens_data['BTData']['PGd_Minimum'])
+            #cdf.setncattr('TRDI_BT_mode', ens_data['BTData']['Mode'])
+            #cdf.setncattr('TRDI_BT_max_err_vel', ens_data['BTData']['Err_Vel_Max'])
             # cdf.setncattr('TRDI_BT_max_tracking_depth',ens_data['BTData'][''])
             # cdf.setncattr('TRDI_BT_shallow_water_gain',ens_data['BTData'][''])
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varname = "BTR%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u8', ('time',), fill_value=intfill)
                 varobj.units = "cm"
                 varobj.long_name = "BT Range %d" % (i + 1)
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varnames = ('BTWe', 'BTWu', 'BTWv', 'BTWd')
-                longnames = (
-                'BT Error Velocity', 'BT Eastward Velocity', 'BT Northward Velocity', 'BT Vertical Velocity')
+                longnames = ('BT Error Velocity', 'BT Eastward Velocity', 'BT Northward Velocity', 'BT Vertical Velocity')
                 if ens_data['FLeader']['Coord_Transform'] == 'EARTH':
                     varobj = cdf.createVariable(varnames[i + 1], 'i2', ('time',), fill_value=intfill)
                     varobj.units = "mm s-1"
@@ -409,66 +371,66 @@ class RtiNetcdf:
                     varobj.units = "mm s-1"
                     varobj.long_name = "BT velocity, mm s-1 %d" % (i + 1)
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varname = "BTc%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
                 varobj.long_name = "BT correlation %d" % (i + 1)
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varname = "BTe%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
                 varobj.long_name = "BT evaluation amplitude %d" % (i + 1)
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varname = "BTp%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "percent"
                 varobj.long_name = "BT percent good %d" % (i + 1)
                 # varobj.valid_range = [0, 100]
 
-            for i in range(4):
+            for i in range(ens.BottomTrack.NumBeams):
                 varname = "BTRSSI%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
                 varobj.long_name = "BT Receiver Signal Strength Indicator %d" % (i + 1)
 
-            if ens_data['BTData']['Mode'] == 0:  # water reference layer was used
-                varobj = cdf.createVariable('BTRmin', 'f4', ('time',), fill_value=floatfill)
-                varobj.units = 'dm'
-                varobj.long_name = "BT Ref. min"
-                varobj = cdf.createVariable('BTRnear', 'f4', ('time',), fill_value=floatfill)
-                varobj.units = 'dm'
-                varobj.long_name = "BT Ref. near"
-                varobj = cdf.createVariable('BTRfar', 'f4', ('time',), fill_value=floatfill)
-                varobj.units = 'dm'
-                varobj.long_name = "BT Ref. far"
+            #if ens_data['BTData']['Mode'] == 0:  # water reference layer was used
+            #    varobj = cdf.createVariable('BTRmin', 'f4', ('time',), fill_value=floatfill)
+            #    varobj.units = 'dm'
+            #    varobj.long_name = "BT Ref. min"
+            #    varobj = cdf.createVariable('BTRnear', 'f4', ('time',), fill_value=floatfill)
+            #    varobj.units = 'dm'
+            #    varobj.long_name = "BT Ref. near"
+            #    varobj = cdf.createVariable('BTRfar', 'f4', ('time',), fill_value=floatfill)
+            #    varobj.units = 'dm'
+            #    varobj.long_name = "BT Ref. far"
 
-                for i in range(4):
-                    varname = "BTRv%d" % (i + 1)
-                    varobj = cdf.createVariable(varname, 'i2', ('time',), fill_value=intfill)
-                    varobj.units = "mm s-1"
-                    varobj.long_name = "BT Ref. velocity, mm s-1 %d" % (i + 1)
+            #    for i in range(4):
+            #        varname = "BTRv%d" % (i + 1)
+            #        varobj = cdf.createVariable(varname, 'i2', ('time',), fill_value=intfill)
+            #        varobj.units = "mm s-1"
+            #        varobj.long_name = "BT Ref. velocity, mm s-1 %d" % (i + 1)
 
-                for i in range(4):
-                    varname = "BTRc%d" % (i + 1)
-                    varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
-                    varobj.units = "counts"
-                    varobj.long_name = "BT Ref. correlation %d" % (i + 1)
+            #    for i in range(4):
+            #        varname = "BTRc%d" % (i + 1)
+            #        varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
+            #        varobj.units = "counts"
+            #        varobj.long_name = "BT Ref. correlation %d" % (i + 1)
 
-                for i in range(4):
-                    varname = "BTRi%d" % (i + 1)
-                    varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
-                    varobj.units = "counts"
-                    varobj.long_name = "BT Ref. intensity %d" % (i + 1)
+            #    for i in range(4):
+            #        varname = "BTRi%d" % (i + 1)
+            #        varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
+            #        varobj.units = "counts"
+            #        varobj.long_name = "BT Ref. intensity %d" % (i + 1)
 
-                for i in range(4):
-                    varname = "BTRp%d" % (i + 1)
-                    varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
-                    varobj.units = "percent"
-                    varobj.long_name = "BT Ref. percent good %d" % (i + 1)
-                    varobj.epic_code = 1269 + i
+            #    for i in range(4):
+            #        varname = "BTRp%d" % (i + 1)
+            #        varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
+            #        varobj.units = "percent"
+            #        varobj.long_name = "BT Ref. percent good %d" % (i + 1)
+            #        varobj.epic_code = 1269 + i
 
         if 'VPingSetup' in ens_data:
             self.write_dict_to_cdf_attributes(cdf, ens_data['VPingSetup'], "TRDI_VBeam_")
@@ -580,8 +542,20 @@ class RtiNetcdf:
 
         return cdf, cf_units
 
+    def add_ens_to_netcdf(self, ens: Ensemble, ens_error, ens2process: List, first_ens_dt: datetime):
+        """
+        Add the given ensemble to netCDF file.
 
-    def add_ens_to_netcdf(self, ens: Ensemble, ens_error):
+        :param ens: Ensemble data to add to the netCDF
+        :type ens: Ensemble
+        :param ens_error:
+        :type ens_error:
+        :param list ens2process: [start, end] ensembles to export.  end = -1 for all ensembles in file
+        :type ens2process: List of start and end ensemble to export. end = -1 for all ensembles in file
+        :param first_ens_dt: First ensemble datetime to calculate the delta.
+        :return:
+        :rtype:
+        """
 
         nslantbeams = ens.EnsembleData.NumBeams
 
@@ -606,12 +580,12 @@ class RtiNetcdf:
                 varobj = self.cdf_file.variables['time2']
                 varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time2']
                 varobj = self.cdf_file.variables['cf_time']
-                elapsed = ens_data['VLeader']['dtobj']-t0  # timedelta
+                elapsed = ens.EnsembleData.datetime() - first_ens_dt  # timedelta
                 elapsed_sec = elapsed.total_seconds()
                 varobj[self.netcdf_index] = elapsed_sec
             elif time_type == 'CF_with_EPIC':
                 varobj = self.cdf_file.variables['time']
-                elapsed = ens_data['VLeader']['dtobj'] - t0  # timedelta
+                elapsed = ens.EnsembleData.datetime() - first_ens_dt  # timedelta
                 elapsed_sec = elapsed.total_seconds()
                 if elapsed_sec == 0:
                     print('elapsed seconds from ensemble {} is {}'.format(self.ensemble_count, elapsed_sec))
@@ -629,7 +603,7 @@ class RtiNetcdf:
                 varobj[self.netcdf_index] = ens_data['VLeader']['EPIC_time2']
             else:  # only CF time, the default
                 varobj = self.cdf_file.variables['time']
-                elapsed = ens_data['VLeader']['dtobj']-t0  # timedelta
+                elapsed = ens.EnsembleData.datetime() - first_ens_dt  # timedelta
                 elapsed_sec = elapsed.total_seconds()
                 varobj[self.netcdf_index] = elapsed_sec
 
@@ -642,20 +616,42 @@ class RtiNetcdf:
             varobj = self.cdf_file.variables['sv']
             varobj[self.netcdf_index] = ens.AncillaryData.SpeedOfSound
 
+            # RTB and PD0 do not share the same Beam Order
+            # RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+            # RTB XYZ  0,1,2,3 = PD0 XYZ 1,0,-2,3
+            # RTB ENU  0,1,2,3 = PD0 ENU 0,1,2,3
+            # Beams will need to be reordered to match
+
+            # Convert from m/s to mm/s
             for i in range(nslantbeams):
                 varname = "vel%d" % (i+1)
                 varobj = self.cdf_file.variables[varname]
-                varobj[self.netcdf_index, :] = ens_data['VData'][i, :]
+                varobj[self.netcdf_index, :] = ens.BeamVelocity.pd0_mm_per_sec(pd0_beam_num=i)      # Convert to mm/s and reorder beams
 
             for i in range(nslantbeams):
                 varname = "cor%d" % (i+1)
                 varobj = self.cdf_file.variables[varname]
-                varobj[self.netcdf_index, :] = ens_data['CData'][i, :]
+                if i == 0:
+                    varobj[self.netcdf_index, :] = ens.Correlation.Correlation[:][2]        # PD0 0 - RTB 2
+                elif i == 1:
+                    varobj[self.netcdf_index, :] = ens.Correlation.Correlation[:][3]        # PD0 1 - RTB 3
+                elif i == 2:
+                    varobj[self.netcdf_index, :] = ens.Correlation.Correlation[:][1]        # PD0 2 - RTB 1
+                elif i == 3:
+                    varobj[self.netcdf_index, :] = ens.Correlation.Correlation[:][0]        # PD0 3 - RTB 0
 
             for i in range(nslantbeams):
                 varname = "att%d" % (i+1)
                 varobj = self.cdf_file.variables[varname]
                 varobj[self.netcdf_index, :] = ens_data['IData'][i, :]
+                if i == 0:
+                    varobj[self.netcdf_index, :] = ens.Amplitude.Amplitude[:][2]        # PD0 0 - RTB 2
+                elif i == 1:
+                    varobj[self.netcdf_index, :] = ens.Amplitude.Amplitude[:][3]        # PD0 1 - RTB 3
+                elif i == 2:
+                    varobj[self.netcdf_index, :] = ens.Amplitude.Amplitude[:][1]        # PD0 2 - RTB 1
+                elif i == 3:
+                    varobj[self.netcdf_index, :] = ens.Amplitude.Amplitude[:][0]        # PD0 3 - RTB 0
 
             if 'GData' in ens_data:
                 for i in range(nslantbeams):
@@ -664,65 +660,70 @@ class RtiNetcdf:
                     varobj[self.netcdf_index, :] = ens_data['GData'][i, :]
 
             varobj = self.cdf_file.variables['Rec']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Ensemble_Number']
+            varobj[self.netcdf_index] = ens.EnsembleData.EnsembleNumber
             varobj = self.cdf_file.variables['Hdg']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Heading']
+            varobj[self.netcdf_index] = ens.AncillaryData.Heading
             varobj = self.cdf_file.variables['Ptch']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Pitch']
+            varobj[self.netcdf_index] = ens.AncillaryData.Pitch
             varobj = self.cdf_file.variables['Roll']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Roll']
-            varobj = self.cdf_file.variables['HdgSTD']
-            varobj[self.netcdf_index] = ens_data['VLeader']['H/Hdg_Std_Dev']
-            varobj = self.cdf_file.variables['PtchSTD']
-            varobj[self.netcdf_index] = ens_data['VLeader']['P/Pitch_Std_Dev']
-            varobj = self.cdf_file.variables['RollSTD']
-            varobj[self.netcdf_index] = ens_data['VLeader']['R/Roll_Std_Dev']
+            varobj[self.netcdf_index] = ens.AncillaryData.Roll
+            #varobj = self.cdf_file.variables['HdgSTD']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['H/Hdg_Std_Dev']
+            #varobj = self.cdf_file.variables['PtchSTD']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['P/Pitch_Std_Dev']
+            #varobj = self.cdf_file.variables['RollSTD']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['R/Roll_Std_Dev']
             varobj = self.cdf_file.variables['Tx']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Temperature']
+            varobj[self.netcdf_index] = ens.AncillaryData.WaterTemp
             varobj = self.cdf_file.variables['S']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Salinity']
-            varobj = self.cdf_file.variables['xmitc']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Xmit_Current']
+            varobj[self.netcdf_index] = ens.AncillaryData.Salinity
+            #varobj = self.cdf_file.variables['xmitc']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['Xmit_Current']
             varobj = self.cdf_file.variables['xmitv']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Xmit_Voltage']
+            varobj[self.netcdf_index] = ens.SystemSetup.XmtVoltage
             varobj = self.cdf_file.variables['Ambient_Temp']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Ambient_Temp']
-            varobj = self.cdf_file.variables['Pressure+']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(+)']
-            varobj = self.cdf_file.variables['Pressure-']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(-)']
-            varobj = self.cdf_file.variables['Attitude_Temp']
-            varobj[self.netcdf_index] = ens_data['VLeader']['Attitude_Temp']
-            varobj = self.cdf_file.variables['EWD1']
-            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_LSB'])
-            varobj = self.cdf_file.variables['EWD2']
-            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_MSB'])
-            varobj = self.cdf_file.variables['EWD3']
-            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_LSB'])
-            varobj = self.cdf_file.variables['EWD4']
-            varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_MSB'])
+            varobj[self.netcdf_index] = ens.AncillaryData.SystemTemp
+            #varobj = self.cdf_file.variables['Pressure+']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(+)']
+            #varobj = self.cdf_file.variables['Pressure-']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['Pressure_(-)']
+            #varobj = self.cdf_file.variables['Attitude_Temp']
+            #varobj[self.netcdf_index] = ens_data['VLeader']['Attitude_Temp']
+            #varobj = self.cdf_file.variables['EWD1']
+            #varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_LSB'])
+            #varobj = self.cdf_file.variables['EWD2']
+            #varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_Low_16_bits_MSB'])
+            #varobj = self.cdf_file.variables['EWD3']
+            #varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_LSB'])
+            #varobj = self.cdf_file.variables['EWD4']
+            #varobj[self.netcdf_index] = int(ens_data['VLeader']['Error_Status_Word_High_16_bits_MSB'])
+            varobj = self.cdf_file.variables['Status']
+            varobj[self.netcdf_index] = ens.EnsembleData.Status
 
-            if ens_data['FLeader']['Depth_sensor_available'] == 'Yes':
-                varobj = self.cdf_file.variables['Pressure']
-                varobj[netcdf_index] = ens_data['VLeader']['Pressure_deca-pascals']
-                varobj = self.cdf_file.variables['PressVar']
-                varobj[netcdf_index] = ens_data['VLeader']['Pressure_variance_deca-pascals']
+            #if ens_data['FLeader']['Depth_sensor_available'] == 'Yes':
+            #    varobj = self.cdf_file.variables['Pressure']
+            #    varobj[netcdf_index] = ens_data['VLeader']['Pressure_deca-pascals']
+            #    varobj = self.cdf_file.variables['PressVar']
+            #    varobj[netcdf_index] = ens_data['VLeader']['Pressure_variance_deca-pascals']
+            varobj = self.cdf_file.variables['Pressure']
+            varobj[self.netcdf_index] = int(round(0.0001 * ens.AncillaryData.Pressure))
+
 
             # add bottom track data write to cdf here
-            if 'BTData' in ens_data:
-                if ens_data['BTData']['Mode'] == 0:
-                    varobj = self.cdf_file.variables['BTRmin']
-                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Min']
-                    varobj = self.cdf_file.variables['BTRnear']
-                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Near']
-                    varobj = self.cdf_file.variables['BTRfar']
-                    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Far']
+            if ens.IsBottomTrack:
+                #if ens_data['BTData']['Mode'] == 0:
+                #    varobj = self.cdf_file.variables['BTRmin']
+                #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Min']
+                #    varobj = self.cdf_file.variables['BTRnear']
+                #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Near']
+                #    varobj = self.cdf_file.variables['BTRfar']
+                #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Far']
 
                 varnames = ('BTWe', 'BTWu', 'BTWv', 'BTWd')
                 for i in range(nslantbeams):
                     varname = "BTR%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Range'][i]
+                    varobj[self.netcdf_index] = ens.BottomTrack.Range[i]
                     if ens_data['FLeader']['Coord_Transform'] == 'EARTH':
                         varobj = self.cdf_file.variables[varnames[i]]
                     else:
@@ -732,28 +733,28 @@ class RtiNetcdf:
                     varobj[self.netcdf_index] = ens_data['BTData']['BT_Vel'][i]
                     varname = "BTc%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Corr'][i]
+                    varobj[self.netcdf_index] = ens.BottomTrack.Correlation[i]
                     varname = "BTe%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens_data['BTData']['BT_Amp'][i]
+                    varobj[self.netcdf_index] = ens.BottomTrack.Amplitude[i]
                     varname = "BTp%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens_data['BTData']['BT_PGd'][i]
+                    varobj[self.netcdf_index] = ens.BottomTrack.BeamGood[i]
                     varname = "BTRSSI%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
                     varobj[self.netcdf_index] = ens_data['BTData']['RSSI_Amp'][i]
 
-                    if ens_data['BTData']['Mode'] == 0:
-                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Vel'][i]
-                        varname = "BTRc%d" % (i+1)
-                        varobj = self.cdf_file.variables[varname]
-                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Corr'][i]
-                        varname = "BTRi%d" % (i+1)
-                        varobj = self.cdf_file.variables[varname]
-                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Amp'][i]
-                        varname = "BTRp%d" % (i+1)
-                        varobj = self.cdf_file.variables[varname]
-                        varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_PGd'][i]
+                    #if ens_data['BTData']['Mode'] == 0:
+                    #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Vel'][i]
+                    #    varname = "BTRc%d" % (i+1)
+                    #    varobj = self.cdf_file.variables[varname]
+                    #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Corr'][i]
+                    #    varname = "BTRi%d" % (i+1)
+                    #    varobj = self.cdf_file.variables[varname]
+                    #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_Amp'][i]
+                    #    varname = "BTRp%d" % (i+1)
+                    #    varobj = self.cdf_file.variables[varname]
+                    #    varobj[self.netcdf_index] = ens_data['BTData']['Ref_Layer_PGd'][i]
 
             if 'VBeamVData' in ens_data:
                 if ens_data['VBeamLeader']['Vertical_Depth_Cells'] == ens_data['FLeader']['Number_of_Cells']:
