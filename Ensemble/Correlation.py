@@ -109,3 +109,50 @@ class Correlation:
             return False
 
         return True
+
+    def pd0_counts(self, num_repeat: int, pd0_beam_num: int):
+        """
+        The value has to be converted from percentage to 0 - 255
+        Scale 0 % - 100 % to 0 - 255
+        255 = 100 %
+        0 = 0 %
+        50 % = 0.50 * 255 = 127.5 = 255 / 2
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param num_repeat: Number of code repeats.
+        :type num_repeat: Integer
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Correlation data as PD0 counts format.  Beams are reordered
+        :rtype: List of Correlation values.
+        """
+
+        if num_repeat == 0:
+            num_repeat = 1
+        repeats = (num_repeat - 1.0) / num_repeat
+
+        # Vertical Beam
+        if self.element_multiplier == 1:
+            beam0 = [v[0] for v in self.Correlation]                            # PD0 Vertical - RTB 0
+            return [round(v * 255.0) for v in beam0]                            # Convert to counts
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.element_multiplier:
+            beam2 = [v[2] for v in self.Correlation]                            # PD0 0 - RTB 2
+            return [round((v * 128.0) / repeats) for v in beam2]                # Convert to counts
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.element_multiplier:
+            beam3 = [v[3] for v in self.Correlation]                            # PD0 1 - RTB 3
+            return [round((v * 128.0) / repeats) for v in beam3]                # Convert to counts
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.element_multiplier:
+            beam1 = [v[1] for v in self.Correlation]                            # PD0 2 - RTB 1
+            return [round((v * 128.0) / repeats) for v in beam1]                # Convert to counts
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.element_multiplier:
+            beam0 = [v[0] for v in self.Correlation]                            # PD0 3 - RTB 0
+            return [round((v * 128.0) / repeats) for v in beam0]                # Convert to counts
+
+        return None

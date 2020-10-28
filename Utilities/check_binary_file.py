@@ -3,6 +3,7 @@ from tkinter import filedialog
 from rti_python.Utilities.read_binary_file import ReadBinaryFile
 from tqdm import tqdm
 from obsub import event
+from typing import List, Set, Dict, Tuple, Optional
 import logging
 
 
@@ -39,6 +40,7 @@ class RtiCheckFile:
         self.ens_bad_delta_time = 0
         self.tilt_issue = 0
         self.prev_ens_datetime = None
+        self.is_prev_ens_vertical = False
         self.is_upward = False
         self.error_output_str = []
         self.summary_str = []
@@ -85,7 +87,7 @@ class RtiCheckFile:
 
         return self.file_paths
 
-    def process(self, file_paths, show_live_error=False):
+    def process(self, file_paths: List, show_live_error: bool = False):
         """
         Read the files and look for any issues in the files.
         :param file_paths: Path to file to process.
@@ -264,7 +266,10 @@ class RtiCheckFile:
             self.bad_corr_100pct_count += 1
 
         # Check for datetime jump
-        is_datetime_jump_issue, err_str, self.prev_ens_datetime, self.ens_delta_time = self.check_datetime_jump(ens, self.show_live_errors, self.prev_ens_datetime, self.ens_delta_time)
+        is_datetime_jump_issue, err_str, self.prev_ens_datetime, self.ens_delta_time = self.check_datetime_jump(ens,
+                                                                                                                self.show_live_errors,
+                                                                                                                self.prev_ens_datetime,
+                                                                                                                self.ens_delta_time )
         self.error_output_str.append(err_str)  # Keep track of all the errors
         if is_datetime_jump_issue:
             self.is_datetime_jump_issue = True
@@ -393,7 +398,8 @@ class RtiCheckFile:
         Then verify that all additional ensembles are the same time apart.
         :param ens: Ensemble data.
         :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
-        :return: True = Found an issue, Err String, Ensemble DT
+        :param prev_ens_dt: Previous Ensemble Delta Time
+        :return: True = Found an issue, Err String, Ensemble DateTime, Ensemble DT
         """
         err_str = ""
         found_issue = False
@@ -405,9 +411,13 @@ class RtiCheckFile:
                 # Get the current datetime
                 ens_datetime = ens.EnsembleData.datetime()
                 dt = 0
+            elif ens.EnsembleData.is_vertical_beam():
+                # Ignore vertical beam to combine 4beam and vertical beam
+                return found_issue, err_str, prev_ens_dt, ens_delta_time
             else:
                 # Get the current datetime
                 ens_datetime = ens.EnsembleData.datetime()
+                is_prev_ens_vertical = ens.EnsembleData.is_vertical_beam()
 
                 # Calculate the difference in time between the previous and this ensemble
                 dt = (ens_datetime - prev_ens_dt).total_seconds()
