@@ -177,71 +177,76 @@ class RtiNetcdf:
         :param ens: Ensemble to process.
         :return:
         """
+        # Ensure we have data
+        if ens:
+            # Log output
+            if ens and ens.IsEnsembleData:
+                logging.debug(str(ens.EnsembleData.EnsembleNumber))
 
-        if ens and ens.IsEnsembleData:
-            logging.debug(str(ens.EnsembleData.EnsembleNumber))
+            # Check if the given data is a vertical beam.  We want to group the 4Beam and vertical beam
+            if ens.EnsembleData.is_vertical_beam():
+                # Verify we have some 4 Beam data
+                # If it is only vertical beam data, then a netCDF file is not created
+                if self.prev_4_beam_ens:
+                    # Check if the netCDF file needs to be created
+                    if not self.is_netcdf_setup:
+                        # Create the netCDF file
+                        self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
+                                                               self.prev_4_beam_ens,                    # 4 Beam Ensemble
+                                                               ens,                                     # Vertical Beam Ensemble
+                                                               self.ensembles_to_process,               # Ensembles indexes to process
+                                                               self.ens_delta_time)                     # Delta time between 2 ensemble pairs
 
-        # Check if the given data is a vertical beam.  We want to group the 4Beam and vertical beam
-        if ens.EnsembleData.is_vertical_beam():
-            # Check if the netCDF file needs to be created
-            if not self.is_netcdf_setup:
-                # Create the netCDF file
-                self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
-                                                       self.prev_4_beam_ens,                    # 4 Beam Ensemble
-                                                       ens,                                     # Vertical Beam Ensemble
-                                                       self.ensembles_to_process,               # Ensembles indexes to process
-                                                       self.ens_delta_time)                     # Delta time between 2 ensemble pairs
+                    # Process the ensemble
+                    self.add_ens_to_netcdf(self.prev_4_beam_ens,                                        # 4 Beam Ensemble
+                                           ens,                                                         # Vertical Beam Ensemble
+                                           None,                                                        # Ignore Errors
+                                           self.ensembles_to_process,                                   # Indexes to process
+                                           self.first_ens_dt)                                           # Time of first ensemble
 
-            # Process the ensemble
-            self.add_ens_to_netcdf(self.prev_4_beam_ens,                                        # 4 Beam Ensemble
-                                   ens,                                                         # Vertical Beam Ensemble
-                                   None,                                                        # Ignore Errors
-                                   self.ensembles_to_process,                                   # Indexes to process
-                                   self.first_ens_dt)                                           # Time of first ensemble
+                    # Clear the previous ensemble
+                    self.prev_4_beam_ens = None
 
-            # Clear the previous ensemble
-            self.prev_4_beam_ens = None
+            # Also check if we are only getting 4 beam data
+            elif not ens.EnsembleData.is_vertical_beam() and self.prev_4_beam_ens and not self.prev_4_beam_ens.EnsembleData.is_vertical_beam():
+                # Check if the netCDF file needs to be created
+                if not self.is_netcdf_setup:
+                    # Create the netCDF file
+                    self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
+                                                           self.prev_4_beam_ens,                    # 4 Beam Ensemble
+                                                           None,                                    # No Vertical Beam data
+                                                           self.ensembles_to_process,               # Ensembles indexes to process
+                                                           self.ens_delta_time)                     # Delta time between 2 ensemble pairs
 
-        # Also check if we are only getting 4 beam data
-        elif not ens.EnsembleData.is_vertical_beam() and self.prev_4_beam_ens and not self.prev_4_beam_ens.EnsembleData.is_vertical_beam():
-            # Check if the netCDF file needs to be created
-            if not self.is_netcdf_setup:
-                # Create the netCDF file
-                self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
-                                                       self.prev_4_beam_ens,                    # 4 Beam Ensemble
-                                                       None,                                    # No Vertical Beam data
-                                                       self.ensembles_to_process,               # Ensembles indexes to process
-                                                       self.ens_delta_time)                     # Delta time between 2 ensemble pairs
+                    # Add the missing previous ensemble since it was never added
+                    self.add_ens_to_netcdf(self.prev_4_beam_ens,                                    # 4 Beam Ensemble
+                                           None,                                                    # No Vertical Beam Ensemble
+                                           None,                                                    # Ignore Errors
+                                           self.ensembles_to_process,                               # Indexes to process
+                                           self.first_ens_dt)                                       # Ensemble first time
+                # Add the new ensemble
+                self.add_ens_to_netcdf(ens,                                                         # 4 Beam Ensemble
+                                       None,                                                        # No Vertical Beam Ensemble
+                                       None,                                                        # Ignore Errors
+                                       self.ensembles_to_process,                                   # Indexes to process
+                                       self.first_ens_dt)                                           # Ensemble first time
 
-                # Add the missing previous ensemble since it was never added
-                self.add_ens_to_netcdf(self.prev_4_beam_ens,                                    # 4 Beam Ensemble
-                                       None,                                                    # No Vertical Beam Ensemble
-                                       None,                                                    # Ignore Errors
-                                       self.ensembles_to_process,                               # Indexes to process
-                                       self.first_ens_dt)                                       # Ensemble first time
-            # Add the new ensemble
-            self.add_ens_to_netcdf(ens,                                                         # 4 Beam Ensemble
-                                   None,                                                        # No Vertical Beam Ensemble
-                                   None,                                                        # Ignore Errors
-                                   self.ensembles_to_process,                                   # Indexes to process
-                                   self.first_ens_dt)                                           # Ensemble first time
+                # Do not set prev_4_beam_ens to None here
+                # It is assumed that the order will not change
+                # So we can just call this block every time now
+                # Which will write all the new ensembles to the netCDF file
+            else:
+                # Store the 4 Beam data
+                self.prev_4_beam_ens = ens
 
-            # Do not set prev_4_beam_ens to None here
-            # It is assumed that the order will not change
-            # So we can just call this block every time now
-            # Which will write all the new ensembles to the netCDF file
-        else:
-            # Store the 4 Beam data
-            self.prev_4_beam_ens = ens
+                # Check if the first ensemble time needs to be set
+                if not self.first_ens_dt:
+                    self.first_ens_dt = ens.EnsembleData.datetime()
 
-            # Check if the first ensemble time needs to be set
-            if not self.first_ens_dt:
-                self.first_ens_dt = ens.EnsembleData.datetime()
+            # Pass the ensemble to the event for others to process
+            self.ensemble_progress_event(ens)
 
-        # Pass the ensemble to the event for others to process
-        self.ensemble_progress_event(ens)
-
-        logging.debug(ens.EnsembleData.EnsembleNumber)
+            logging.debug(ens.EnsembleData.EnsembleNumber)
 
     def setup_netcdf_file(self, netcdf_file_name: str, ens: Ensemble, vert_ens: Ensemble, ensembles_to_process: Tuple, delta_t: str):
         """
@@ -266,13 +271,15 @@ class RtiNetcdf:
         # is it possible for delta_t to be none or an int.  Deal with that here
         if delta_t is None:
             delta_t = "none"
-
         if isinstance(delta_t, int):
             delta_t = str(delta_t)
 
+        # Determine how many ensembles to process
+        # I am not sure why they subtract by 1 except for 0 based i guess
         nens = ensembles_to_process[1] - ensembles_to_process[0] - 1
         print('creating netCDF file %s with %s records' % (netcdf_file_name, str(nens)))
 
+        # Create the netCDF file
         cdf = Dataset(netcdf_file_name, "w", clobber=True, format="NETCDF4")
 
         # dimensions, in EPIC order
@@ -503,6 +510,35 @@ class RtiNetcdf:
                 varobj.epic_code = 1241 + i
                 # varobj.valid_range = [0, 100]
 
+        if ens.IsRangeTracking:
+            for i in range(ens.EnsembleData.NumBeams):
+                varname = "RTR%d" % (i + 1)
+                varobj = cdf.createVariable(varname, 'f4', ('time',), fill_value=floatfill)
+                varobj.units = "meters"
+                varobj.long_name = "Range Tracking Range Beam %d" % (i + 1)
+                #varobj.epic_code = 1241 + i
+
+            for i in range(ens.EnsembleData.NumBeams):
+                varname = "RTSNR%d" % (i + 1)
+                varobj = cdf.createVariable(varname, 'f4', ('time',), fill_value=floatfill)
+                varobj.units = "dB"
+                varobj.long_name = "Range Tracking SNR Beam %d" % (i + 1)
+                #varobj.epic_code = 1241 + i
+
+            for i in range(ens.EnsembleData.NumBeams):
+                varname = "RTAmp%d" % (i + 1)
+                varobj = cdf.createVariable(varname, 'f4', ('time',), fill_value=floatfill)
+                varobj.units = "dB"
+                varobj.long_name = "Range Tracking Amplitude Beam %d" % (i + 1)
+                #varobj.epic_code = 1241 + i
+
+            for i in range(ens.EnsembleData.NumBeams):
+                varname = "RTCorr%d" % (i + 1)
+                varobj = cdf.createVariable(varname, 'f4', ('time',), fill_value=floatfill)
+                varobj.units = "percent"
+                varobj.long_name = "Range Tracking Correlation Beam %d" % (i + 1)
+                #varobj.epic_code = 1241 + i
+
         varobj = cdf.createVariable('Hdg', 'f4', ('time',), fill_value=floatfill)
         varobj.units = "hundredths of degrees"
         varobj.long_name = "INST Heading"
@@ -595,13 +631,22 @@ class RtiNetcdf:
             varobj.long_name = "ADCP Transducer Pressure"
             varobj.epic_code = 4
 
+        if ens.IsNmeaData:
+            varobj = cdf.createVariable('Lat', 'f4', ('time',), fill_value=floatfill)
+            varobj.units = "degrees"
+            varobj.long_name = "Latitude Decimal Degrees"
+
+            varobj = cdf.createVariable('Lon', 'f4', ('time',), fill_value=floatfill)
+            varobj.units = "degrees"
+            varobj.long_name = "Longitude Decimal Degrees"
+
             #varobj = cdf.createVariable('PressVar', 'f4', ('time',), fill_value=floatfill)
             #varobj.units = "deca-pascals"
             #varobj.long_name = "ADCP Transducer Pressure Variance"
 
         if ens.IsBottomTrack:
             # write globals attributable to BT setup
-            cdf.setncattr('TRDI_BT_pings_per_ensemble', ens.BottomTrack.ActualPingCount)
+            cdf.setncattr('Rowe', ens.BottomTrack.ActualPingCount)
             #cdf.setncattr('TRDI_BT_reacquire_delay', ens_data['BTData']['delay_before_reacquire'])
             #cdf.setncattr('TRDI_BT_min_corr_mag', ens_data['BTData']['Corr_Mag_Min'])
             #cdf.setncattr('TRDI_BT_min_eval_mag', ens_data['BTData']['Eval_Amp_Min'])
@@ -745,6 +790,22 @@ class RtiNetcdf:
                     varobj.long_name = "Percent Good Beam 5"
                 else:
                     cdf.TRDI_VBeam_note1 = 'Vertical beam data found without Percent Good'
+                if vert_ens.IsRangeTracking:
+                    varobj = cdf.createVariable("RTR5", 'f4', ('time',), fill_value=floatfill)
+                    varobj.units = "meters"
+                    varobj.long_name = "Range Tracking Range Beam 5"
+                    varobj = cdf.createVariable("RTSNR5", 'f4', ('time',), fill_value=floatfill)
+                    varobj.units = "dB"
+                    varobj.long_name = "Range Tracking SNR Beam 5"
+                    varobj = cdf.createVariable("RTAmp5", 'f4', ('time',), fill_value=floatfill)
+                    varobj.units = "dB"
+                    varobj.long_name = "Range Tracking Amplitude Beam 5"
+                    varobj = cdf.createVariable("RTCorr5", 'f4', ('time',), fill_value=floatfill)
+                    varobj.units = "percent"
+                    varobj.long_name = "Range Tracking Correlation Beam 5"
+                else:
+                    cdf.TRDI_VBeam_note2 = 'Vertical beam data found without Range Tracking'
+
             else:
                 print("Vertical beam data found with different number of cells.")
                 cdf.TRDI_VBeam_note = "Vertical beam data found with different number of cells. " + \
@@ -952,6 +1013,24 @@ class RtiNetcdf:
                     varobj = self.cdf_file.variables[varname]
                     varobj[self.netcdf_index, :] = ens.GoodBeam.pd0_percent(pings_per_ens=pings_per_ens, pd0_beam_num=i) # Convert to percent and reorder beams
 
+            if ens.IsRangeTracking:
+                for i in range(nslantbeams):
+                    varname = "RTR%d" % (i+1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens.RangeTracking.Range[i]
+
+                    varname = "RTSNR%d" % (i + 1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens.RangeTracking.SNR[i]
+
+                    varname = "RTAmp%d" % (i + 1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens.RangeTracking.Amplitude[i]
+
+                    varname = "RTCorr%d" % (i + 1)
+                    varobj = self.cdf_file.variables[varname]
+                    varobj[self.netcdf_index] = ens.RangeTracking.Correlation[i]
+
             varobj = self.cdf_file.variables['Rec']
             varobj[self.netcdf_index] = ens.EnsembleData.EnsembleNumber
             varobj = self.cdf_file.variables['Hdg']
@@ -1010,6 +1089,13 @@ class RtiNetcdf:
             if ens.AncillaryData.Pressure > 0:
                 varobj = self.cdf_file.variables['Pressure']
                 varobj[self.netcdf_index] = int(round(0.0001 * ens.AncillaryData.Pressure))
+
+            if ens.IsNmeaData:
+                varobj = self.cdf_file.variables['Lat']
+                varobj[self.netcdf_index] = ens.NmeaData.latitude
+
+                varobj = self.cdf_file.variables['Lon']
+                varobj[self.netcdf_index] = ens.NmeaData.longitude
 
             # add bottom track data write to cdf here
             if ens.IsBottomTrack:
@@ -1070,6 +1156,15 @@ class RtiNetcdf:
                     if vert_ens.IsGoodBeam:
                         varobj = self.cdf_file.variables['PGd5']
                         varobj[self.netcdf_index, :] = vert_ens.GoodBeam.pd0_percent(pings_per_ens=vert_ens.EnsembleData.ActualPingCount, pd0_beam_num=0)
+                    if vert_ens.IsRangeTracking:
+                        varobj = self.cdf_file.variables['RTR5']
+                        varobj[self.netcdf_index] = vert_ens.RangeTracking.Range[0]
+                        varobj = self.cdf_file.variables['RTSNR5']
+                        varobj[self.netcdf_index] = vert_ens.RangeTracking.SNR[0]
+                        varobj = self.cdf_file.variables['RTAmp5']
+                        varobj[self.netcdf_index] = vert_ens.RangeTracking.Amplitude[0]
+                        varobj = self.cdf_file.variables['RTCorr5']
+                        varobj[self.netcdf_index] = vert_ens.RangeTracking.Correlation[0]
 
             #if 'WaveParams' in ens_data:
             #    # we can get away with this because the key names and var names are the same
