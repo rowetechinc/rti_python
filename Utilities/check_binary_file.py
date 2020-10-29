@@ -5,6 +5,7 @@ from tqdm import tqdm
 from obsub import event
 from typing import List, Set, Dict, Tuple, Optional
 import logging
+from rti_python.Ensemble.Ensemble import Ensemble
 
 
 class RtiCheckFile:
@@ -15,8 +16,12 @@ class RtiCheckFile:
     def __init__(self):
         self.ens_count = 0
         self.bad_ens = 0
+        self.primary_beam_ens_count = 0
+        self.vert_beam_ens_count = 0
+        self.ens_pairs_count = 0
         self.found_issues = 0
         self.found_issue_str = ""
+        self.prev_ens = None
         self.prev_ens_num = 0
         self.is_missing_ens = False
         self.is_status_issue = False
@@ -27,6 +32,7 @@ class RtiCheckFile:
         self.is_tilt_issue = False
         self.file_paths = ""
         self.pbar = None
+        self.show_progress_bar = True
         self.first_ens = None
         self.last_ens = None
         self.show_live_errors = False
@@ -87,15 +93,17 @@ class RtiCheckFile:
 
         return self.file_paths
 
-    def process(self, file_paths: List, show_live_error: bool = False):
+    def process(self, file_paths: List, show_live_error: bool = False, show_progress_bar: bool = True):
         """
         Read the files and look for any issues in the files.
         :param file_paths: Path to file to process.
         :param show_live_error: TRUE = Show the errors as they are found.
+        :param show_progress_bar: TRUE = Show the progress bar in the text console.
         :return: Summary containing a list of all the output.
         """
         self.file_paths = file_paths
         self.show_live_errors = show_live_error
+        self.show_progress_bar = show_progress_bar
 
         if self.file_paths:
             for file in self.file_paths:
@@ -109,7 +117,8 @@ class RtiCheckFile:
                 self.print_summary(file)
 
                 # Close the progress bar
-                self.pbar.close()
+                if self.show_progress_bar:
+                    self.pbar.close()
 
     def get_summary(self):
         """
@@ -122,7 +131,7 @@ class RtiCheckFile:
 
         return { "summary": self.summary_str, "errors": self.error_output_str }
 
-    def print_summary(self, file_path):
+    def print_summary(self, file_path: str):
         """
         Print a summary of the results.
         :param file_path: File path for the file processed.
@@ -139,9 +148,6 @@ class RtiCheckFile:
                 self.is_correlation_100pct_issue or \
                 self.is_datetime_jump_issue or \
                 self.is_tilt_issue:
-            #self.summary_str.append(str(self.found_issues) + " ISSUES FOUND WITH FILES")
-            #self.summary_str.append("*********************************************")
-            #self.summary_str.append(self.found_issue_str)
             self.summary_str.append("*********************************************")
             self.summary_str.append(str(self.found_issues) + " ISSUES FOUND WITH FILES")
             self.summary_str.append("Total Bad Status: " + str(self.bad_status_count))
@@ -180,8 +186,11 @@ class RtiCheckFile:
         # Print total number of ensembles in the file
         self.summary_str.append("Total number of bad ensembles in file: " + str(self.bad_ens))
         self.summary_str.append("Total number of ensembles in file:     " + str(self.ens_count))
+        self.summary_str.append("Total number of Primary Beam ensembles in file:     " + str(self.primary_beam_ens_count))
+        self.summary_str.append("Total number of Vertical Beam ensembles in file:     " + str(self.vert_beam_ens_count))
+        self.summary_str.append("Total number of Ensemble Pairs in file:     " + str(self.ens_pairs_count))
         if self.ens_count > 0:
-            self.summary_str.append("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count)*100.0, 3)) + "%")
+            self.summary_str.append("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count) * 100.0, 3)) + "%")
 
         self.summary_str.append("---------------------------------------------")
         self.summary_str.append("---------------------------------------------")
@@ -192,7 +201,7 @@ class RtiCheckFile:
 
         return self.summary_str
 
-    def file_progress_handler(self, sender, bytes_read, total_size, file_name):
+    def file_progress_handler(self, sender, bytes_read: int, total_size: int, file_name: str):
         """
         Monitor the file playback progress.
         :param sender: NOT USED
@@ -201,12 +210,18 @@ class RtiCheckFile:
         :param file_name: File name being read..
         :return:
         """
-        if self.pbar is None:
+        # Create the progress bar
+        if self.pbar is None and self.show_progress_bar:
             self.pbar = tqdm(total=total_size)
 
-        self.pbar.update(int(bytes_read))
+        # Update the progress bar
+        if self.show_progress_bar:
+            self.pbar.update(int(bytes_read))
 
-    def ens_handler(self, sender, ens):
+        # Pass the event to others
+        self.file_progress_event(bytes_read, total_size, file_name)
+
+    def ens_handler(self, sender, ens: Ensemble):
         """
         Process the ensemble data.  Check for any issues.
         :param sender: NOT USED.
@@ -290,21 +305,40 @@ class RtiCheckFile:
         if ens.IsAncillaryData:
             self.is_upward = ens.AncillaryData.is_upward_facing()
 
-        # Count the number of ensembles
-        self.ens_count += 1
+        # Count Ensembles and type of ensembles
+        self.count_ens_types(ens)
 
-        # Cound Bad ensembles
+        # Count Bad ensembles
         if is_missing_ens or is_status_issue or is_amplitude_0db_issue or is_correlation_100pct_issue or is_datetime_jump_issue or is_voltage_issue or is_tilt_issue:
             self.bad_ens += 1
-
-        # Update the progress bar
-        #self.pbar.update(1)
 
         # Send ensemble to event to let other objects process the data
         self.ensemble_event(ens)
 
+    def count_ens_types(self, ens: Ensemble):
+        """
+        Count the type of ensembles we have received.
+        :param ens: Latest Ensemble.
+        :type ens: Ensemble
+        """
+        # Count the number of ensembles
+        self.ens_count += 1
+
+        # Count how many vertical and 3 or 4 beam ensembles we have received
+        if ens.EnsembleData.NumBeams == 1:
+            self.vert_beam_ens_count += 1
+        elif ens.EnsembleData.NumBeams >= 3:
+            self.primary_beam_ens_count += 1
+
+        # Check if we have 4 Beam and Vertical Beam pairs
+        if self.prev_ens and self.prev_ens.EnsembleData.NumBeams >= 3 and ens.EnsembleData.NumBeams == 1:
+            self.ens_pairs_count += 1
+
+        # Store the ensemble to check next pass
+        self.prev_ens = ens
+
     @event
-    def ensemble_event(self, ens):
+    def ensemble_event(self, ens: Ensemble):
         """
         Event to subscribe to receive decoded ensembles.
         :param ens: Ensemble object.
@@ -313,8 +347,24 @@ class RtiCheckFile:
         if ens.IsEnsembleData:
             logging.debug(str(ens.EnsembleData.EnsembleNumber))
 
+    @event
+    def file_progress_event(self, bytes_read: int, total_size: int, file_name: str):
+        """
+        Event to monitor the file progress.  This is passed through from the
+        file playback.
+        :param bytes_read: Bytes read.
+        :type bytes_read: integer
+        :param total_size: Total bytes to read.
+        :type total_size: integer
+        :param file_name: File name being read currently.
+        :type file_name: string
+        :return:
+        :rtype:
+        """
+        logging.debug(file_name + " Bytes read: " + str(bytes_read) + " of " + str(total_size))
+
     @staticmethod
-    def check_status(ens, show_live_errors=False):
+    def check_status(ens: Ensemble, show_live_errors: bool = False):
         """
         Check the status for any errors.
         :param ens: Ensemble data.

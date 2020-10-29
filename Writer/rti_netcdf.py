@@ -3,11 +3,13 @@ import datetime
 from netCDF4 import Dataset
 from pathlib import Path
 import os
+from obsub import event
 from typing import List, Set, Dict, Tuple, Optional
 from rti_python.Ensemble.Ensemble import Ensemble
 from rti_python.Utilities.check_binary_file import RtiCheckFile
 from rti_python.Utilities.read_binary_file import ReadBinaryFile
 import numpy as np
+import copy
 
 """
 Convert full profile Rowe Technologies Inc. ADCP data ensembles currents to a netCDF4 file.
@@ -27,49 +29,157 @@ class RtiNetcdf:
         # netCDF setup
         self.is_netcdf_setup = False
         self.netcdf_file_path = ""
+        self.ensembles_to_process = [0,0]
 
         # Store previous 4 beam ensemble to combine with a vertical beam ensemble
         self.prev_4_beam_ens = None
-        self.ens_delta_time = 0.6
+        self.ens_delta_time = 0
         self.first_ens_dt = None
 
         # Create the CDF file
         self.cdf_file = None
 
-    def write(self, files_paths: List):
-        # Go through all the selected files
-        for binary_file in files_paths:
-            b_file_path = Path(binary_file)             # Create A path to disect
-            file_dir = b_file_path.parent               # Directory of the file
-            base_file_name = b_file_path.stem           # Base file name of the selected file
-            netcdf_name = base_file_name + ".nc"        # Create a netCDF file with same file name
+    def analyze_file(self, file_path: str):
+        """
+        Read in the file to determine all the attributes of the file.
+        :param file_path: File path.
+        :type file_path: str
+        :return: Dictionary of all the attributes.
+        :rtype: dictionary
+        """
+        # Get the information about the file
+        logging.debug("----------------------------------")
+        logging.debug("Start Analyzing File: " + file_path)
+        file_check = RtiCheckFile()
+        file_check.file_progress_event += self.file_progress_handler
+        file_check.process([file_path], show_live_error=False, show_progress_bar=False)
+        self.ensemble_count = file_check.ens_count
+
+        # Check if pairs is 0, then use ensemble count
+        # There are no pairs of ensemble is this data
+        total_ensembles = file_check.ens_pairs_count
+        if total_ensembles == 0:
+            total_ensembles = file_check.ens_count
+
+        logging.debug("Total Ensembles: " + str(total_ensembles))
+
+        file_results = {
+            'EnsCount': file_check.ens_count,
+            'PrimaryEnsCount': file_check.primary_beam_ens_count,
+            'VerticalEnsCount': file_check.vert_beam_ens_count,
+            'EnsPairCount': file_check.ens_pairs_count,
+            'FirstEnsDateTime': file_check.first_ens.EnsembleData.datetime_str(),
+            'LastEnsDateTime': file_check.last_ens.EnsembleData.datetime_str(),
+            'EnsembleDeltaTime': file_check.ens_delta_time,
+            'BadEnsCount': file_check.bad_ens,
+            'EnsErrors': file_check.error_output_str,
+            'IsUpward': file_check.is_upward,
+            'FilePath': file_path,
+            'CompleteFileDesc': file_path + " - Total Ensembles: " + str(total_ensembles) + " Delta: " + str(file_check.ens_delta_time) + " Start: " + file_check.first_ens.EnsembleData.datetime_str() + " End: " + file_check.last_ens.EnsembleData.datetime_str(),
+        }
+
+        logging.debug("Completed Analyzing File: " + file_path)
+        logging.debug("----------------------------------")
+
+        return file_results
+
+    def file_progress_handler(self, sender, bytes_read: int, total_size: int, file_name: str):
+        """
+        Pass the event handler to this objects event so others can monitor the process.
+        :param sender: NOT USED
+        :type sender:
+        :param bytes_read: Bytes read.
+        :type bytes_read: int
+        :param total_size: Total bytes of the file.
+        :type total_size: int
+        :param file_name: File name being processed.
+        :type file_name: str
+        :return:
+        :rtype:
+        """
+        # Pass the event to subscribers
+        self.file_progress_event(bytes_read, total_size, file_name)
+        logging.debug("File Progress: " + str(bytes_read) + " Total: " + str(total_size) + " " + file_name)
+
+    @event
+    def file_progress_event(self, bytes_read: int, total_size: int, file_name: str):
+        """
+        Monitor this event for the file progress.  This will give the number of bytes
+        currently read.
+        :param bytes_read: Bytes read.
+        :type bytes_read: integer
+        :param total_size: Total bytes in the file.
+        :type total_size: integer
+        :param file_name: File name currently reading.
+        :type file_name: string
+        :return:
+        :rtype:
+        """
+        logging.debug(file_name + ' Bytes Read: ' + str(bytes_read) + " of " + str(total_size))
+
+    @event
+    def ensemble_progress_event(self, ens: Ensemble):
+        """
+        Monitor the ensembles being processed.
+        This will pass the event to subcribers when a new
+        ensemble is received to process.
+        :param ens: Ensemble to process.
+        :type ens: Ensemble
+        :return:
+        :rtype:
+        """
+        if ens.IsEnsembleData:
+            logging.debug(str(ens.EnsembleData.EnsembleNumber))
+
+    def export(self, file_path: str, ens_to_process: List, ens_delta_time: float):
+        """
+        Write the netCDF file based on the files given.  Each file will get an individual
+        netCDF file.  The file path will be based on the file path of the original file.
+        :param file_path: File to process.
+        :type file_path: str file paths.
+        :param ens_to_process: List of ensembles to process.
+        :type ens_to_process: [min, max]
+        :param ens_delta_time: Delta time in seconds between ensembles.
+        :type ens_delta_time: Float
+        :return:
+        :rtype:
+        """
+        # Set the values based on analyzing the file
+        self.ensembles_to_process = ens_to_process
+        self.ens_delta_time = ens_delta_time
+
+        if os.path.exists(file_path):
+            b_file_path = Path(file_path)                                   # Create A path to dissect
+            file_dir = b_file_path.parent                                   # Directory of the file
+            base_file_name = b_file_path.stem                               # Base file name of the selected file
+            netcdf_name = base_file_name + ".nc"                            # Create a netCDF file with same file name
             self.netcdf_file_path = os.path.join(file_dir, netcdf_name)     # Create file path for netCDF file
 
             # Set flag to setup the netCDF file
             self.is_netcdf_setup = False
 
-            # Get the information about the file
-            #file_check = RtiCheckFile()
-            #file_check.process([binary_file], show_live_error=False)
-            #self.ensemble_count = file_check.ens_count
-            #print("Ensembles: " + str(file_check.ens_count))
-            #file_check.print_summary(binary_file)
+            logging.debug("Start Exporting " + file_path + " to " + self.netcdf_file_path)
 
             # Create the file reader to read the binary file
             read_binary = ReadBinaryFile()
-            read_binary.ensemble_event += self.process_ens_func
-            read_binary.playback(binary_file)
+            read_binary.ensemble_event += self.process_ens_handler          # Receive ensemble to process
+            read_binary.file_progress += self.file_progress_handler         # Monitor file progress
+            read_binary.playback(file_path)
 
-    def process_ens_func(self, sender, ens):
+            logging.debug("Exporting Complete for " + file_path + " to " + self.netcdf_file_path)
+
+    def process_ens_handler(self, sender, ens: Ensemble):
         """
         Receive the data from the file.  It will process the file.
         When an ensemble is found, it will call this function with the
         complete ensemble.
+        :param sender NOT USED
         :param ens: Ensemble to process.
         :return:
         """
 
-        ensembles_to_process = [0, 2048]
+        if ens and ens.IsEnsembleData:
+            logging.debug(str(ens.EnsembleData.EnsembleNumber))
 
         # Check if the given data is a vertical beam.  We want to group the 4Beam and vertical beam
         if ens.EnsembleData.is_vertical_beam():
@@ -79,31 +189,38 @@ class RtiNetcdf:
                 self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
                                                        self.prev_4_beam_ens,                    # 4 Beam Ensemble
                                                        ens,                                     # Vertical Beam Ensemble
-                                                       ensembles_to_process,                    # Ensembles indexes to process
+                                                       self.ensembles_to_process,               # Ensembles indexes to process
                                                        self.ens_delta_time)                     # Delta time between 2 ensemble pairs
 
             # Process the ensemble
             self.add_ens_to_netcdf(self.prev_4_beam_ens,                                        # 4 Beam Ensemble
                                    ens,                                                         # Vertical Beam Ensemble
                                    None,                                                        # Ignore Errors
-                                   ensembles_to_process,                                        # Indexes to process
+                                   self.ensembles_to_process,                                   # Indexes to process
                                    self.first_ens_dt)                                           # Time of first ensemble
+
         # Also check if we are only getting 4 beam data
-        elif not ens.EnsembleData.is_vertical_beam and not self.prev_4_beam_ens.EnsembleData.is_vertical_beam():
+        elif not ens.EnsembleData.is_vertical_beam() and self.prev_4_beam_ens and not self.prev_4_beam_ens.EnsembleData.is_vertical_beam():
             # Check if the netCDF file needs to be created
             if not self.is_netcdf_setup:
                 # Create the netCDF file
                 self.cdf_file = self.setup_netcdf_file(self.netcdf_file_path,                   # netCDF file path
-                                                       ens,                                     # 4 Beam Ensemble
+                                                       self.prev_4_beam_ens,                    # 4 Beam Ensemble
                                                        None,                                    # No Vertical Beam data
-                                                       ensembles_to_process,                    # Ensembles indexes to process
+                                                       self.ensembles_to_process,               # Ensembles indexes to process
                                                        self.ens_delta_time)                     # Delta time between 2 ensemble pairs
 
-            # Process the ensemble
+                # Add the missing previous ensemble since it was never added
+                self.add_ens_to_netcdf(self.prev_4_beam_ens,                                    # 4 Beam Ensemble
+                                       None,                                                    # No Vertical Beam Ensemble
+                                       None,                                                    # Ignore Errors
+                                       self.ensembles_to_process,                               # Indexes to process
+                                       self.first_ens_dt)                                       # Ensemble first time
+            # Add the new ensemble
             self.add_ens_to_netcdf(ens,                                                         # 4 Beam Ensemble
                                    None,                                                        # No Vertical Beam Ensemble
                                    None,                                                        # Ignore Errors
-                                   ensembles_to_process,                                        # Indexes to process
+                                   self.ensembles_to_process,                                   # Indexes to process
                                    self.first_ens_dt)                                           # Ensemble first time
         else:
             # Store the 4 Beam data
@@ -112,6 +229,11 @@ class RtiNetcdf:
             # Check if the first ensemble time needs to be set
             if not self.first_ens_dt:
                 self.first_ens_dt = ens.EnsembleData.datetime()
+
+        # Pass the ensemble to the event for others to process
+        self.ensemble_progress_event(ens)
+
+        logging.debug(ens.EnsembleData.EnsembleNumber)
 
     def setup_netcdf_file(self, netcdf_file_name: str, ens: Ensemble, vert_ens: Ensemble, ensembles_to_process: Tuple, delta_t: str):
         """
@@ -130,6 +252,8 @@ class RtiNetcdf:
         # needs to be kept that way, even though pylint complains
         intfill = -32768
         floatfill = 1E35
+
+        logging.debug("Setting up netCDF file: " + netcdf_file_name)
 
         # is it possible for delta_t to be none or an int.  Deal with that here
         if delta_t is None:
@@ -479,13 +603,13 @@ class RtiNetcdf:
             # cdf.setncattr('TRDI_BT_max_tracking_depth',ens_data['BTData'][''])
             # cdf.setncattr('TRDI_BT_shallow_water_gain',ens_data['BTData'][''])
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 varname = "BTR%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u8', ('time',), fill_value=intfill)
                 varobj.units = "cm"
                 varobj.long_name = "BT Range %d" % (i + 1)
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 #varnames = ('BTWe', 'BTWu', 'BTWv', 'BTWd')
                 #longnames = ('BT Error Velocity', 'BT Eastward Velocity', 'BT Northward Velocity', 'BT Vertical Velocity')
                 #if ens_data['FLeader']['Coord_Transform'] == 'EARTH':
@@ -498,26 +622,26 @@ class RtiNetcdf:
                 varobj.units = "mm s-1"
                 varobj.long_name = "BT velocity, mm s-1 %d" % (i + 1)
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 varname = "BTc%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
                 varobj.long_name = "BT correlation %d" % (i + 1)
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 varname = "BTe%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
                 varobj.long_name = "BT evaluation amplitude %d" % (i + 1)
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 varname = "BTp%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "percent"
                 varobj.long_name = "BT percent good %d" % (i + 1)
                 # varobj.valid_range = [0, 100]
 
-            for i in range(ens.BottomTrack.NumBeams):
+            for i in range(int(ens.BottomTrack.NumBeams)):
                 varname = "BTRSSI%d" % (i + 1)
                 varobj = cdf.createVariable(varname, 'u2', ('time',), fill_value=intfill)
                 varobj.units = "counts"
@@ -701,6 +825,8 @@ class RtiNetcdf:
         # Set the flag that the netCDF file was created
         self.is_netcdf_setup = True
 
+        logging.debug("Completed setting up netCDF file: " + netcdf_file_name)
+
         return cdf
 
     def add_ens_to_netcdf(self, ens: Ensemble, vert_ens: Ensemble, ens_error, ens2process: List, first_ens_dt: datetime):
@@ -719,6 +845,8 @@ class RtiNetcdf:
         :return:
         :rtype:
         """
+
+        logging.debug("Add Ensemble to netCDF file: " + self.netcdf_file_path + " " + str(ens.EnsembleData.EnsembleNumber) + " " + str(self.ensemble_count))
 
         # Number of beams for 4 Beam system
         nslantbeams = ens.EnsembleData.NumBeams
@@ -739,7 +867,8 @@ class RtiNetcdf:
             varobj = self.cdf_file.variables['Rec']
             try:
                 varobj[self.netcdf_index] = ens.EnsembleData.EnsembleNumber
-            except:
+            except Exception as ex:
+                logging.debug(ex)
                 # here we have reached the end of the netCDF file
                 self.cdf_file.close()
                 return
@@ -870,8 +999,9 @@ class RtiNetcdf:
             #    varobj[netcdf_index] = ens_data['VLeader']['Pressure_deca-pascals']
             #    varobj = self.cdf_file.variables['PressVar']
             #    varobj[netcdf_index] = ens_data['VLeader']['Pressure_variance_deca-pascals']
-            varobj = self.cdf_file.variables['Pressure']
-            varobj[self.netcdf_index] = int(round(0.0001 * ens.AncillaryData.Pressure))
+            if ens.AncillaryData.Pressure > 0:
+                varobj = self.cdf_file.variables['Pressure']
+                varobj[self.netcdf_index] = int(round(0.0001 * ens.AncillaryData.Pressure))
 
             # add bottom track data write to cdf here
             if ens.IsBottomTrack:
@@ -887,13 +1017,13 @@ class RtiNetcdf:
                 for i in range(nslantbeams):
                     varname = "BTR%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens.BottomTrack.pd0_range(pd0_beam_num=i)
+                    varobj[self.netcdf_index] = ens.BottomTrack.pd0_range_cm(pd0_beam_num=i)
                     varname = "BTV%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
                     varobj[self.netcdf_index] = ens.BottomTrack.pd0_beam_vel_mm_per_sec(pd0_beam_num=i)
                     varname = "BTc%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
-                    varobj[self.netcdf_index] = ens.BottomTrack.pd0_corr_counts(num_repeat=num_repeats, pd0_beam_num=i)
+                    varobj[self.netcdf_index] = ens.BottomTrack.pd0_corr_counts(pd0_beam_num=i)
                     varname = "BTe%d" % (i+1)
                     varobj = self.cdf_file.variables[varname]
                     varobj[self.netcdf_index] = ens.BottomTrack.pd0_amp_counts(pd0_beam_num=i)
@@ -951,4 +1081,7 @@ class RtiNetcdf:
             print('Stopping because ID tracking lost')
             self.cdf_file.close()
 
+        # Increment the ensemble count
         self.ensemble_count += 1
+
+        logging.debug("Completed Adding Ensemble to netCDF file: " + self.netcdf_file_path + " " + str(ens.EnsembleData.EnsembleNumber) + " " + str(self.ensemble_count))

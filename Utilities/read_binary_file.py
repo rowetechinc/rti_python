@@ -2,6 +2,7 @@ from rti_python.Codecs.BinaryCodec import BinaryCodec
 from obsub import event
 import logging
 import os
+import copy
 
 
 class ReadBinaryFile:
@@ -37,16 +38,16 @@ class ReadBinaryFile:
             bytes_read += BLOCK_SIZE
             self.file_progress(bytes_read, file_size, ens_file_path)
 
-            while data:  # Verify data was found
-                buff += data  # Accumulate the buffer
-                if DELIMITER in buff:  # Check for the delimiter
-                    chunks = buff.split(DELIMITER)  # If delimiter found, split to get the remaining buffer data
-                    buff = chunks.pop()  # Put the remaining data back in the buffer
+            while data:                                                             # Verify data was found
+                buff += data                                                        # Accumulate the buffer
+                if DELIMITER in buff:                                               # Check for the delimiter
+                    chunks = buff.split(DELIMITER)                                  # If delimiter found, split to get the remaining buffer data
+                    buff = chunks.pop()                                             # Put the remaining data back in the buffer
 
-                    for chunk in chunks:  # Take out the ens data
-                        self.process_playback_ens(DELIMITER + chunk)  # Process the binary ensemble data
+                    for chunk in chunks:                                            # Take out the ens data
+                        self.process_playback_ens(DELIMITER + chunk)                # Process the binary ensemble data
 
-                data = f.read(BLOCK_SIZE)  # Read the next batch of data
+                data = f.read(BLOCK_SIZE)                                           # Read the next batch of data
 
                 # Keep track of bytes read
                 bytes_read += BLOCK_SIZE
@@ -71,7 +72,13 @@ class ReadBinaryFile:
         # This will check that all the data is there and the checksum is good
         if BinaryCodec.verify_ens_data(ens_bin):
             # Decode the ens binary data
+            logging.debug("Decoding binary data to ensemble: " + str(len(ens_bin)))
             ens = BinaryCodec.decode_data_sets(ens_bin)
+
+            if ens.IsEnsembleData:
+                logging.debug("Ensemble Found: " + str(ens.EnsembleData.EnsembleNumber))
+            else:
+                logging.debug("Ensemble Found")
 
             if ens:
                 # Pass the ensemble to the event handler
