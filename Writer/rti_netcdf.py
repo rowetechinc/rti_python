@@ -29,7 +29,7 @@ class RtiNetcdf:
         # netCDF setup
         self.is_netcdf_setup = False
         self.netcdf_file_path = ""
-        self.ensembles_to_process = [0,0]
+        self.ensembles_to_process = [0, 0]
 
         # Store previous 4 beam ensemble to combine with a vertical beam ensemble
         self.prev_4_beam_ens = None
@@ -199,6 +199,9 @@ class RtiNetcdf:
                                    self.ensembles_to_process,                                   # Indexes to process
                                    self.first_ens_dt)                                           # Time of first ensemble
 
+            # Clear the previous ensemble
+            self.prev_4_beam_ens = None
+
         # Also check if we are only getting 4 beam data
         elif not ens.EnsembleData.is_vertical_beam() and self.prev_4_beam_ens and not self.prev_4_beam_ens.EnsembleData.is_vertical_beam():
             # Check if the netCDF file needs to be created
@@ -222,6 +225,11 @@ class RtiNetcdf:
                                    None,                                                        # Ignore Errors
                                    self.ensembles_to_process,                                   # Indexes to process
                                    self.first_ens_dt)                                           # Ensemble first time
+
+            # Do not set prev_4_beam_ens to None here
+            # It is assumed that the order will not change
+            # So we can just call this block every time now
+            # Which will write all the new ensembles to the netCDF file
         else:
             # Store the 4 Beam data
             self.prev_4_beam_ens = ens
