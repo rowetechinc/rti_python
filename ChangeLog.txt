@@ -1,5 +1,9 @@
 rti_python ChangeLog
 
+rti_python - 2.2.0
+ - Added netCDF exporter
+ - Added PD0 outputs for ensemble data
+
 rti_python - 2.1.6
  - Added check for exterme tilts in check_binary_file.
  - In EarthVelocity, make sure both velocity and bottom track velocity are good when removing vessel speed.
