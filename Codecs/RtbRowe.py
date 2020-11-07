@@ -352,9 +352,10 @@ class RtbRowe(object):
             # NMEA data
             if "E000011" in name:
                 logging.debug(name)
-                #nd = NmeaData(num_elements, element_multiplier)
-                #nd.decode(ens_bytes[packetPointer:packetPointer + data_set_size])
-                #ensemble.AddNmeaData(nd)
+                if not ensemble.Nmea:
+                    ensemble.Nmea = Nmea(pd0_format=use_pd0_format)
+                ensemble.Nmea.decode(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                                     name_len=name_len)
 
             # System Setup
             if "E000014" in name:
@@ -1921,3 +1922,274 @@ class RT:
             self.beam_vel[0] = (RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 6, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
             self.instr_vel[0] = (RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 7, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
             self.earth_vel[0] = (RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 8, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
+
+class Nmea:
+    """
+    NMEA data from the ensemble dataset.
+    """
+    def __init__(self, pd0_format: bool = False):
+        """
+        Initialize all the values.
+
+        Initializing the lists as list and converting
+        to numpy array after data is decoded.
+        """
+        self.pd0_format = pd0_format
+
+        self.gga = []
+        self.gsa = []
+        self.vtg = []
+        self.dbt = []
+        self.hdt = []
+
+        # GGA
+        self.gga_delta_time = 0.0
+        self.gga_header = ""
+        self.utc = 0.0
+        self.lat_deg = 0.0
+        self.lat_ref = ""
+        self.lon_deg = 0.0
+        self.lon_ref = ""
+        self.corr_qual = 0.0
+        self.num_sats = 0.0
+        self.hdop = 0.0
+        self.alt = 0.0
+        self.alt_unit = ""
+        self.geoid = ""
+        self.geoid_unit = ""
+        self.d_gps_age = 0.0
+        self.ref_stat_id = 0.0
+
+        # VTG
+        self.vtg_delta_time = 0
+        self.vtg_header = ""
+        self.course_true = 0.0
+        self.true_indicator = ""
+        self.course_mag = 0.0
+        self.mag_indicator = ""
+        self.speed_knots = 0.0
+        self.knots_indicator = ""
+        self.speed_kph = 0.0
+        self.kph_indicator = ""
+        self.mode_indicator = ""
+
+        # HDT
+        self.hdt_header = ""
+        self.heading = 0.0
+        self.rel_true_north = ""
+
+    def decode(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the NMEA dataset.  This will be the raw NMEA messages
+        from the ADCP containing GPS data.
+        :param ens_bytes Bytes for dataset.
+        :param name_len: Name length to get the start location.
+        """
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        # Convert all the messages to a string
+        nmea_str = str(ens_bytes[packet_pointer:], "UTF-8")
+
+        # Decode each NMEA message
+        for msg in nmea_str.split():
+            self.decode_nmea(msg)
+
+        # Convert all the list to numpy array for better storage
+        self.gga = np.array(self.gga)
+        self.gsa = np.array(self.gsa)
+        self.vtg = np.array(self.vtg)
+        self.dbt = np.array(self.dbt)
+        self.hdt = np.array(self.hdt)
+
+    def decode_nmea(self, nmea_str: str):
+        """
+        Verify the NMEA message is by checking the checksum.
+        Then add the message to the list and decode each message.
+        :param nmea_str NMEA string to decode.
+        """
+        # Verify the NMEA string is good
+        if Nmea.check_nmea_checksum(nmea_str):
+            # Add each message to the list
+            # Decode the data
+            if 'gga' in  nmea_str or 'GGA' in nmea_str:
+                self.gga.append(nmea_str)
+                self.decode_gga(nmea_str)
+            if 'gsa' in nmea_str or 'GSA' in nmea_str:
+                self.gsa.append(nmea_str)
+            if 'vtg' in nmea_str or 'VTG' in nmea_str:
+                self.vtg.append(nmea_str)
+                self.decode_vtg(nmea_str)
+            if 'dbt' in nmea_str or 'DBT' in nmea_str:
+                self.dbt.append(nmea_str)
+            if 'hdt' in nmea_str or 'HDT' in nmea_str:
+                self.hdt.append(nmea_str)
+                self.decode_hdt(nmea_str)
+
+    def decode_gga(self, nmea_str: str):
+        """
+        Decode GGA message.  Update the variables.
+
+        :param nmea_str NMEA string.
+        """
+        temp_array = np.array(nmea_str.split(','))
+        temp_array[temp_array == '999.9'] = ''
+
+        try:
+            #self.gga_delta_time = delta_time
+            self.gga_header = temp_array[0]
+            self.utc = float(temp_array[1])
+            lat_str = temp_array[2]
+            lat_deg = float(lat_str[0:2])
+            lat_deg = lat_deg + float(lat_str[2:]) / 60
+            self.lat_deg = lat_deg
+            self.lat_ref = temp_array[3]
+            lon_str = temp_array[4]
+            lon_num = float(lon_str)
+            lon_deg = np.floor(lon_num / 100)
+            lon_deg = lon_deg + (((lon_num / 100.) - lon_deg) * 100.) / 60.
+            self.lon_deg = lon_deg
+            self.lon_ref = temp_array[5]
+            self.corr_qual = float(temp_array[6])
+            self.num_sats = float(temp_array[7])
+            self.hdop = float(temp_array[8])
+            self.alt = float(temp_array[9])
+            self.alt_unit = temp_array[10]
+            self.geoid = temp_array[11]
+            self.geoid_unit = temp_array[12]
+            self.d_gps_age = float(temp_array[13])
+            idx_star = temp_array[14].find('*')
+            self.ref_stat_id= float(temp_array[15][:idx_star])
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+    def decode_gga(self, nmea_str: str):
+        """
+        Decode GGA message.  Update the variables.
+
+        :param nmea_str NMEA string.
+        """
+        temp_array = np.array(nmea_str.split(','))
+        temp_array[temp_array == '999.9'] = ''
+
+        try:
+            # self.gga_delta_time = delta_time
+            self.gga_header = temp_array[0]
+            self.utc = float(temp_array[1])
+            lat_str = temp_array[2]
+            lat_deg = float(lat_str[0:2])
+            lat_deg = lat_deg + float(lat_str[2:]) / 60
+            self.lat_deg = lat_deg
+            self.lat_ref = temp_array[3]
+            lon_str = temp_array[4]
+            lon_num = float(lon_str)
+            lon_deg = np.floor(lon_num / 100)
+            lon_deg = lon_deg + (((lon_num / 100.) - lon_deg) * 100.) / 60.
+            self.lon_deg = lon_deg
+            self.lon_ref = temp_array[5]
+            self.corr_qual = float(temp_array[6])
+            self.num_sats = float(temp_array[7])
+            self.hdop = float(temp_array[8])
+            self.alt = float(temp_array[9])
+            self.alt_unit = temp_array[10]
+            self.geoid = temp_array[11]
+            self.geoid_unit = temp_array[12]
+            self.d_gps_age = float(temp_array[13])
+            idx_star = temp_array[14].find('*')
+            self.ref_stat_id = float(temp_array[15][:idx_star])
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+    def decode_vtg(self, nmea_str: str):
+        """
+        Decode the VTG message and set all the variables.
+
+        :param nmea_str: NMEA string.
+        """
+
+        temp_array = np.array(nmea_str.split(','))
+        temp_array[temp_array == '999.9'] = ''
+
+        try:
+            #self.vtg_delta_time = delta_time
+            self.vtg_header = temp_array[0]
+            self.course_true = Nmea.valid_number(temp_array[1])
+            self.true_indicator = temp_array[2]
+            self.course_mag = Nmea.valid_number(temp_array[3])
+            self.mag_indicator = temp_array[4]
+            self.speed_knots = Nmea.valid_number(temp_array[5])
+            self.knots_indicator = temp_array[6]
+            self.speed_kph = Nmea.valid_number(temp_array[7])
+            self.kph_indicator = temp_array[8]
+            idx_star = temp_array[9].find('*')
+            self.mode_indicator = temp_array[9][:idx_star]
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+    def decode_hdt(self, nmea_str: str):
+        """
+        Decode the HDT message and set all the variables.
+
+        :param nmea_str: NMEA string.
+        """
+
+        temp_array = np.array(nmea_str.split(','))
+        temp_array[temp_array == '999.9'] = ''
+
+        try:
+            # self.vtg_delta_time = delta_time
+            self.hdt_header = temp_array[0]
+            self.heading = Nmea.valid_number(temp_array[1])
+            idx_star = temp_array[2].find('*')
+            self.rel_true_north = temp_array[2][:idx_star]
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+    @staticmethod
+    def valid_number(data_in):
+        """
+        Check to see if data_in can be converted to float.
+
+        :param data_in: str String to be converted to float
+        :return Returns a float of data_in or nan if conversion is not possible
+        """
+
+        try:
+            data_out = float(data_in)
+        except ValueError:
+            data_out = np.nan
+        return data_out
+
+    @staticmethod
+    def check_nmea_checksum(nmea_str: str):
+        """
+        Calculate the NMEA checksum.  Verify the
+        checksum value matches the given value.
+        :param nmea_str NMEA string.
+        :return TRUE = Good checksum
+        """
+        # Remove newline and spaces at the end
+        nmea_str = nmea_str.rstrip('\n')
+        # Get the checksum value
+        checksum = nmea_str[len(nmea_str) - 2:]
+        checksum = int(checksum, 16)
+
+        # Get the data from the string
+        nmea_data = re.sub("(\n|\r\n)", "", nmea_str[nmea_str.find("$") + 1:nmea_str.find("*")])
+
+        # Calculate the checksum
+        calc_checksum = 0
+        for c in nmea_data:
+            calc_checksum ^= ord(c)
+        calc_checksum = calc_checksum & 0xFF
+
+        # Verify the checksum matches
+        if calc_checksum == checksum:
+            return True
+
+        return False
+

@@ -485,3 +485,21 @@ def test_rt():
     assert rowe.ens[-2].Rt.pings[1] == 1
     assert rowe.ens[-2].Rt.pings[2] == 1
     assert rowe.ens[-2].Rt.pings[3] == 1
+
+
+def test_nmea():
+    file_path = r"RTI_20191101112241_00857.bin"
+    rowe = RtbRowe(file_path=file_path, use_pd0_format=False)
+    assert rowe.ens[-1].Nmea.heading == pytest.approx(73.05, abs=0.01)
+    assert rowe.ens[-1].Nmea.speed_knots == pytest.approx(2.64, abs=0.01)
+    assert rowe.ens[-1].Nmea.speed_kph == pytest.approx(4.9, abs=0.01)
+    assert rowe.ens[-1].Nmea.lon_deg == pytest.approx(117.0986, abs=0.01)
+    assert rowe.ens[-1].Nmea.lat_deg == pytest.approx(32.915, abs=0.01)
+    assert rowe.ens[-1].Nmea.num_sats == pytest.approx(9.0, abs=0.01)
+    assert rowe.ens[-1].Nmea.rel_true_north == 'T'
+    assert rowe.ens[-1].Nmea.ref_stat_id == pytest.approx(0.0, abs=0.01)
+    assert rowe.ens[-1].Nmea.mag_indicator == 'M'
+    assert rowe.ens[-1].Nmea.lon_ref == 'W'
+    assert rowe.ens[-1].Nmea.lat_ref == 'N'
+    assert rowe.ens[-1].Nmea.mode_indicator == 'D'
+
