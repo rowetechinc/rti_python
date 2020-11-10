@@ -1,10 +1,10 @@
 import os
-from rti_python.River.QRevProject import QRevRtiProject
-from rti_python.River.QRevTransect import QRevRtiTransect
+from rti_python.River.QRevProject import RTTrowe
+from rti_python.River.QRevTransect import RTTtransect
 
 def test_constructor():
     project_name = "TestProject1"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\imperial\\Imperal Valley_20170816_095301\\'
 
     assert project.project is not None
@@ -15,10 +15,10 @@ def test_constructor():
 
 def test_transect():
     project_name = "TestProject1"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\imperial\\Imperal Valley_20170816_095301\\'
 
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     transect.add_transect_file(file_name1)
     project.add_transect(transect)
@@ -30,10 +30,10 @@ def test_transect():
 
 def test_write_file():
     project_name = "TestProject1"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\test_qrev_project'
 
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     transect.add_transect_file(file_name1)
     project.add_transect(transect)
@@ -42,15 +42,15 @@ def test_write_file():
     project.write_json_file()
 
     assert os.path.exists(project.path)
-    assert os.path.exists(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+    assert os.path.exists(os.path.join(project.path, project_name + RTTrowe.FILE_EXTENSION))
 
 
 def test_write_file_multi_transect():
     project_name = "TestProject1"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\test_qrev_project'
 
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     file_name2 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0_1.pd0'
     transect.add_transect_file(file_name1)
@@ -61,15 +61,15 @@ def test_write_file_multi_transect():
     project.write_json_file()
 
     assert os.path.exists(project.path)
-    assert os.path.exists(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+    assert os.path.exists(os.path.join(project.path, project_name + RTTrowe.FILE_EXTENSION))
 
 
 def test_read_file():
     project_name = "TestProject1"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\test_qrev_project'
 
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     file_name2 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0_1.pd0'
     transect.add_transect_file(file_name1)
@@ -78,11 +78,11 @@ def test_read_file():
 
     # Verify the file exist before we read it in
     assert os.path.exists(project.path)
-    assert os.path.exists(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+    assert os.path.exists(os.path.join(project.path, project_name + RTTrowe.FILE_EXTENSION))
 
     # Read the project file
-    project_read = QRevRtiProject("")
-    project_read.read_json_file(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+    project_read = RTTrowe("")
+    project_read.parse_project(os.path.join(project.path, project_name + RTTrowe.FILE_EXTENSION))
 
     assert project_read.project['Name'] == project_name
     assert len(project_read.transects) == 1
@@ -91,11 +91,11 @@ def test_read_file():
 
 def test_multiple_transects():
     project_name = "TestProject2"
-    project = QRevRtiProject(project_name)
+    project = RTTrowe(project_name)
     project.path = 'C:\\RTI_Capture\\test_qrev_project'
 
-    transect1 = QRevRtiTransect()
-    transect2 = QRevRtiTransect()
+    transect1 = RTTtransect()
+    transect2 = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     file_name2 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0_1.pd0'
     transect1.add_transect_file(file_name1)
@@ -107,5 +107,5 @@ def test_multiple_transects():
     project.write_json_file()
 
     assert os.path.exists(project.path)
-    assert os.path.exists(os.path.join(project.path, project_name + QRevRtiProject.FILE_EXTENSION))
+    assert os.path.exists(os.path.join(project.path, project_name + RTTrowe.FILE_EXTENSION))
 

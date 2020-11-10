@@ -5,45 +5,301 @@ from rti_python.Codecs.RtbRowe import RtbRowe
 def test_init():
     file_path = r"RTI_20191101112241_00857.bin"
     rowe = RtbRowe(file_path=file_path)
-    assert len(rowe.Cfg) == 233
-    assert len(rowe.Rt) == 0
-    assert len(rowe.GdE) == 233
-    assert len(rowe.Bt) == 233
-    assert len(rowe.GdB) == 233
-    assert len(rowe.Corr) == 233
-    assert len(rowe.Amp) == 233
-    assert len(rowe.EarthVel) == 233
-    assert len(rowe.InstrVel) == 233
-    assert len(rowe.BeamVel) == 233
-    assert len(rowe.Sensor) == 233
-    assert len(rowe.Nmea) == 233
+    assert len(rowe.Cfg.num_bins) == 233
+    assert len(rowe.Cfg.num_beams) == 233
+    assert len(rowe.Cfg.bt_lag_length) == 233
+    assert len(rowe.Cfg.wp_nce) == 233
+    assert len(rowe.Cfg.bt_actual_ping_count) == 233
+    assert len(rowe.Cfg.wp_transmit_bandwidth) == 233
+    assert len(rowe.Cfg.wp_system_freq_hz) == 233
+    assert len(rowe.Cfg.wp_samples_per_second) == 233
+    assert len(rowe.Cfg.wp_repeat_n) == 233
+    assert len(rowe.Cfg.wp_receive_bandwidth) == 233
+    assert len(rowe.Cfg.wp_lag_samples) == 233
+    assert len(rowe.Cfg.wp_lag_length) == 233
+    assert len(rowe.Cfg.wp_cpce) == 233
+    assert len(rowe.Cfg.wp_broadband) == 233
+    assert len(rowe.Cfg.wp_beam_mux) == 233
+    assert len(rowe.Cfg.subsystem_config) == 233
+    assert len(rowe.Cfg.subsystem_code) == 233
+    assert len(rowe.Cfg.status) == 233
+    assert len(rowe.Cfg.speed_of_sound) == 233
+    assert len(rowe.Cfg.serial_num) == 233
+    assert len(rowe.Cfg.second) == 233
+    assert len(rowe.Cfg.salinity) == 233
+    assert len(rowe.Cfg.month) == 233
+    assert len(rowe.Cfg.minute) == 233
+    assert len(rowe.Cfg.last_ping_time) == 233
+    assert len(rowe.Cfg.hsec) == 233
+    assert len(rowe.Cfg.hour) == 233
+    assert len(rowe.Cfg.first_ping_time) == 233
+    assert len(rowe.Cfg.firm_rev) == 233
+    assert len(rowe.Cfg.firm_minor) == 233
+    assert len(rowe.Cfg.firm_major) == 233
+    assert len(rowe.Cfg.desired_ping_count) == 233
+    assert len(rowe.Cfg.bt_system_freq_hz) == 233
+    assert len(rowe.Cfg.bt_status) == 233
+    assert len(rowe.Cfg.bt_speed_of_sound) == 233
+    assert len(rowe.Cfg.bt_samples_per_second) == 233
+    assert len(rowe.Cfg.bt_repeat_n) == 233
+    assert len(rowe.Cfg.bt_num_beams) == 233
+    assert len(rowe.Cfg.bt_nce) == 233
+    assert len(rowe.Cfg.bt_narrowband) == 233
+    assert len(rowe.Cfg.bt_last_ping_time) == 233
+    assert len(rowe.Cfg.bt_first_ping_time) == 233
+    assert len(rowe.Cfg.wp_nce) == 233
+    assert len(rowe.Cfg.year) == 233
+    assert len(rowe.Cfg.day) == 233
+
+    assert len(rowe.Sensor.heading) == 233
+    assert len(rowe.Sensor.raw_mag_field_strength3) == 233
+    assert len(rowe.Sensor.raw_mag_field_strength2) == 233
+    assert len(rowe.Sensor.raw_mag_field_strength) == 233
+    assert len(rowe.Sensor.vertical_gravity_vec) == 233
+    assert len(rowe.Sensor.roll_gravity_vec) == 233
+    assert len(rowe.Sensor.roll) == 233
+    assert len(rowe.Sensor.pitch_gravity_vec) == 233
+    assert len(rowe.Sensor.pitch) == 233
+    assert len(rowe.Sensor.bt_salinity) == 233
+    assert len(rowe.Sensor.bt_roll) == 233
+    assert len(rowe.Sensor.bt_pitch) == 233
+    assert len(rowe.Sensor.bt_heading) == 233
+    assert len(rowe.Sensor.voltage) == 233
+    assert len(rowe.Sensor.bt_transducer_depth) == 233
+    assert len(rowe.Sensor.bt_pressure) == 233
+    assert len(rowe.Sensor.transducer_depth) == 233
+    assert len(rowe.Sensor.pressure) == 233
+    assert len(rowe.Sensor.bt_water_temp) == 233
+    assert len(rowe.Sensor.bt_system_temp) == 233
+    assert len(rowe.Sensor.system_temp) == 233
+    assert len(rowe.Sensor.water_temp) == 233
+    assert len(rowe.Sensor.xmt_voltage) == 233
+    assert len(rowe.Sensor.transmit_boost_neg_volt) == 233
+
+    assert len(rowe.Rt.pings) == 0
+    assert len(rowe.Rt.amp) == 0
+    assert len(rowe.Rt.corr) == 0
+    assert len(rowe.Rt.depth) == 0
+    assert len(rowe.Rt.earth_vel) == 0
+    assert len(rowe.Rt.instr_vel) == 0
+    assert len(rowe.Rt.beam_vel) == 0
+    assert len(rowe.Rt.snr) == 0
+
+    assert len(rowe.Bt.depth) == 233               # NAN data
+    assert len(rowe.Bt.snr) == 233
+    assert len(rowe.Bt.beam_vel) == 233
+    assert len(rowe.Bt.instr_vel) == 233
+    assert len(rowe.Bt.earth_vel) == 233
+    assert len(rowe.Bt.corr) == 233
+    assert len(rowe.Bt.amp) == 233
+    assert len(rowe.Bt.pulse_coh_corr) == 233
+    assert len(rowe.Bt.pulse_coh_noise) == 233
+    assert len(rowe.Bt.pulse_coh_vel) == 233
+    assert len(rowe.Bt.pulse_coh_amp) == 233
+    assert len(rowe.Bt.pulse_coh_snr) == 233
+    assert len(rowe.Bt.earth_good) == 233
+    assert len(rowe.Bt.instr_good) == 233
+    assert len(rowe.Bt.beam_good) == 233
+
+    assert len(rowe.GdE.pings) == 233
+    assert len(rowe.GdB.pings) == 233
+    assert len(rowe.Corr.corr) == 233
+    assert len(rowe.Amp.amp) == 233
+    assert len(rowe.EarthVel.vel) == 233
+    assert len(rowe.InstrVel.vel) == 233
+    assert len(rowe.BeamVel.vel) == 233
+
+    assert len(rowe.Nmea.gga) == 233
+    assert len(rowe.Nmea.heading) == 233
+    assert len(rowe.Nmea.rel_true_north) == 233
+    assert len(rowe.Nmea.hdt_header) == 233
+    assert len(rowe.Nmea.alt_unit) == 233
+    assert len(rowe.Nmea.hdt) == 233
+    assert len(rowe.Nmea.mode_indicator) == 233
+    assert len(rowe.Nmea.kph_indicator) == 233
+    assert len(rowe.Nmea.speed_kph) == 233
+    assert len(rowe.Nmea.knots_indicator) == 233
+    assert len(rowe.Nmea.speed_knots) == 233
+    assert len(rowe.Nmea.mag_indicator) == 233
+    assert len(rowe.Nmea.course_mag) == 233
+    assert len(rowe.Nmea.true_indicator) == 233
+    assert len(rowe.Nmea.course_true) == 233
+    assert len(rowe.Nmea.vtg_header) == 233
+    assert len(rowe.Nmea.vtg) == 233
+    assert len(rowe.Nmea.hdt_header) == 233
+    assert len(rowe.Nmea.lat_ref) == 233
+    assert len(rowe.Nmea.lon_ref) == 233
+    assert len(rowe.Nmea.ref_stat_id) == 0
+    assert len(rowe.Nmea.num_sats) == 233
+    assert len(rowe.Nmea.lon_deg) == 233
+    assert len(rowe.Nmea.dbt) == 233
+    assert len(rowe.Nmea.gsa) == 233
+    assert len(rowe.Nmea.corr_qual) == 233
+    assert len(rowe.Nmea.geoid) == 233
+    assert len(rowe.Nmea.geoid_unit) == 233
+    assert len(rowe.Nmea.gga_delta_time) == 0
+    assert len(rowe.Nmea.gga_header) == 233
+    assert len(rowe.Nmea.hdop) == 233
+    assert len(rowe.Nmea.lat_deg) == 233
+    assert len(rowe.Nmea.utc) == 233
+    assert len(rowe.Nmea.vtg_delta_time) == 0
+    assert len(rowe.Nmea.alt) == 233
+
     assert len(rowe.AutoMode) == 0
-    assert len(rowe.Gps) == 0
-    assert len(rowe.Gps2) == 0
-    assert len(rowe.Surface) == 0
-    assert len(rowe.Wt) == 0
+    #assert len(rowe.Gps) == 0
+    #assert len(rowe.Gps2) == 0
+    #assert len(rowe.Surface) == 0
+    #assert len(rowe.Wt) == 0
 
 
 def test_init_1():
     file_path = r"B0000005.ens"
     rowe = RtbRowe(file_path=file_path)
-    assert len(rowe.Cfg) == 30
-    assert len(rowe.Rt) == 30
-    assert len(rowe.GdE) == 30
-    assert len(rowe.Bt) == 0
-    assert len(rowe.GdB) == 30
-    assert len(rowe.Corr) == 30
-    assert len(rowe.Amp) == 30
-    assert len(rowe.EarthVel) == 30
-    assert len(rowe.InstrVel) == 30
-    assert len(rowe.BeamVel) == 30
-    assert len(rowe.Sensor) == 30
-    assert len(rowe.Nmea) == 0
+    assert len(rowe.Cfg.num_bins) == 30
+    assert len(rowe.Cfg.num_beams) == 30
+    assert len(rowe.Cfg.bt_lag_length) == 30
+    assert len(rowe.Cfg.wp_nce) == 30
+    assert len(rowe.Cfg.bt_actual_ping_count) == 30
+    assert len(rowe.Cfg.wp_transmit_bandwidth) == 30
+    assert len(rowe.Cfg.wp_system_freq_hz) == 30
+    assert len(rowe.Cfg.wp_samples_per_second) == 30
+    assert len(rowe.Cfg.wp_repeat_n) == 30
+    assert len(rowe.Cfg.wp_receive_bandwidth) == 30
+    assert len(rowe.Cfg.wp_lag_samples) == 30
+    assert len(rowe.Cfg.wp_lag_length) == 30
+    assert len(rowe.Cfg.wp_cpce) == 30
+    assert len(rowe.Cfg.wp_broadband) == 30
+    assert len(rowe.Cfg.wp_beam_mux) == 30
+    assert len(rowe.Cfg.subsystem_config) == 30
+    assert len(rowe.Cfg.subsystem_code) == 30
+    assert len(rowe.Cfg.status) == 30
+    assert len(rowe.Cfg.speed_of_sound) == 30
+    assert len(rowe.Cfg.serial_num) == 30
+    assert len(rowe.Cfg.second) == 30
+    assert len(rowe.Cfg.salinity) == 30
+    assert len(rowe.Cfg.month) == 30
+    assert len(rowe.Cfg.minute) == 30
+    assert len(rowe.Cfg.last_ping_time) == 30
+    assert len(rowe.Cfg.hsec) == 30
+    assert len(rowe.Cfg.hour) == 30
+    assert len(rowe.Cfg.first_ping_time) == 30
+    assert len(rowe.Cfg.firm_rev) == 30
+    assert len(rowe.Cfg.firm_minor) == 30
+    assert len(rowe.Cfg.firm_major) == 30
+    assert len(rowe.Cfg.desired_ping_count) == 30
+    assert len(rowe.Cfg.bt_system_freq_hz) == 30
+    assert len(rowe.Cfg.bt_status) == 30
+    assert len(rowe.Cfg.bt_speed_of_sound) == 30
+    assert len(rowe.Cfg.bt_samples_per_second) == 30
+    assert len(rowe.Cfg.bt_repeat_n) == 30
+    assert len(rowe.Cfg.bt_num_beams) == 30
+    assert len(rowe.Cfg.bt_nce) == 30
+    assert len(rowe.Cfg.bt_narrowband) == 30
+    assert len(rowe.Cfg.bt_last_ping_time) == 30
+    assert len(rowe.Cfg.bt_first_ping_time) == 30
+    assert len(rowe.Cfg.wp_nce) == 30
+    assert len(rowe.Cfg.year) == 30
+    assert len(rowe.Cfg.day) == 30
+
+    assert len(rowe.Sensor.heading) == 30
+    assert len(rowe.Sensor.raw_mag_field_strength3) == 30
+    assert len(rowe.Sensor.raw_mag_field_strength2) == 30
+    assert len(rowe.Sensor.raw_mag_field_strength) == 30
+    assert len(rowe.Sensor.vertical_gravity_vec) == 30
+    assert len(rowe.Sensor.roll_gravity_vec) == 30
+    assert len(rowe.Sensor.roll) == 30
+    assert len(rowe.Sensor.pitch_gravity_vec) == 30
+    assert len(rowe.Sensor.pitch) == 30
+    assert len(rowe.Sensor.bt_salinity) == 30
+    assert len(rowe.Sensor.bt_roll) == 30
+    assert len(rowe.Sensor.bt_pitch) == 30
+    assert len(rowe.Sensor.bt_heading) == 30
+    assert len(rowe.Sensor.voltage) == 30
+    assert len(rowe.Sensor.bt_transducer_depth) == 30
+    assert len(rowe.Sensor.bt_pressure) == 30
+    assert len(rowe.Sensor.transducer_depth) == 30
+    assert len(rowe.Sensor.pressure) == 30
+    assert len(rowe.Sensor.bt_water_temp) == 30
+    assert len(rowe.Sensor.bt_system_temp) == 30
+    assert len(rowe.Sensor.system_temp) == 30
+    assert len(rowe.Sensor.water_temp) == 30
+    assert len(rowe.Sensor.xmt_voltage) == 30
+    assert len(rowe.Sensor.transmit_boost_neg_volt) == 30
+
+    assert len(rowe.Rt.pings) == 30
+    assert len(rowe.Rt.amp) == 30
+    assert len(rowe.Rt.corr) == 30
+    assert len(rowe.Rt.depth) == 30
+    assert len(rowe.Rt.earth_vel) == 30
+    assert len(rowe.Rt.instr_vel) == 30
+    assert len(rowe.Rt.beam_vel) == 30
+    assert len(rowe.Rt.snr) == 30
+
+    assert len(rowe.Bt.depth) == 30               # NAN data
+    assert len(rowe.Bt.snr) == 30
+    assert len(rowe.Bt.beam_vel) == 30
+    assert len(rowe.Bt.instr_vel) == 30
+    assert len(rowe.Bt.earth_vel) == 30
+    assert len(rowe.Bt.corr) == 30
+    assert len(rowe.Bt.amp) == 30
+    assert len(rowe.Bt.pulse_coh_corr) == 30
+    assert len(rowe.Bt.pulse_coh_noise) == 30
+    assert len(rowe.Bt.pulse_coh_vel) == 30
+    assert len(rowe.Bt.pulse_coh_amp) == 30
+    assert len(rowe.Bt.pulse_coh_snr) == 30
+    assert len(rowe.Bt.earth_good) == 30
+    assert len(rowe.Bt.instr_good) == 30
+    assert len(rowe.Bt.beam_good) == 30
+
+    assert len(rowe.GdE.pings) == 30
+    assert len(rowe.GdB.pings) == 30
+    assert len(rowe.Corr.corr) == 30
+    assert len(rowe.Amp.amp) == 30
+    assert len(rowe.EarthVel.vel) == 30
+    assert len(rowe.InstrVel.vel) == 30
+    assert len(rowe.BeamVel.vel) == 30
+
+    assert len(rowe.Nmea.gga) == 0
+    assert len(rowe.Nmea.heading) == 0
+    assert len(rowe.Nmea.rel_true_north) == 0
+    assert len(rowe.Nmea.hdt_header) == 0
+    assert len(rowe.Nmea.alt_unit) == 0
+    assert len(rowe.Nmea.hdt) == 0
+    assert len(rowe.Nmea.mode_indicator) == 0
+    assert len(rowe.Nmea.kph_indicator) == 0
+    assert len(rowe.Nmea.speed_kph) == 0
+    assert len(rowe.Nmea.knots_indicator) == 0
+    assert len(rowe.Nmea.speed_knots) == 0
+    assert len(rowe.Nmea.mag_indicator) == 0
+    assert len(rowe.Nmea.course_mag) == 0
+    assert len(rowe.Nmea.true_indicator) == 0
+    assert len(rowe.Nmea.course_true) == 0
+    assert len(rowe.Nmea.vtg_header) == 0
+    assert len(rowe.Nmea.vtg) == 0
+    assert len(rowe.Nmea.hdt_header) == 0
+    assert len(rowe.Nmea.lat_ref) == 0
+    assert len(rowe.Nmea.lon_ref) == 0
+    assert len(rowe.Nmea.ref_stat_id) == 0
+    assert len(rowe.Nmea.num_sats) == 0
+    assert len(rowe.Nmea.lon_deg) == 0
+    assert len(rowe.Nmea.dbt) == 0
+    assert len(rowe.Nmea.gsa) == 0
+    assert len(rowe.Nmea.corr_qual) == 0
+    assert len(rowe.Nmea.geoid) == 0
+    assert len(rowe.Nmea.geoid_unit) == 0
+    assert len(rowe.Nmea.gga_delta_time) == 0
+    assert len(rowe.Nmea.gga_header) == 0
+    assert len(rowe.Nmea.hdop) == 0
+    assert len(rowe.Nmea.lat_deg) == 0
+    assert len(rowe.Nmea.utc) == 0
+    assert len(rowe.Nmea.vtg_delta_time) == 0
+    assert len(rowe.Nmea.alt) == 0
+
     assert len(rowe.AutoMode) == 0
-    assert len(rowe.Gps) == 0
-    assert len(rowe.Gps2) == 0
-    assert len(rowe.Surface) == 0
-    assert len(rowe.Wt) == 0
+    #assert len(rowe.Gps) == 0
+    #assert len(rowe.Gps2) == 0
+    #assert len(rowe.Surface) == 0
+    #assert len(rowe.Wt) == 0
 
 
 def test_init_2():
@@ -52,7 +308,7 @@ def test_init_2():
     assert len(rowe.Cfg) == 502
     assert len(rowe.Rt) == 502
     assert len(rowe.GdE) == 251
-    assert len(rowe.Bt) == 0
+    assert len(rowe.Bt) == 502              # NAN data
     assert len(rowe.GdB) == 502
     assert len(rowe.Corr) == 502
     assert len(rowe.Amp) == 502
