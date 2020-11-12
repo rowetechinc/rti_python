@@ -54,6 +54,7 @@ class RtbRowe(object):
         self.Rt = RT(pd0_format=use_pd0_format)
         self.Bt = BT(pd0_format=use_pd0_format)
         self.Nmea = Nmea(pd0_format=use_pd0_format)
+        self.Gage = Gage(pd0_format=use_pd0_format)
         self.Gps = []
         self.Gps2 = []
         self.Surface = []
@@ -223,6 +224,8 @@ class RtbRowe(object):
 
         # Flag if BT data found
         bt_data_found = False
+        bt_adcp3_data_found = False
+        ancillary_adcp3_found = False
 
         # Create a new config and sensor object
         # Multiple datasets are needed to populate these objects
@@ -348,6 +351,13 @@ class RtbRowe(object):
                 self.Sensor.decode_ancillary_data(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
                                                   name_len=name_len)
 
+                if num_elements > 19:
+                    self.Sensor.decode_ancillary_adcp3_init(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                                                            name_len=name_len)
+                    self.Cfg.decode_ancillary_adcp3_init(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                                                         name_len=name_len)
+                    ancillary_adcp3_found = True
+
             # Bottom Track
             if "E000010" in name:
                 logging.debug(name)
@@ -363,6 +373,15 @@ class RtbRowe(object):
                 # Populate Sensor data
                 self.Sensor.decode_bottom_track_data(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
                                                      name_len=name_len)
+
+                # Check if ADCP 3 data is available
+                # Number of elements.  74 for 4 Beam system, 59 for 3 beam, 29 for 1 beam
+                if num_elements > 74:
+                    self.Sensor.decode_bottom_track_adcp3_data(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                                                               name_len=name_len)
+                    # Set flag that data found
+                    bt_adcp3_data_found = True
+
 
             # NMEA data
             if "E000011" in name:
@@ -387,6 +406,35 @@ class RtbRowe(object):
                 self.Rt.decode(ens_bytes=ens_bytes[packetPointer:packetPointer + data_set_size],
                                name_len=name_len)
 
+            if "E000016" in name:
+                logging.debug(name)
+                self.Gage.decode_data(ens_bytes=ens_bytes[packetPointer:packetPointer + data_set_size],
+                                      name_len=name_len)
+
+            if "R000001" in name:
+                logging.debug(name)
+                #RiverBTID
+
+            if "R000002" in name:
+                logging.debug(name)
+                #RiverTimeStamp
+
+            if "R000003" in name:
+                logging.debug(name)
+                #RiverNmea
+
+            if "R000004" in name:
+                logging.debug(name)
+                #RiverBThump
+
+            if "R000005" in name:
+                logging.debug(name)
+                #RiverStationID
+
+            if "R000006" in name:
+                logging.debug(name)
+                #RiverTransectID
+
             # Move to the next dataset
             packetPointer += data_set_size
 
@@ -395,8 +443,15 @@ class RtbRowe(object):
         if not bt_data_found and self.Cfg:
             self.Bt.empty_init(num_ens=len(self.Cfg.num_beams),
                                num_beams=self.Cfg.num_beams)
-            self.Cfg.empty_bt_init(num_ens=len(self.Cfg.num_beams))
-            self.Sensor.empty_bt_init(num_ens=len(self.Cfg.num_beams))
+            self.Cfg.empty_bt_init(num_beams=len(self.Cfg.num_beams))
+            self.Sensor.empty_bt_init(num_beams=len(self.Cfg.num_beams))
+
+        if not bt_adcp3_data_found and self.Cfg:
+            self.Sensor.empty_bt_adcp3_init(num_beams=len(self.Cfg.num_beams))
+
+        if not ancillary_adcp3_found:
+            self.Sensor.empty_ancillary_adcp3_init()
+            self.Cfg.empty_ancillary_adcp3_init()
 
     @staticmethod
     def get_data_set_size(ds_type: int, name_len: int, num_elements: int, element_multiplier: int):
@@ -489,6 +544,16 @@ class RtbRowe(object):
             logging.debug("Error creating a float from bytes. " + str(e))
             return 0.0
 
+    @staticmethod
+    def nans(num_ens: int):
+        """
+        Create a numpy array filled with NaN based on the number of
+        ensembles given.
+        @param num_ens: Number of ensembles
+        """
+        empty_arr = np.empty(num_ens, dtype=float)
+        empty_arr.fill(np.nan)
+        return empty_arr
 
 class BeamVelocity:
     """
@@ -1073,6 +1138,11 @@ class Cfg:
         self.second = []                     # Second
         self.hsec = []                       # Hundredth Second
 
+        # ADCP 3 values
+        self.current_system = []
+        self.status_2 = []
+        self.burst_index = []
+
         self.blank = []                    # Blank.  Depth to the first bin in meters.
         self.bin_size = []                 # Size of a bin in meters.
         self.first_ping_time = []          # First Ping Time in seconds.
@@ -1163,6 +1233,20 @@ class Cfg:
         self.salinity.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
         self.speed_of_sound.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
+    def decode_ancillary_adcp3_data(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the ancillary data for the Configuration data.
+
+        :param ens_bytes: Byte array containing the ensemble data.
+        :param name_len: Length of the name of the dataset.
+        """
+        # Determine where to start in the ensemble data
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        self.current_system.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 0, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.status_2.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 1, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.burst_index.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 2, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
     def decode_systemsetup_data(self, ens_bytes: list, name_len: int = 8):
         """
         Decode the system setup data for the Configuration data.
@@ -1211,34 +1295,26 @@ class Cfg:
         self.bt_num_beams.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
         self.bt_actual_ping_count.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 13, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
-    def empty_bt_init(self, num_ens: int):
+    def empty_bt_init(self, num_beams: int):
         """
         Set the list with NAN for all missing Bottom Track data.
-        :param num_ens Number of ensembles.
+        :param num_beams Number of beams.
         """
-        bfp_empty = np.empty(num_ens, dtype=float)
-        bfp_empty.fill(np.nan)
-        self.bt_first_ping_time.append(bfp_empty)
+        self.bt_first_ping_time.append(RtbRowe.nans(num_beams))
+        self.bt_last_ping_time.append(RtbRowe.nans(num_beams))
+        self.bt_speed_of_sound.append(RtbRowe.nans(num_beams))
+        self.bt_status.append(RtbRowe.nans(num_beams))
+        self.bt_num_beams.append(RtbRowe.nans(num_beams))
+        self.bt_actual_ping_count.append(RtbRowe.nans(num_beams))
 
-        blp_empty = np.empty(num_ens, dtype=float)
-        blp_empty.fill(np.nan)
-        self.bt_last_ping_time.append(blp_empty)
-
-        bss_empty = np.empty(num_ens, dtype=float)
-        bss_empty.fill(np.nan)
-        self.bt_speed_of_sound.append(bss_empty)
-
-        bs_empty = np.empty(num_ens, dtype=float)
-        bs_empty.fill(np.nan)
-        self.bt_status.append(bs_empty)
-
-        bnb_empty = np.empty(num_ens, dtype=float)
-        bnb_empty.fill(np.nan)
-        self.bt_num_beams.append(bnb_empty)
-
-        bap_empty = np.empty(num_ens, dtype=float)
-        bap_empty.fill(np.nan)
-        self.bt_actual_ping_count.append(bap_empty)
+    def empty_ancillary_adcp3_init(self):
+        """
+        If no Ancillary ADCP3 data is given,
+        fill in the arrays with NaN values.
+        """
+        self.current_system.append(np.NaN)
+        self.status_2.append(np.NaN)
+        self.burst_index.append(np.NaN)
 
 
 class Sensor:
@@ -1287,6 +1363,29 @@ class Sensor:
         self.bt_salinity = []
         self.bt_pressure = []
         self.bt_transducer_depth = []
+
+        # ADCP 3 Values
+        self.hs1_temp = []
+        self.hs2_temp = []
+        self.rcv1_temp = []
+        self.rcv2_temp = []
+        self.vinf = []
+        self.vg = []
+        self.vt = []
+        self.vtl = []
+        self.d3v3 = []
+        self.bt_hs1_temp = []
+        self.bt_hs2_temp = []
+        self.bt_rcv1_temp = []
+        self.bt_rcv2_temp = []
+        self.bt_vinf = []
+        self.bt_vg = []
+        self.bt_vt = []
+        self.bt_vtl = []
+        self.bt_d3v3 = []
+        self.bt_sounder_range = []
+        self.bt_sounder_snr = []
+        self.bt_sounder_amp = []
 
     def decode_systemsetup_data(self, ens_bytes: list, name_len: int = 8):
         """
@@ -1342,9 +1441,43 @@ class Sensor:
             self.pressure.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 10, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
             self.transducer_depth.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 11, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
+    def decode_ancillary_adcp3_init(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the ancillary ADCP3 data for the Sensor data.
+
+        :param ens_bytes: Byte array containing the ensemble data.
+        :param name_len: Length of the name of the dataset.
+        """
+        # Determine where to start in the ensemble data
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        self.hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 13, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 14, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 15, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 16, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 17, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 18, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 16, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 17, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 18, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
+    def empty_ancillary_adcp3_init(self):
+        """
+        Initialize the array with NaN if no value is given.
+        """
+        self.hs1_temp.append(np.NaN)
+        self.hs2_temp.append(np.NaN)
+        self.rcv1_temp.append(np.NaN)
+        self.rcv2_temp.append(np.NaN)
+        self.vinf.append(np.NaN)
+        self.vg.append(np.NaN)
+        self.vt.append(np.NaN)
+        self.vtl.append(np.NaN)
+        self.d3v3.append(np.NaN)
+
     def decode_bottom_track_data(self, ens_bytes: list, name_len: int = 8):
         """
-        Decode the ancillary data for the Configuration data.
+        Decode the bottom track data for the Sensor data.
 
         :param ens_bytes: Byte array containing the ensemble data.
         :param name_len: Length of the name of the dataset.
@@ -1375,42 +1508,82 @@ class Sensor:
             self.bt_pressure.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 8, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
             self.bt_transducer_depth.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
-    def empty_bt_init(self, num_ens: int):
+    def decode_bottom_track_adcp3_data(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the bottom track ADCP3 data for the Sensor data.
+
+        :param ens_bytes: Byte array containing the ensemble data.
+        :param name_len: Length of the name of the dataset.
+        """
+        # Determine where to start in the ensemble data
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        # Get the number of beams
+        num_beams = int(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
+        # 14 raw values plus 15 values for each beam
+        data_index = 14 + (15 * num_beams)
+
+        self.hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 1), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 2), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 3), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 4), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 5), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 6), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 7), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 8), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 9), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 10), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 11), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 12), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 13), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 14), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 15), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 16), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 17), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 18), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 19), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 20), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 21), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 22), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 23), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 24), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_range.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 25), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_snr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 26), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_amp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 27), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
+    def empty_bt_init(self, num_beams: int):
         """
         Set the list with NAN for all missing Bottom Track data.
-        :param num_ens Number of ensembles.
+        :param num_beams Number of ensembles.
         """
-        bh_empty = np.empty(num_ens, dtype=float)
-        bh_empty.fill(np.nan)
-        self.bt_heading.append(bh_empty)
+        self.bt_heading.append(np.NaN)
+        self.bt_pitch.append(np.NaN)
+        self.bt_roll.append(np.NaN)
+        self.bt_water_temp.append(np.NaN)
+        self.bt_system_temp.append(np.NaN)
+        self.bt_salinity.append(np.NaN)
+        self.bt_pressure.append(np.NaN)
+        self.bt_transducer_depth.append(np.NaN)
 
-        bp_empty = np.empty(num_ens, dtype=float)
-        bp_empty.fill(np.nan)
-        self.bt_pitch.append(bp_empty)
-
-        br_empty = np.empty(num_ens, dtype=float)
-        br_empty.fill(np.nan)
-        self.bt_roll.append(br_empty)
-
-        bwt_empty = np.empty(num_ens, dtype=float)
-        bwt_empty.fill(np.nan)
-        self.bt_water_temp.append(bwt_empty)
-
-        bst_empty = np.empty(num_ens, dtype=float)
-        bst_empty.fill(np.nan)
-        self.bt_system_temp.append(bst_empty)
-
-        bs_empty = np.empty(num_ens, dtype=float)
-        bs_empty.fill(np.nan)
-        self.bt_salinity.append(bs_empty)
-
-        bp_empty = np.empty(num_ens, dtype=float)
-        bp_empty.fill(np.nan)
-        self.bt_pressure.append(bp_empty)
-
-        btd_empty = np.empty(num_ens, dtype=float)
-        btd_empty.fill(np.nan)
-        self.bt_transducer_depth.append(btd_empty)
+    def empty_bt_adcp3_init(self, num_beams: int):
+        """
+        If now Bottom Track ADCP3 data is given,
+        fill in the arrays with NaN values.
+        :param num_beams Number of beams.
+        """
+        self.bt_hs1_temp.append(np.NaN)
+        self.bt_hs2_temp.append(np.NaN)
+        self.bt_rcv1_temp.append(np.NaN)
+        self.bt_rcv2_temp.append(np.NaN)
+        self.bt_vinf.append(np.NaN)
+        self.bt_vg.append(np.NaN)
+        self.bt_vt.append(np.NaN)
+        self.bt_vtl.append(np.NaN)
+        self.bt_d3v3.append(np.NaN)
+        self.bt_sounder_range.append(np.NaN)
+        self.bt_sounder_snr.append(np.NaN)
+        self.bt_sounder_amp.append(np.NaN)
 
 
 class BT:
@@ -2409,4 +2582,88 @@ class Nmea:
             return True
 
         return False
+
+
+class Gage:
+    """
+    Gage Height data from the ensemble dataset.
+    """
+    def __init__(self, pd0_format: bool = False):
+        """
+        Initialize all the values.
+
+        Initializing the lists as list and converting
+        to numpy array after data is decoded.
+        """
+        self.pd0_format = pd0_format
+
+        self.status = []
+        self.avg_range = []
+        self.sd = []
+        self.avg_sn = []
+        self.n = []
+        self.salinity = []
+        self.pressure = []
+        self.depth = []
+        self.water_temp = []
+        self.backplane_temp = []
+        self.speed_of_sound = []
+        self.heading = []
+        self.pitch = []
+        self.roll = []
+        self.avg_s = []
+        self.avg_n1 = []
+        self.avg_n2 = []
+        self.gain_frac = []
+
+        self.pings = []
+        self.snr_thresh = []
+        self.gain_thresh = []
+        self.stat_thresh = []
+        self.xmt_cycles = []
+        self.depth_offset = []
+
+    def decode_data(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the ancillary data for the Configuration data.
+
+        :param ens_bytes: Byte array containing the ensemble data.
+        :param name_len: Length of the name of the dataset.
+        """
+        # Determine where to start in the ensemble data
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        self.status.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 0, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.avg_range.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 1, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.sd.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 2, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.avg_sn.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 3, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.n.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 4, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.salinity.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 5, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.pressure.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 6, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.depth.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 7, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.water_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 8, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.backplane_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.speed_of_sound.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 10, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.heading.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 11, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.pitch.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.roll.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 13, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.avg_s.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 14, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.avg_n1.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 15, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.avg_n2.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 16, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.gain_frac.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 17, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.pings.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 18, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.snr_thresh.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 19, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.gain_thresh.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 20, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.stat_thresh.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 21, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.xmt_cycles.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 22, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.depth_offset.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 23, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+
+
+
+
+
+
+
+
+
 

@@ -50,6 +50,9 @@ def test_init():
     assert len(rowe.Cfg.wp_nce) == 233
     assert len(rowe.Cfg.year) == 233
     assert len(rowe.Cfg.day) == 233
+    assert len(rowe.Cfg.current_system) == 233
+    assert len(rowe.Cfg.status_2) == 233
+    assert len(rowe.Cfg.burst_index) == 233
 
     assert len(rowe.Sensor.heading) == 233
     assert len(rowe.Sensor.raw_mag_field_strength3) == 233
@@ -75,6 +78,27 @@ def test_init():
     assert len(rowe.Sensor.water_temp) == 233
     assert len(rowe.Sensor.xmt_voltage) == 233
     assert len(rowe.Sensor.transmit_boost_neg_volt) == 233
+    assert len(rowe.Sensor.hs1_temp) == 233
+    assert len(rowe.Sensor.hs2_temp) == 233
+    assert len(rowe.Sensor.rcv1_temp) == 233
+    assert len(rowe.Sensor.rcv2_temp) == 233
+    assert len(rowe.Sensor.vinf) == 233
+    assert len(rowe.Sensor.vg) == 233
+    assert len(rowe.Sensor.vt) == 233
+    assert len(rowe.Sensor.vtl) == 233
+    assert len(rowe.Sensor.d3v3) == 233
+    assert len(rowe.Sensor.bt_hs1_temp) == 233
+    assert len(rowe.Sensor.bt_hs2_temp) == 233
+    assert len(rowe.Sensor.bt_rcv1_temp) == 233
+    assert len(rowe.Sensor.bt_rcv2_temp) == 233
+    assert len(rowe.Sensor.bt_vinf) == 233
+    assert len(rowe.Sensor.bt_vg) == 233
+    assert len(rowe.Sensor.bt_vt) == 233
+    assert len(rowe.Sensor.bt_vtl) == 233
+    assert len(rowe.Sensor.bt_d3v3) == 233
+    assert len(rowe.Sensor.bt_sounder_range) == 233
+    assert len(rowe.Sensor.bt_sounder_snr) == 233
+    assert len(rowe.Sensor.bt_sounder_amp) == 233
 
     assert len(rowe.Rt.pings) == 0
     assert len(rowe.Rt.amp) == 0
