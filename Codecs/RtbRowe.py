@@ -60,6 +60,7 @@ class RtbRowe(object):
         self.Surface = []
         self.AutoMode = []
         self.Wt = []
+        self.River_BT = RiverBT(pd0_format=use_pd0_format)
 
         # Read in the given file path
         self.rtb_read(file_path=file_path, use_pd0_format=self.use_pd0_format)
@@ -352,9 +353,9 @@ class RtbRowe(object):
                                                   name_len=name_len)
 
                 if num_elements > 19:
-                    self.Sensor.decode_ancillary_adcp3_init(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                    self.Sensor.decode_ancillary_adcp3_data(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
                                                             name_len=name_len)
-                    self.Cfg.decode_ancillary_adcp3_init(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
+                    self.Cfg.decode_ancillary_adcp3_data(ens_bytes=ens_bytes[packetPointer:packetPointer+data_set_size],
                                                          name_len=name_len)
                     ancillary_adcp3_found = True
 
@@ -413,7 +414,8 @@ class RtbRowe(object):
 
             if "R000001" in name:
                 logging.debug(name)
-                #RiverBTID
+                self.River_BT.decode_data(ens_bytes=ens_bytes[packetPointer:packetPointer + data_set_size],
+                                          name_len=name_len)
 
             if "R000002" in name:
                 logging.debug(name)
@@ -554,6 +556,7 @@ class RtbRowe(object):
         empty_arr = np.empty(num_ens, dtype=float)
         empty_arr.fill(np.nan)
         return empty_arr
+
 
 class BeamVelocity:
     """
@@ -1441,7 +1444,7 @@ class Sensor:
             self.pressure.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 10, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
             self.transducer_depth.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 11, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
-    def decode_ancillary_adcp3_init(self, ens_bytes: list, name_len: int = 8):
+    def decode_ancillary_adcp3_data(self, ens_bytes: list, name_len: int = 8):
         """
         Decode the ancillary ADCP3 data for the Sensor data.
 
@@ -1524,33 +1527,18 @@ class Sensor:
         # 14 raw values plus 15 values for each beam
         data_index = 14 + (15 * num_beams)
 
-        self.hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 1), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 2), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 3), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 4), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 5), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 6), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 7), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 8), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 9), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 10), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 11), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 12), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 13), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 14), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 15), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 16), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 17), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 18), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 19), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 20), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 21), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 22), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 23), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 24), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_sounder_range.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 25), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_sounder_snr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 26), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.bt_sounder_amp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 27), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 1), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_hs2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 2), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_rcv1_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 3), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_rcv2_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 4), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vinf.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 5), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 6), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 7), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_vtl.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 8), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_d3v3.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 9), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_range.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 11), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_snr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 12), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.bt_sounder_amp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * (data_index + 13), RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
     def empty_bt_init(self, num_beams: int):
         """
@@ -2562,26 +2550,30 @@ class Nmea:
         :param nmea_str NMEA string.
         :return TRUE = Good checksum
         """
-        # Remove newline and spaces at the end
-        nmea_str = nmea_str.rstrip('\n')
-        # Get the checksum value
-        checksum = nmea_str[len(nmea_str) - 2:]
-        checksum = int(checksum, 16)
+        try:
+            # Remove newline and spaces at the end
+            nmea_str = nmea_str.rstrip('\n')
+            # Get the checksum value
+            checksum = nmea_str[len(nmea_str) - 2:]
+            checksum = int(checksum, 16)
 
-        # Get the data from the string
-        nmea_data = re.sub("(\n|\r\n)", "", nmea_str[nmea_str.find("$") + 1:nmea_str.find("*")])
+            # Get the data from the string
+            nmea_data = re.sub("(\n|\r\n)", "", nmea_str[nmea_str.find("$") + 1:nmea_str.find("*")])
 
-        # Calculate the checksum
-        calc_checksum = 0
-        for c in nmea_data:
-            calc_checksum ^= ord(c)
-        calc_checksum = calc_checksum & 0xFF
+            # Calculate the checksum
+            calc_checksum = 0
+            for c in nmea_data:
+                calc_checksum ^= ord(c)
+            calc_checksum = calc_checksum & 0xFF
 
-        # Verify the checksum matches
-        if calc_checksum == checksum:
-            return True
+            # Verify the checksum matches
+            if calc_checksum == checksum:
+                return True
 
-        return False
+            return False
+        except Exception as ex:
+            logging.error(ex)
+            return False
 
 
 class Gage:
@@ -2659,10 +2651,292 @@ class Gage:
         self.depth_offset.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 23, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
 
+class RiverBT:
+    """
+    River Bottom Track data from the ensemble dataset.
+    """
+    def __init__(self, pd0_format: bool = False):
+        """
+        Initialize all the values.
 
+        Initializing the lists as list and converting
+        to numpy array after data is decoded.
+        """
+        self.pd0_format = pd0_format
 
+        self.num_subsystems = []                # Number of subsystems to decode
+        self.ping_count = []                    # Pings averaged
+        self.status = []                        # Data status
+        self.beams = []                         # Number of beams
+        self.nce = []                           # Number of code elements
+        self.repeats_n = []                     # Number of code repeats
+        self.cpce = []                          # Codes per code elements
+        self.bb = []                            # Broadband
+        self.ll = []
+        self.beam_mux = []                      # Beam Mux setup
+        self.nb = []                            # Narrowband
+        self.ping_sec = []                      # Ping time in seconds
+        self.heading = []                       # Heading 0 to 360
+        self.pitch = []                         # Pitch -90 to 90
+        self.roll = []                          # Roll -180 to 180
+        self.water_temp = []                    # Water Temperature in C
+        self.backplane_temp = []                # Internal System temperature in C
+        self.salinity = []                      # Salinity in PPT
+        self.pressure = []                      # Pressure in Pascal
+        self.depth = []                         # Pressure converted to m
+        self.speed_of_sound = []                # Speed of Sound in m/s
+        self.mx = []
+        self.my = []
+        self.mz = []
+        self.gp = []
+        self.gr = []
+        self.gz = []
+        self.samples_per_sec = []               # Samples per second
+        self.system_freq_hz = []                # System frequency in Hz
+        self.bt_range = []                      # Bottom Track Range in m
+        self.bt_snr = []                        # Bottom Track SNR in dB
+        self.bt_amp = []                        # Bottom Track Amplitude in dB
+        self.bt_noise_amp_bp = []               # Noise in Amplitude Back Porch
+        self.bt_noise_amp_fp = []               # Noise in Amplitude Front Porch
+        self.bt_corr = []                       # Bottom Track Correlation in percent
+        self.vel = []                           # Bottom Track Beam Velocity in m/s
+        self.beam_n = []
 
+    def decode_data(self, ens_bytes: list, name_len: int = 8):
+        """
+        Decode the River Bottom data data.
 
+        :param ens_bytes: Byte array containing the ensemble data.
+        :param name_len: Length of the name of the dataset.
+        """
+
+        # Determine where to start in the ensemble data
+        packet_pointer = RtbRowe.get_base_data_size(name_len)
+
+        num_subsystems = int(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 0, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        self.num_subsystems.append(num_subsystems)
+
+        # Start of the data
+        index = 1
+
+        # Create a temp list to hold all the values for each subsystem
+        # Accumulate the list then add it to the data type
+        # Index will keep track of where we are located in the data
+        pint_count = []
+        for sb in range(num_subsystems):
+            pint_count.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.ping_count.append(pint_count)
+
+        status = []
+        for sb in range(num_subsystems):
+            status.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.status.append(status)
+
+        beams = []
+        for sb in range(num_subsystems):
+            beams.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.beams.append(beams)
+
+        nce = []
+        for sb in range(num_subsystems):
+            nce.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.nce.append(nce)
+
+        repeats_n = []
+        for sb in range(num_subsystems):
+            repeats_n.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.repeats_n.append(repeats_n)
+
+        cpce = []
+        for sb in range(num_subsystems):
+            cpce.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.cpce.append(cpce)
+
+        bb = []
+        for sb in range(num_subsystems):
+            bb.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bb.append(bb)
+
+        ll = []
+        for sb in range(num_subsystems):
+            ll.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.ll.append(ll)
+
+        beam_mux = []
+        for sb in range(num_subsystems):
+            beam_mux.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.beam_mux.append(beam_mux)
+
+        nb = []
+        for sb in range(num_subsystems):
+            nb.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.nb.append(nb)
+
+        ps = []
+        for sb in range(num_subsystems):
+            ps.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.ping_sec.append(ps)
+
+        hdg = []
+        for sb in range(num_subsystems):
+            hdg.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.heading.append(hdg)
+
+        ptch = []
+        for sb in range(num_subsystems):
+            ptch.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.pitch.append(ptch)
+
+        roll = []
+        for sb in range(num_subsystems):
+            roll.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.roll.append(roll)
+
+        wt = []
+        for sb in range(num_subsystems):
+            wt.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.water_temp.append(wt)
+
+        sys_temp = []
+        for sb in range(num_subsystems):
+            sys_temp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.backplane_temp.append(sys_temp)
+
+        sal = []
+        for sb in range(num_subsystems):
+            sal.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.salinity.append(sal)
+
+        pres = []
+        for sb in range(num_subsystems):
+            pres.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.pressure.append(pres)
+
+        depth = []
+        for sb in range(num_subsystems):
+            depth.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.depth.append(depth)
+
+        sos = []
+        for sb in range(num_subsystems):
+            sos.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.speed_of_sound.append(sos)
+
+        mx = []
+        for sb in range(num_subsystems):
+            mx.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.mx.append(mx)
+
+        my = []
+        for sb in range(num_subsystems):
+            my.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.my.append(my)
+
+        mz = []
+        for sb in range(num_subsystems):
+            mz.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.mz.append(mz)
+
+        gp = []
+        for sb in range(num_subsystems):
+            gp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.gp.append(gp)
+
+        gr = []
+        for sb in range(num_subsystems):
+            gr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.gr.append(gr)
+
+        gz = []
+        for sb in range(num_subsystems):
+            gz.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.gz.append(gz)
+
+        sps = []
+        for sb in range(num_subsystems):
+            sps.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.samples_per_sec.append(sps)
+
+        freq = []
+        for sb in range(num_subsystems):
+            freq.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.system_freq_hz.append(freq)
+
+        bt_range = []
+        for sb in range(num_subsystems):
+            bt_range.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_range.append(bt_range)
+
+        snr = []
+        for sb in range(num_subsystems):
+            snr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_snr.append(snr)
+
+        amp = []
+        for sb in range(num_subsystems):
+            amp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_amp.append(amp)
+
+        noise_bp = []
+        for sb in range(num_subsystems):
+            noise_bp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_noise_amp_bp.append(noise_bp)
+
+        noise_fp = []
+        for sb in range(num_subsystems):
+            noise_fp.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_noise_amp_fp.append(noise_fp)
+
+        corr = []
+        for sb in range(num_subsystems):
+            corr.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.bt_corr.append(corr)
+
+        vel = []
+        for sb in range(num_subsystems):
+            vel.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.vel.append(vel)
+
+        beam_n = []
+        for sb in range(num_subsystems):
+            beam_n.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * index, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            index += 1
+        self.beam_n.append(beam_n)
 
 
 
