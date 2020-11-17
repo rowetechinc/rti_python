@@ -2,6 +2,43 @@ import pytest
 from rti_python.Codecs.RtbRowe import RtbRowe
 
 
+def test_count():
+    file_path = r"RTI_20191101112241_00857.bin"
+    count = RtbRowe.count_ensembles(file_path=file_path)
+    assert count == 233
+
+    file_path = r"B0000005.ens"
+    count = RtbRowe.count_ensembles(file_path=file_path)
+    assert count == 30
+
+    file_path = r"B0000086_SUB.ENS"
+    count = RtbRowe.count_ensembles(file_path=file_path)
+    assert count == 238
+
+
+def test_file_info():
+    file_path = r"RTI_20191101112241_00857.bin"
+    rowe = RtbRowe(file_path=file_path)
+    ens_count, num_beams, num_bins = rowe.get_file_info(file_path=file_path)
+    assert ens_count == 233
+    assert num_beams == 4
+    assert num_bins == 50
+
+    file_path = r"B0000005.ens"
+    rowe = RtbRowe(file_path=file_path)
+    ens_count, num_beams, num_bins = rowe.get_file_info(file_path=file_path)
+    assert ens_count == 30
+    assert num_beams == 4
+    assert num_bins == 80
+
+    file_path = r"B0000086_SUB.ENS"
+    rowe = RtbRowe(file_path=file_path)
+    ens_count, num_beams, num_bins = rowe.get_file_info(file_path=file_path)
+    assert ens_count == 251
+    assert num_beams == 4
+    assert num_bins == 20
+
+
 def test_init():
     file_path = r"RTI_20191101112241_00857.bin"
     rowe = RtbRowe(file_path=file_path)

@@ -65,6 +65,119 @@ class RtbRowe(object):
         # Read in the given file path
         self.rtb_read(file_path=file_path, use_pd0_format=self.use_pd0_format)
 
+    @staticmethod
+    def count_ensembles(file_path: str):
+        """
+        Get the file information like the number of ensembles in the file.
+        """
+        # RTB ensemble delimiter
+        DELIMITER = b'\x80' * 16
+
+        # Block size to read in data
+        BLOCK_SIZE = 4096
+
+        # Keep count of the number of ensembles found
+        ens_count = 0
+
+        # Search for the number of ensembles by looking for the delimiter
+        # Check to ensure file exists
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                data = f.read(BLOCK_SIZE)  # Read in data
+
+                # Verify data was found
+                while data:
+                    # Check for the delimiter
+                    if DELIMITER in data:
+                        ens_count += 1
+
+                    # Read the next batch of data
+                    data = f.read(BLOCK_SIZE)
+
+        return ens_count
+
+    def get_file_info(self, file_path: str):
+        """
+        Get the file information like the number of ensembles,
+        number of beams and number of bins.
+        This only counts 3 or 4 beam ensembles.  Vertical beams
+        will be merged with 4 beam ensembles.
+
+        :param file_path File path to inspect.
+        :return NumEnsembles, NumBeams, NumBins
+        """
+        # RTB ensemble delimiter
+        DELIMITER = b'\x80' * 16
+
+        # Block size to read in data
+        BLOCK_SIZE = 4096
+
+        # Create a buffer
+        buff = bytes()
+
+        # Keep count of the number of ensembles found
+        ens_count = 0
+        num_beams = 0
+        num_bins = 0
+
+        # Search for the number of ensembles by looking for the delimiter
+        # Check to ensure file exists
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                data = f.read(BLOCK_SIZE)  # Read in data
+
+                # Verify data was found
+                while data:
+                    # Accumulate the buffer
+                    buff += data
+
+                    # Check for the delimiter
+                    if DELIMITER in buff:
+                        # If delimiter found, split at the delimiter to get the remaining buffer data
+                        chunks = buff.split(DELIMITER)
+
+                        # Put the remaining data back in the buffer
+                        buff = chunks.pop()
+
+                        # Take out the ens data
+                        for chunk in chunks:
+                            # Process the binary ensemble data
+                            # Verify the ENS data is good
+                            # This will check that all the data is there and the checksum is good
+                            if self.verify_ens_data(DELIMITER + chunk):
+                                # Get the ensemble info
+                                bin_count, beams_count = self.get_ens_info(DELIMITER + chunk)
+
+                                # Verify we have 3 or 4 beam data ensemble
+                                # Vertical beam is not counted and is merged with 4 beam ensembles
+                                if beams_count > 2:
+                                    ens_count += 1
+
+                                    # Set the largest beam and bin number
+                                    num_beams = max(beams_count, num_beams)
+                                    num_bins = max(bin_count, num_bins)
+
+                    # Read the next batch of data
+                    data = f.read(BLOCK_SIZE)
+
+            # Process whatever is remaining in the buffer
+            # Verify the ENS data is good
+            # This will check that all the data is there and the checksum is good
+            if self.verify_ens_data(DELIMITER + buff):
+                # Get the ensemble info
+                bin_count, beams_count = self.get_ens_info(DELIMITER + buff)
+
+                # Verify we have 3 or 4 beam data ensemble
+                # Vertical beam is not counted and is merged with 4 beam ensembles
+                if beams_count > 2:
+                    ens_count += 1
+
+                    # Set the largest beam and bin number
+                    num_beams = max(beams_count, num_beams)
+                    num_bins = max(bin_count, num_bins)
+
+        return ens_count, num_beams, num_bins
+
     def rtb_read(self, file_path: str, wr2: bool = False, use_pd0_format: bool = False):
         """
         Reads the binary RTB file and assigns values to object instance variables.
@@ -129,6 +242,43 @@ class RtbRowe(object):
 
             # Process whatever is remaining in the buffer
             self.decode_ens(DELIMITER + buff, use_pd0_format=use_pd0_format)
+
+    def get_ens_info(self, ens_bytes: list):
+        """
+        Decode the datasets to an ensemble to get the general information about the ensemble.
+        This includes the number of beams and bins.
+        Use verify_ens_data if you are using this
+        as a static method to verify the data is correct.
+        :param ens_bytes: Ensemble binary data.  Decode the dataset.
+        :return: Return number of beam and number of bins.
+        """
+        packetPointer = self.HEADER_SIZE
+        ens_len = len(ens_bytes)
+
+        num_elements = 0
+        element_multiplier = 0
+
+        # Decode the ensemble datasets
+        # Limit the number of attempts to look for new datasets
+        for x in range(self.MAX_DATASETS):
+            # Check if we are at the end of the payload
+            if packetPointer >= ens_len - RtbRowe.CHECKSUM_SIZE - RtbRowe.HEADER_SIZE:
+                break
+
+            # Get the dataset info
+            ds_type = RtbRowe.get_int32(packetPointer + (RtbRowe.BYTES_IN_INT32 * 0), RtbRowe.BYTES_IN_INT32, ens_bytes)
+            num_elements = RtbRowe.get_int32(packetPointer + (RtbRowe.BYTES_IN_INT32 * 1), RtbRowe.BYTES_IN_INT32, ens_bytes)
+            element_multiplier = RtbRowe.get_int32(packetPointer + (RtbRowe.BYTES_IN_INT32 * 2), RtbRowe.BYTES_IN_INT32, ens_bytes)
+            image = RtbRowe.get_int32(packetPointer + (RtbRowe.BYTES_IN_INT32 * 3), RtbRowe.BYTES_IN_INT32, ens_bytes)
+            name_len = RtbRowe.get_int32(packetPointer + (RtbRowe.BYTES_IN_INT32 * 4), RtbRowe.BYTES_IN_INT32, ens_bytes)
+            name = str(ens_bytes[packetPointer + (RtbRowe.BYTES_IN_INT32 * 5):packetPointer + (RtbRowe.BYTES_IN_INT32 * 5) + 8], 'UTF-8')
+
+            # Beam velocity will contain all the information we need
+            if "E000001" in name:
+                # Return the number bins and number of beams
+                return num_elements, element_multiplier
+
+        return num_elements, element_multiplier
 
     def decode_ens(self, ens_bytes: list, use_pd0_format: bool = False):
         """
@@ -214,13 +364,6 @@ class RtbRowe(object):
         :return: Return the decoded ensemble.
         """
         packetPointer = self.HEADER_SIZE
-        #type = 0
-        #numElements = 0
-        #elementMultiplier = 0
-        #imag = 0
-        #nameLen = 0
-        #name = ""
-        #dataSetSize = 0
         ens_len = len(ens_bytes)
 
         # Flag if BT data found
@@ -1197,7 +1340,7 @@ class Cfg:
         self.desired_ping_count.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 3, RtbRowe.BYTES_IN_INT32, ens_bytes))
         self.actual_ping_count.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 4, RtbRowe.BYTES_IN_INT32, ens_bytes))
         self.status.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 5, RtbRowe.BYTES_IN_INT32, ens_bytes))
-        self.year.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 6, RtbRowe.BYTES_IN_INT32, ens_bytes))
+        #self.year.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 6, RtbRowe.BYTES_IN_INT32, ens_bytes))
         self.month.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 7, RtbRowe.BYTES_IN_INT32, ens_bytes))
         self.day.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 8, RtbRowe.BYTES_IN_INT32, ens_bytes))
         self.hour.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 9, RtbRowe.BYTES_IN_INT32, ens_bytes))
@@ -1214,9 +1357,10 @@ class Cfg:
         self.subsystem_config.append(struct.unpack("B", ens_bytes[packet_pointer + RtbRowe.BYTES_IN_INT32 * 22 + 3:packet_pointer + RtbRowe.BYTES_IN_INT32 * 22 + 4])[0])
 
         if self.pd0_format:
-            self.year.append(self.year - 2000)
-            self.salinity.append(round(self.salinity))
-            self.speed_of_sound.append(round(self.speed_of_sound))
+            year = RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 6, RtbRowe.BYTES_IN_INT32, ens_bytes)
+            self.year.append(year - 2000)
+        else:
+            self.year.append(RtbRowe.get_int32(packet_pointer + RtbRowe.BYTES_IN_INT32 * 6, RtbRowe.BYTES_IN_INT32, ens_bytes))
 
     def decode_ancillary_data(self, ens_bytes: list, name_len: int = 8):
         """
@@ -1233,8 +1377,14 @@ class Cfg:
         self.first_ping_time.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 2, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
         self.last_ping_time.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 3, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
-        self.salinity.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
-        self.speed_of_sound.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+        if self.pd0_format:
+            salinity = RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes)
+            sos = RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes)
+            self.salinity.append(round(salinity))
+            self.speed_of_sound.append(round(sos))
+        else:
+            self.salinity.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 9, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
+            self.speed_of_sound.append(RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 12, RtbRowe.BYTES_IN_FLOAT, ens_bytes))
 
     def decode_ancillary_adcp3_data(self, ens_bytes: list, name_len: int = 8):
         """
@@ -1433,7 +1583,7 @@ class Sensor:
             if roll > 90.0:
                 self.roll.append(-1 * (180.0 - roll))
             elif roll < -90.0:
-                self.roll.append(180.0 + self.roll)
+                self.roll.append(180.0 + roll)
 
             pressure = RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 10, RtbRowe.BYTES_IN_FLOAT, ens_bytes)
             transducer_depth = RtbRowe.get_float(packet_pointer + RtbRowe.BYTES_IN_FLOAT * 11, RtbRowe.BYTES_IN_FLOAT, ens_bytes)
