@@ -1,6 +1,7 @@
 import json
 
-class QRevRtiTransect(object):
+
+class RTTtransect(object):
     """
     This to reproduce a MMTtransect object used in QRev.
     The MMTtransect is populated using an MMT file.
@@ -258,7 +259,7 @@ class QRevRtiTransect(object):
 
         return transect_json
 
-    def from_json(self, json_dict):
+    def parse_config(self, json_dict):
         """
         Convert the JSON dictionary read from the
         JSON to create a Transect object

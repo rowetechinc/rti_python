@@ -1,9 +1,9 @@
 import os
-from rti_python.River.QRevTransect import QRevRtiTransect
+from rti_python.River.QRevTransect import RTTtransect
 
 
 def test_constructor():
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
 
     assert transect.Checked
     assert len(transect.Files) == 0
@@ -11,7 +11,7 @@ def test_constructor():
 
 
 def test_unchecked():
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     transect.Checked = False
 
     assert not transect.Checked
@@ -19,7 +19,7 @@ def test_unchecked():
 
 
 def test_add_transect():
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
 
     # Add the transect file to the transect
@@ -31,7 +31,7 @@ def test_add_transect():
 
 
 def test_add_transect_unchecked():
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
 
     # Add the transect file to the transect
@@ -44,7 +44,7 @@ def test_add_transect_unchecked():
 
 
 def test_add_transect_multiple_files():
-    transect = QRevRtiTransect()
+    transect = RTTtransect()
     file_name1 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0.pd0'
     file_name2 = 'Imperal Valley_20170816_095301_0_1.2 MHz 4 beam 20 degree piston_pd0_1.pd0'
 

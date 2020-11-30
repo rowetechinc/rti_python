@@ -16,7 +16,6 @@ from rti_python.Ensemble.BottomTrack import BottomTrack
 from rti_python.Ensemble.NmeaData import NmeaData
 from rti_python.Ensemble.RangeTracking import RangeTracking
 from rti_python.Ensemble.SystemSetup import SystemSetup
-import crc16
 import binascii
 
 # Buffer to hold the incoming data
@@ -130,7 +129,7 @@ class BinaryCodec:
                 # Calculate Checksum
                 # Use only the payload for the checksum
                 ens = ens_data[ens_start + Ensemble().HeaderSize:ens_start + Ensemble().HeaderSize + payload_size[0]]
-                calc_checksum = crc16.crc16xmodem(ens)
+                calc_checksum = binascii.crc_hqx(ens, 0)
 
                 # Verify checksum
                 if checksum[0] == calc_checksum:
