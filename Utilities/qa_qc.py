@@ -13,7 +13,7 @@ class EnsembleQC:
         :return:
         """
         if ens.IsBeamVelocity:
-            EnsembleQC.scan_bad_velocity(ens.BeamVelocity.Velocities)
+            EnsembleQC.scan_bad_velocity(ens.Wt.Velocities)
         if ens.IsInstrumentVelocity:
             EnsembleQC.scan_bad_velocity(ens.InstrumentVelocity.Velocities)
         if ens.IsEarthVelocity:

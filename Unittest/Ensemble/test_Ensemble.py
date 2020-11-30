@@ -557,7 +557,7 @@ def test_encode_decode():
 
     for beam in range(beam_vel.element_multiplier):
         for bin_num in range(beam_vel.num_elements):
-            assert beam_vel.Velocities[bin_num][beam] == pytest.approx(ens1.BeamVelocity.Velocities[bin_num][beam], 0.1)
+            assert beam_vel.Velocities[bin_num][beam] == pytest.approx(ens1.Wt.Velocities[bin_num][beam], 0.1)
 
     for beam in range(beam_vel.element_multiplier):
         for bin_num in range(beam_vel.num_elements):
@@ -593,7 +593,7 @@ def test_encode_decode():
     assert bt.SNR == pytest.approx(ens1.BottomTrack.SNR)
     assert bt.Amplitude == pytest.approx(ens1.BottomTrack.Amplitude)
     assert bt.Correlation == pytest.approx(ens1.BottomTrack.Correlation)
-    assert bt.BeamVelocity == pytest.approx(ens1.BottomTrack.BeamVelocity)
+    assert bt.BeamVelocity == pytest.approx(ens1.BottomTrack.Wt)
     assert bt.BeamGood == pytest.approx(ens1.BottomTrack.BeamGood, 0.1)
     assert bt.InstrumentVelocity == pytest.approx(ens1.BottomTrack.InstrumentVelocity)
     assert bt.InstrumentGood == pytest.approx(ens1.BottomTrack.InstrumentGood, 0.1)
@@ -610,7 +610,7 @@ def test_encode_decode():
     assert rt.SNR == pytest.approx(ens1.RangeTracking.SNR)
     assert rt.Amplitude == pytest.approx(ens1.RangeTracking.Amplitude)
     assert rt.Correlation == pytest.approx(ens1.RangeTracking.Correlation)
-    assert rt.BeamVelocity == pytest.approx(ens1.RangeTracking.BeamVelocity)
+    assert rt.BeamVelocity == pytest.approx(ens1.RangeTracking.Wt)
     assert rt.InstrumentVelocity == pytest.approx(ens1.RangeTracking.InstrumentVelocity)
     assert rt.EarthVelocity == pytest.approx(ens1.RangeTracking.EarthVelocity)
 

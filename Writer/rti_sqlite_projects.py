@@ -326,9 +326,9 @@ class RtiSqliteProjects:
             try:
                 if ens.IsBeamVelocity:
                     self.add_dataset("beamvelocity",
-                                     ens.BeamVelocity.Velocities,
-                                     ens.BeamVelocity.num_elements,
-                                     ens.BeamVelocity.element_multiplier,
+                                     ens.Wt.Velocities,
+                                     ens.Wt.num_elements,
+                                     ens.Wt.element_multiplier,
                                      ens_idx,
                                      bin_size,
                                      blank)
@@ -618,7 +618,7 @@ class RtiSqliteProjects:
             query_corr_val += "{0}, ".format(ens.BottomTrack.Correlation[beam])
 
             query_beam_vel_label += "beamVelBeam{0}, ".format(beam)
-            query_beam_vel_val += "{0}, ".format(ens.BottomTrack.BeamVelocity[beam])
+            query_beam_vel_val += "{0}, ".format(ens.BottomTrack.Wt[beam])
 
             query_beam_ping_label += "beamGoodBeam{0}, ".format(beam)
             query_beam_ping_val += "{0}, ".format(int(ens.BottomTrack.BeamGood[beam]))
@@ -824,7 +824,7 @@ class RtiSqliteProjects:
             query_corr_val += "{0}, ".format(ens.RangeTracking.Correlation[beam])
 
             query_beam_vel_label += "beamVelBeam{0}, ".format(beam)
-            query_beam_vel_val += "{0}, ".format(ens.RangeTracking.BeamVelocity[beam])
+            query_beam_vel_val += "{0}, ".format(ens.RangeTracking.Wt[beam])
 
             query_pings_label += "pingsBeam{0}, ".format(beam)
             query_pings_val += "{0}, ".format(int(ens.RangeTracking.Pings[beam]))

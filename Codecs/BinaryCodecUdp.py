@@ -114,11 +114,11 @@ class BinaryCodecUdp(BinaryCodec):
             self.send_udp(Ensemble().toJSON(ens.EnsembleData).encode())
 
         if ens.IsBeamVelocity:
-            ens.BeamVelocity.EnsembleNumber = ensemble_number
-            ens.BeamVelocity.SerialNumber = serial_number
-            ens.BeamVelocity.DateTime = date_time
-            ens.BeamVelocity.Meta = self.Meta
-            self.send_udp(Ensemble().toJSON(ens.BeamVelocity).encode())
+            ens.Wt.EnsembleNumber = ensemble_number
+            ens.Wt.SerialNumber = serial_number
+            ens.Wt.DateTime = date_time
+            ens.Wt.Meta = self.Meta
+            self.send_udp(Ensemble().toJSON(ens.Wt).encode())
 
         if ens.IsInstrumentVelocity:
             ens.InstrumentVelocity.EnsembleNumber = ensemble_number
