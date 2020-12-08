@@ -392,7 +392,9 @@ class RtiCheckFile:
         Check if the datetime has jumped.  Determine the time between ensembles.
         Then verify that all additional ensembles are the same time apart.
         :param ens: Ensemble data.
+        :param prev_ens_dt: Previous Ensemble
         :param show_live_errors: Show the errors occurring as file is read in or wait until entire file complete
+        :param ens_delta_time: Time between last 2 ensembles.
         :return: True = Found an issue, Err String, Ensemble DT
         """
         err_str = ""
@@ -414,7 +416,7 @@ class RtiCheckFile:
 
                 # Verify the times are available
                 # Then verify the ensemble delta time are the same from last ensemble
-                if ens_delta_time != 0 and dt != 0 and ens_delta_time != dt:
+                if ens_delta_time != 0 and dt != 0 and dt != ens_delta_time:
                     err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tDateTime Jump: [Actual DT: " + str(ens_delta_time) + " DT:" + str(dt) + " Curr:" + str(ens_datetime) + " Prev: " + str(prev_ens_dt) + "]"
 
                     # Display the error if turned on
