@@ -198,16 +198,16 @@ def test_mps_to_mmps():
     assert vel.Velocities[1][1] == pytest.approx(35.1, 0.1)
 
     beam0 = [v[0] for v in vel.Velocities]
-    beam0_mm_p_s = [v * 1000.0 for v in beam0]
+    beam0_mm_p_s = [round(v * 1000) for v in beam0]
 
     beam1 = [v[1] for v in vel.Velocities]
-    beam1_mm_p_s = [v * 1000.0 for v in beam1]
+    beam1_mm_p_s = [round(v * 1000) for v in beam1]
 
     beam2 = [v[2] for v in vel.Velocities]
-    beam2_mm_p_s = [v * 1000.0 for v in beam2]
+    beam2_mm_p_s = [round(v * 1000) for v in beam2]
 
     beam3 = [v[3] for v in vel.Velocities]
-    beam3_mm_p_s = [v * 1000.0 for v in beam3]
+    beam3_mm_p_s = [round(v * 1000) for v in beam3]
 
     assert beam0_mm_p_s[0] == pytest.approx(1000.0, 0.1)
 
@@ -215,3 +215,24 @@ def test_mps_to_mmps():
     assert beam1_mm_p_s == vel.pd0_mm_per_sec(pd0_beam_num=2)   # RTB 1 = PD0 2
     assert beam2_mm_p_s == vel.pd0_mm_per_sec(pd0_beam_num=0)   # RTB 2 = PD0 0
     assert beam3_mm_p_s == vel.pd0_mm_per_sec(pd0_beam_num=1)   # RTB 3 = PD0 1
+
+
+def test_pd0_bad_vel():
+    # Convert from m/s to mm/s
+    num_bins = 30
+    num_beams = 4
+
+    vel = BeamVelocity(num_bins, num_beams)
+
+    # Populate data
+    val = 1.0
+    for beam in range(vel.element_multiplier):
+        for bin_num in range(vel.num_elements):
+            vel.Velocities[bin_num][beam] = val
+            val += 1.1
+
+    vel.Velocities[0][0] = Ensemble.BadVelocity
+
+    beam0_pd0 = vel.pd0_mm_per_sec(pd0_beam_num=3)
+
+    assert beam0_pd0[0] == pytest.approx(-32768, 0.0)

@@ -77,7 +77,7 @@ class Ensemble_Compactor:
         :return:
         """
         if ens.IsBeamVelocity:
-            self.BVel = ens.BeamVelocity.Velocities
+            self.BVel = ens.Wt.Velocities
 
         if ens.IsInstrumentVelocity:
             self.IVel = ens.InstrumentVelocity.Velocities
@@ -134,7 +134,7 @@ class Ensemble_Compactor:
             self.bt_SNR = ens.BottomTrack.SNR
             self.bt_Amp = ens.BottomTrack.Amplitude
             self.bt_Corr = ens.BottomTrack.Correlation
-            self.bt_BVel = ens.BottomTrack.BeamVelocity
+            self.bt_BVel = ens.BottomTrack.Wt
             self.bt_GB = ens.BottomTrack.BeamGood
             self.bt_IVel = ens.BottomTrack.InstrumentVelocity
             self.bt_GI = ens.BottomTrack.InstrumentGood
@@ -147,6 +147,6 @@ class Ensemble_Compactor:
             self.rt_Pings = ens.RangeTracking.Pings
             self.rt_Amp = ens.RangeTracking.Amplitude
             self.rt_Cor = ens.RangeTracking.Correlation
-            self.rt_BVel = ens.RangeTracking.BeamVelocity
+            self.rt_BVel = ens.RangeTracking.Wt
             self.rt_IVel = ens.RangeTracking.InstrumentVelocity
             self.rt_EVel = ens.RangeTracking.EarthVelocity

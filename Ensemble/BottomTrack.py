@@ -433,3 +433,164 @@ class BottomTrack:
         return DataFrame(df_result, columns=df_earth_columns)
 
         return df_result
+
+    def pd0_range_cm(self, pd0_beam_num: int):
+        """
+        Convert the range from meters to centimeters.
+
+        Remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Ranges for the given PD0 beam, converted to centimeters for the beam.  The beam will be based on reordering for PD0
+        :rtype: Float - Range value.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.Range[2]):
+                return -32768
+            return round(self.Range[2] * 100.0)            # PD0 0 - RTB 2
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.Range[3]):
+                return -32768
+            return round(self.Range[3] * 100.0)           # PD0 1 - RTB 3
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.Range[1]):
+                return -32768
+            return round(self.Range[1] * 100.0)           # PD0 2 - RTB 1
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.Range[0]):
+                return -32768
+            return round(self.Range[0] * 100.0)            # PD0 3 - RTB 0
+
+        return None
+
+    def pd0_beam_vel_mm_per_sec(self, pd0_beam_num: int):
+        """
+        Convert the Beam Velocity from m/s to mm/s.
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Velocity for the given PD0 beam, converted to mm/s for the beam.  The beam will be based on reordering for PD0
+        :rtype: Velocity data for given beam.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.BeamVelocity[2]):
+                return -32768
+            return round(self.BeamVelocity[2] * 1000.0 * -1.0)            # Convert to mm/s  PD0 0 - RTB 2
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.BeamVelocity[3]):
+                return -32768
+            return round(self.BeamVelocity[3] * 1000.0 * -1.0)            # Convert to mm/s  PD0 1 - RTB 3
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.BeamVelocity[1]):
+                return -32768
+            return round(self.BeamVelocity[1] * 1000.0 * -1.0)            # Convert to mm/s  PD0 2 - RTB 1
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.NumBeams:
+            if Ensemble.is_bad_velocity(self.BeamVelocity[0]):
+                return -32768
+            return round(self.BeamVelocity[0] * 1000.0 * -1.0)            # Convert to mm/s  PD0 3 - RTB 0
+
+        return None
+
+    def pd0_corr_counts(self, pd0_beam_num: int):
+        """
+        The value has to be converted from percentage to 0 - 255
+        Scale 0 % - 100 % to 0 - 255
+        255 = 100 %
+        0 = 0 %
+        50 % = 0.50 * 255 = 127.5 = 255 / 2
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Correlation data as PD0 counts format.  Beams are reordered
+        :rtype: Float - Correlation value.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.NumBeams:
+            return round(self.Correlation[2] * 255.0)  # Convert to counts - PD0 0 - RTB 2
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.NumBeams:
+            return round(self.Correlation[3] * 255.0)  # Convert to counts - PD0 1 - RTB 3
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.NumBeams:
+            return round(self.Correlation[1] * 255.0)  # Convert to counts - PD0 2 - RTB 1
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.NumBeams:
+            return round(self.Correlation[0] * 255.0)  # Convert to counts - PD0 3 - RTB 0
+
+        return None
+
+    def pd0_amp_counts(self, pd0_beam_num: int):
+        """
+        Convert the Amplitude/Echo Intensity to Counts.
+        0.5dB per count.
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Amplitude data as PD0 counts format.  Beams are reordered
+        :rtype: Float - Amplitude value.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.NumBeams:
+            return round(self.Amplitude[2] * 2.0)  # Convert to counts - PD0 0 - RTB 2
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.NumBeams:
+            return round(self.Amplitude[3] * 2.0)  # Convert to counts - PD0 1 - RTB 3
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.NumBeams:
+            return round(self.Amplitude[1] * 2.0)  # Convert to counts - PD0 2 - RTB 1
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.NumBeams:
+            return round(self.Amplitude[0] * 2.0)  # Convert to counts - PD0 3 - RTB 0
+
+        return None
+
+    def pd0_good_beam_percent(self, pd0_beam_num: int):
+        """
+        Convert the Good Beams to percentage.
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: Good Beams data as PD0 as a percentage.  Beams are reordered
+        :rtype: Float - Good Beams value.
+        """
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.NumBeams:
+            return round((self.BeamGood[2] * 100.0) / self.ActualPingCount)       # Convert to percentage - PD0 0 - RTB 2
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.NumBeams:
+            return round((self.BeamGood[3] * 100.0) / self.ActualPingCount)       # Convert to counts - PD0 1 - RTB 3
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.NumBeams:
+            return round((self.BeamGood[1] * 100.0) / self.ActualPingCount)       # Convert to counts - PD0 2 - RTB 1
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.NumBeams:
+            return round((self.BeamGood[0] * 100.0) / self.ActualPingCount)       # Convert to counts - PD0 3 - RTB 0
+
+        return None

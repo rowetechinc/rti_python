@@ -369,7 +369,7 @@ class WaveForceCodec:
 
         # Selected Bin Heights (WHV)
         for sel_bin in range(num_bins):
-            bin_ht = round((ens_buff[0].blank + (self.selected_bin[sel_bin] * ens_buff[0].bin_size)), 2)
+            bin_ht = round((ens_buff[0].dist_bin1_cm + (self.selected_bin[sel_bin] * ens_buff[0].ws_cm)), 2)
             sel_bins_buff.extend(struct.pack('f', bin_ht))
 
         # Pressure Sensor Depth

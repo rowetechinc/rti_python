@@ -85,3 +85,42 @@ class GoodBeam:
                 str_result.append(Ensemble.gen_csv_line(dt, Ensemble.CSV_GOOD_BEAM, ss_code, ss_config, bin_num, beam, blank, bin_size, val))
 
         return str_result
+
+    def pd0_percent(self, pings_per_ens: int, pd0_beam_num: int):
+        """
+        Convert the Good Beams to Percent.
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :param pings_per_ens: Number of pings in the ensemble.
+        :type pings_per_ens: Integer
+        :return: A list of all the velocities for the given PD0 beam, converted to mm/s for the beam.  The beam will be based on reordering for PD0
+        :rtype: List or None if beam number is not correct.
+        """
+
+        # Vertical Beam ONLY
+        if self.element_multiplier == 1:
+            beam0 = [v[0] for v in self.GoodBeam]                                 # Beam 0
+            return [round((v * 100.0) / pings_per_ens) for v in beam0]            # Convert to percent
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.element_multiplier:
+            beam2 = [v[2] for v in self.GoodBeam]                                 # PD0 0 - RTB 2
+            return [round((v * 100.0) / pings_per_ens) for v in beam2]            # Convert to percent
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.element_multiplier:
+            beam3 = [v[3] for v in self.GoodBeam]                                 # PD0 1 - RTB 3
+            return [round((v * 100.0) / pings_per_ens) for v in beam3]            # Convert to percent
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.element_multiplier:
+            beam1 = [v[1] for v in self.GoodBeam]                                 # PD0 2 - RTB 1
+            return [round((v * 100.0) / pings_per_ens) for v in beam1]            # Convert to percent
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.element_multiplier:
+            beam0 = [v[0] for v in self.GoodBeam]                                 # PD0 3 - RTB 0
+            return [round((v * 100.0) / pings_per_ens) for v in beam0]            # Convert to percent
+
+        return None

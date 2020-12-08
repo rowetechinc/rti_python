@@ -92,7 +92,8 @@ class BeamVelocity:
 
     def pd0_mm_per_sec(self, pd0_beam_num: int):
         """
-        Convert the Beam Velocity from m/s to mm/s.
+        Convert the Beam Velocity from m/s to mm/s and as an integer.
+
         Also remap the Beam numbers to match PD0 beams.
         RTB and PD0 do not share the same Beam Order
         RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
@@ -103,20 +104,27 @@ class BeamVelocity:
         :rtype: List or None if beam number is not correct.
         """
 
-        if pd0_beam_num == 0 and pd0_beam_num <= self.element_multiplier:
-            beam2 = [v[2] for v in self.Velocities]     # PD0 0 - RTB 2
-            return [v * 1000.0 for v in beam2]          # Convert to mm/s
+        # Remap the beam number
+        # beam order 3,2,0,1
+        rti_beam_num = 0
+        if self.element_multiplier == 1:                # Vertical beam
+            rti_beam_num = 0
+        elif pd0_beam_num == 0:
+            rti_beam_num = 2
+        elif pd0_beam_num == 1:
+            rti_beam_num = 3
+        elif pd0_beam_num == 2:
+            rti_beam_num = 1
+        elif pd0_beam_num == 3:
+            rti_beam_num = 0
 
-        if pd0_beam_num == 1 and pd0_beam_num <= self.element_multiplier:
-            beam3 = [v[3] for v in self.Velocities]     # PD0 1 - RTB 3
-            return [v * 1000.0 for v in beam3]          # Convert to mm/s
+        # Replace the RTB BAD_Velocity (88.888) to PD0 BAD_VELOCITY (-32768)
+        pd0_vel_data = []
+        for bin_idx in range(self.num_elements):
+            if Ensemble.is_bad_velocity(self.Velocities[bin_idx][rti_beam_num]):
+                pd0_vel_data.append(-32768)
+            else:
+                pd0_vel_data.append(round(self.Velocities[bin_idx][rti_beam_num] * 1000.0))  # Convert to mm/s and integer
 
-        if pd0_beam_num == 2 and pd0_beam_num <= self.element_multiplier:
-            beam1 = [v[1] for v in self.Velocities]     # PD0 2 - RTB 1
-            return [v * 1000.0 for v in beam1]          # Convert to mm/s
+        return pd0_vel_data
 
-        if pd0_beam_num == 3 and pd0_beam_num <= self.element_multiplier:
-            beam0 = [v[0] for v in self.Velocities]     # PD0 3 - RTB 0
-            return [v * 1000.0 for v in beam0]          # Convert to mm/s
-
-        return None

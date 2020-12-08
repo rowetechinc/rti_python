@@ -113,3 +113,41 @@ class Amplitude:
             return False
 
         return True
+
+    def pd0_counts(self, pd0_beam_num: int):
+        """
+        Convert the Amplitude to Counts.
+        0.5dB per count.
+
+        Also remap the Beam numbers to match PD0 beams.
+        RTB and PD0 do not share the same Beam Order
+        RTB BEAM 0,1,2,3 = PD0 BEAM 3,2,0,1
+
+        :param pd0_beam_num: PD0 Beam number.
+        :type pd0_beam_num: Integer
+        :return: A list of all the Amplitude for the given PD0 beam, converted to counts for the beam.  The beam will be based on reordering for PD0
+        :rtype: List or None if beam number is not correct.
+        """
+
+        # Vertical Beam ONLY
+        if self.element_multiplier == 1:
+            beam0 = [v[0] for v in self.Amplitude]              # Beam 0
+            return [round(v * 2.0) for v in beam0]              # Convert to counts
+
+        if pd0_beam_num == 0 and pd0_beam_num <= self.element_multiplier:
+            beam2 = [v[2] for v in self.Amplitude]              # PD0 0 - RTB 2
+            return [round(v * 2.0) for v in beam2]              # Convert to counts
+
+        if pd0_beam_num == 1 and pd0_beam_num <= self.element_multiplier:
+            beam3 = [v[3] for v in self.Amplitude]              # PD0 1 - RTB 3
+            return [round(v * 2.0) for v in beam3]              # Convert to counts
+
+        if pd0_beam_num == 2 and pd0_beam_num <= self.element_multiplier:
+            beam1 = [v[1] for v in self.Amplitude]              # PD0 2 - RTB 1
+            return [round(v * 2.0) for v in beam1]              # Convert to counts
+
+        if pd0_beam_num == 3 and pd0_beam_num <= self.element_multiplier:
+            beam0 = [v[0] for v in self.Amplitude]              # PD0 3 - RTB 0
+            return [round(v * 2.0) for v in beam0]              # Convert to counts
+
+        return None

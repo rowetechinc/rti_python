@@ -2,23 +2,27 @@ import datetime
 import os
 import json
 import logging
-from rti_python.River.QRevTransect import QRevRtiTransect
+from rti_python.River.QRevTransect import RTTtransect
 
 
-class QRevRtiProject(object):
+class RTTrowe(object):
     """
-    All the transect files will be stored in the same place as the project
+    Project file to hold all the configurations, settings and transect information
+    for a River project.  The file is in JSON format.  The file extension is RTT
+    (Rowe Technologies Transects).
+
+    All the transect files will be stored in the same folder as the project
     file.
     """
 
     VERSION = 1.0
-    FILE_EXTENSION = ".rmmt"
+    FILE_EXTENSION = ".rtt"                         # Rowe Technologies Transects
 
     def __init__(self, project_name: str):
         # QRev Variables
         self.project = {
             'Name': project_name,
-            'Version': QRevRtiProject.VERSION,
+            'Version': RTTrowe.VERSION,
             'Locked': None,
         }
 
@@ -307,9 +311,10 @@ class QRevRtiProject(object):
         # Folder Path for the project and all the transect files
         self.path = None
 
-    def add_transect(self, transect: QRevRtiTransect):
+    def add_transect(self, transect: RTTtransect):
         """
         Add a transect to the project.
+        :param transect Transect object.
         """
         self.transects.append(transect)
 
@@ -332,7 +337,7 @@ class QRevRtiProject(object):
 
         :return The file path to file created.
         """
-        file_path = os.path.join(self.path, self.project["Name"] + QRevRtiProject.FILE_EXTENSION)
+        file_path = os.path.join(self.path, self.project["Name"] + RTTrowe.FILE_EXTENSION)
         project_dict = {
             'RTI': {
                 'project': self.project,
@@ -355,7 +360,12 @@ class QRevRtiProject(object):
 
         return file_path
 
-    def read_json_file(self, file_path):
+    def parse_project(self, file_path: str):
+        """
+        Read in the project file.  The project is a JSON file.
+        Read and populate all the dictionaries with the values.
+        :param file_path File path to the project file.
+        """
 
         if os.path.exists(file_path):
 
@@ -374,8 +384,8 @@ class QRevRtiProject(object):
 
                 # Add all the transects
                 for json_transect in project_json['RTI']['transects']:
-                    transect = QRevRtiTransect()
-                    transect.from_json(json_transect)
+                    transect = RTTtransect()
+                    transect.parse_config(json_transect)
                     self.transects.append(transect)
 
 

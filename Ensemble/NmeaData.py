@@ -71,7 +71,7 @@ class NmeaData:
             if isinstance(nmea_msg, pynmea2.types.talker.VTG):
                 self.GPVTG = nmea_msg
                 self.speed_knots = nmea_msg.spd_over_grnd_kts
-                self.speed_m_s = nmea_msg.spd_over_grnd_kts * 0.51444444444444
+                self.speed_m_s = nmea_msg.spd_over_grnd_kts * Decimal(0.51444444444444)
             if isinstance(nmea_msg, pynmea2.types.talker.RMC):
                 self.GPRMC = nmea_msg
             if isinstance(nmea_msg, pynmea2.types.talker.GLL):
@@ -87,7 +87,8 @@ class NmeaData:
                 self.GPHDG = nmea_msg
 
             self.nmea_sentences.append(msg.strip())
-
+        except pynmea2.nmea.ParseError as pe:
+            logging.debug("Bad NMEA String")
         except Exception as e:
             logging.debug("Error decoding NMEA msg", e)
 

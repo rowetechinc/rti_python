@@ -164,6 +164,24 @@ class EnsembleData:
 
         return result_str
 
+    def is_vertical_beam(self):
+        """
+        Determine if the current ensemble is a vertical beam ensemble or other type.
+        :return: TRUE = Vertical Beam Ensemble
+        :rtype: bool
+        """
+        if self.SysFirmwareSubsystemCode == "9" or \
+                self.SysFirmwareSubsystemCode == "A" or \
+                self.SysFirmwareSubsystemCode == "B" or \
+                self.SysFirmwareSubsystemCode == "C" or \
+                self.SysFirmwareSubsystemCode == "D" or \
+                self.SysFirmwareSubsystemCode == "E" or \
+                self.SysFirmwareSubsystemCode == "F" or \
+                self.SysFirmwareSubsystemCode == "G":
+            return True
+
+        return False
+
     def encode(self):
         """
         Encode the data into RTB format.

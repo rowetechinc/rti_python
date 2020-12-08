@@ -90,7 +90,7 @@ class AverageWaterColumn:
                     self.xdcr_depth.append([ens.AncillaryData.TransducerDepth])
                     self.is_upward = ens.AncillaryData.is_upward_facing()               # Set if upward or downward
                 if ens.IsBeamVelocity:
-                    self.ens_beam_list.append(ens.BeamVelocity.Velocities)
+                    self.ens_beam_list.append(ens.Wt.Velocities)
                 if ens.IsInstrumentVelocity:
                     self.ens_instr_list.append(ens.InstrumentVelocity.Velocities)
                 if ens.IsEarthVelocity:

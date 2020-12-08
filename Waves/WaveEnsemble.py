@@ -255,12 +255,12 @@ class WaveEnsemble:
             if ens.IsBeamVelocity and ens.IsCorrelation:
                 # Check the correlation against the correlation threshold
                 if ens.Correlation.Correlation[selected_bins[bins]][0] >= corr_thresh:
-                    self.vert_beam_vel.append(ens.BeamVelocity.Velocities[selected_bins[bins]][0])
+                    self.vert_beam_vel.append(ens.Wt.Velocities[selected_bins[bins]][0])
                 else:
                     self.vert_beam_vel.append(Ensemble.BadVelocity)
             # No correlation data, so just use the beam velocity
             elif ens.IsBeamVelocity:
-                self.vert_beam_vel.append(ens.BeamVelocity.Velocities[selected_bins[bins]][0])
+                self.vert_beam_vel.append(ens.Wt.Velocities[selected_bins[bins]][0])
 
 
         # Cleanup
@@ -313,12 +313,12 @@ class WaveEnsemble:
                     if ens.IsBeamVelocity and ens.IsCorrelation and selected_bin < len(ens.Correlation.Correlation) and beam < ens.Correlation.element_multiplier:
                         # Check the correlation against the correlation threshold
                         if ens.Correlation.Correlation[selected_bin][beam] >= corr_thresh:
-                            beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
+                            beam_data.append(ens.Wt.Velocities[selected_bin][beam])
                         else:
                             beam_data.append(Ensemble.BadVelocity)
                     # No correlation data, so just use the beam velocity
                     elif ens.IsBeamVelocity:
-                        beam_data.append(ens.BeamVelocity.Velocities[selected_bin][beam])
+                        beam_data.append(ens.Wt.Velocities[selected_bin][beam])
 
                 # Add the data for each bin
                 self.beam_vel.append(beam_data)
