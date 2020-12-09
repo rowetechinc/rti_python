@@ -6,12 +6,14 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from rti_python.Utilities.check_binary_file import RtiCheckFile
 from rti_python.Writer.rti_sqlite_projects import RtiSqliteProjects
 from rti_python.Writer.rti_sql import RtiSQL
 
+
 # Set logging level
-#logging.basicConfig(format='%(asctime)s [%(levelname)s] : %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s [%(levelname)s] : %(message)s', level=logging.DEBUG)
 
 
 class ReadPlotCSV:
@@ -26,17 +28,31 @@ class ReadPlotCSV:
         self.beam_b1_fig = None
         self.beam_b2_fig = None
         self.beam_b3_fig = None
+        self.beam_min = 0
+        self.beam_max = 0
+
         self.instr_x_fig = None
         self.instr_y_fig = None
         self.instr_z_fig = None
         self.instr_err_fig = None
+        self.instr_min = 0
+        self.instr_max = 0
+
         self.earth_east_fig = None
         self.earth_north_fig = None
         self.earth_vert_fig = None
+        self.earth_min = 0
+        self.earth_max = 0
+
         self.mag_fig = None
         self.dir_fig = None
 
-    def select_and_process(self, max_roll: float = 160, max_vel: float = 88.0, max_bt_vel: float = 88.0, max_mag: float = 88.0):
+        self.beam_fig_subplots = None
+        self.instr_fig_subplots = None
+        self.earth_fig_subplots = None
+        self.magdir_fig_subplots = None
+
+    def select_and_process(self):
         """
         Select the files you would like to process.  Then create a DB file based on the binary files.
         If a DB file is selected, then load the data.
@@ -97,12 +113,6 @@ class ReadPlotCSV:
                 # Create a connection to the sqlite project file
                 self.project = RtiSqliteProjects(file_path=db_path)
                 prj_idx = self.project.check_project_exist(str(prj_name))
-
-        # Process the data
-        self.process_data(max_roll=max_roll, max_vel=max_vel, max_bt_vel=max_bt_vel, max_mag=max_mag)
-
-        # Export to CSV
-        #self.export_to_csv(max_roll=max_roll)
 
     def export_to_csv_(self, max_roll: float = 160.0):
         """
@@ -191,6 +201,68 @@ class ReadPlotCSV:
         # Write the results to the CSV file
         df.to_csv(csv_name, index=False)
 
+    def export_beam_to_csv(self, max_roll: float = 160.0, max_vel: float = 88.0):
+        """
+        Export the data to a CSV.
+
+        :param max_roll: Maximum roll value to allow.
+        :param max_vel: Maximum velocity to allow.
+        """
+        # Filter some of the data
+        filter_query = "WHERE ensembles.roll > " + str(max_roll) + " OR ensembles.roll < -" + str(max_roll)
+
+        # Setup a query to get the data from the database
+        query = "SELECT " \
+                "ensembles.ensNum," \
+                "ensembles.dateTIme," \
+                "beamVelocity.bin," \
+                "beamVelocity.binDepth," \
+                "beamVelocity.beam0," \
+                "beamVelocity.beam1,"\
+                "beamVelocity.beam2," \
+                "beamVelocity.beam3," \
+                "bottomtrack.beamVelBeam0," \
+                "bottomtrack.beamVelBeam1," \
+                "bottomtrack.beamVelBeam2," \
+                "bottomtrack.beamVelBeam3," \
+                "bottomtrack.avgRange " \
+                "FROM ensembles " \
+                "INNER JOIN beamVelocity ON ensembles.id=beamVelocity.ensIndex " \
+                "INNER JOIN bottomtrack ON ensembles.id=bottomtrack.ensIndex " + filter_query + ";"
+
+        # Filter the data using the query
+        df = self.query_data(self.project.file_path, query)
+
+        # Rename the columns so we know which column is bottom track and to handle duplicate column names
+        df.rename(columns={"beamVelBeam0": "btBeamVelB0",
+                           "beamVelBeam1": "btBeamVelB1",
+                           "beamVelBeam2": "btBeamVelB2",
+                           "beamVelBeam3": "btBeamVelB3",
+                           "beam0": "beamVelB0",
+                           "beam1": "beamVelB1",
+                           "beam2": "beamVelB2",
+                           "beam3": "beamVelB3",
+                           },
+                  inplace=True)
+
+        # Clean up data
+        # Check if the number exceeds the max value
+        # Use absolute value to handle negative and postive the same
+        df['beamVelB0'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['beamVelB0']]
+        df['beamVelB1'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['beamVelB1']]
+        df['beamVelB2'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['beamVelB2']]
+        df['beamVelB3'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['beamVelB3']]
+
+        # Get the folder path from the project file path
+        # Then create the CSV file
+        folder_path = PurePath(self.project.file_path).parent
+        prj_name = PurePath(self.project.file_path).stem + "_beam_vel"
+        csv_name = folder_path.joinpath(str(prj_name) + ".csv").as_posix()
+        logging.debug("CSV File: " + csv_name)
+
+        # Write the results to the CSV file
+        df.to_csv(csv_name, index=False)
+
     def export_to_csv(self, df: pd.DataFrame, file_name_suffix: str):
         """
         Export the data to a CSV.
@@ -209,7 +281,7 @@ class ReadPlotCSV:
         # Write the results to the CSV file
         df.to_csv(csv_name, index=False)
 
-    def process_data(self, max_roll: float = 160, max_vel: float = 88.0, max_bt_vel: float = 88.0, max_mag: float = 88.0):
+    def display_all_data(self, max_roll: float = 160, max_vel: float = 88.0, max_bt_vel: float = 88.0, max_mag: float = 88.0):
         """
         Process the data and display the plots in streamlit.
 
@@ -250,8 +322,12 @@ class ReadPlotCSV:
         self.display_earth_vel_plots()
 
         # Magnitude and Direction
-        self.mag_plot(filter_data, max_mag=max_mag, max_bt_vel=max_bt_vel, display_text=True, display_stats=True, display_plot=True)
-        self.dir_plot(filter_data, max_vel=max_vel, max_bt_vel=max_bt_vel, display_text=True, display_stats=True, display_plot=True)
+        self.mag_plot(filter_data, max_mag=max_mag, max_bt_vel=max_bt_vel, display_text=True, display_stats=True, display_plot=False)
+        self.dir_plot(filter_data, max_vel=max_vel, max_bt_vel=max_bt_vel, display_text=True, display_stats=True, display_plot=False)
+        self.display_mag_dir_plots();
+
+        # Display all the plots in a single HTML
+        self.display_all_plots()
 
     def beam_0_vel(self, filter_query: str, max_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True, is_export: bool = True):
         """
@@ -356,10 +432,13 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['beamVelB0_VSR'] = data['beamB0'] + data['btVelB0']
 
+        # Set the min and max values
+        self.beam_min = min(self.beam_min, data['beamVelB0_VSR'].min())
+        self.beam_max = max(self.beam_max, data['beamVelB0_VSR'].max())
+
         if is_export:
             # Export to CSV
             self.export_to_csv(data, "_beam_vel_0_vsr")
-
 
         # Display the raw data
         if display_text:
@@ -423,7 +502,8 @@ class ReadPlotCSV:
             z=z,
             x=dates,
             y=bin_nums,
-            colorscale='Viridis'))
+            colorscale='Viridis')
+        )
 
         # Set the layout with downward looking
         self.beam_b0_fig.update_layout(
@@ -535,6 +615,10 @@ class ReadPlotCSV:
         # Remove vessel speed
         # Add the bottom track velocity to remove the velocity
         data['beamVelB1_VSR'] = data['beamB1'] + data['btVelB1']
+
+        # Set the min and max values
+        self.beam_min = min(self.beam_min, data['beamVelB1_VSR'].min())
+        self.beam_max = max(self.beam_max, data['beamVelB1_VSR'].max())
 
         if display_text:
             # Display the raw data
@@ -710,6 +794,10 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['beamVelB2_VSR'] = data['beamB2'] + data['btVelB2']
 
+        # Set the min and max values
+        self.beam_min = min(self.beam_min, data['beamVelB2_VSR'].min())
+        self.beam_max = max(self.beam_max, data['beamVelB2_VSR'].max())
+
         if display_text:
             # Display the raw data
             st.subheader("Beam Velocity - Beam 2 Raw Data (Vessel Speed Removed)")
@@ -883,6 +971,10 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['beamVelB3_VSR'] = data['beamB3'] + data['btVelB3']
 
+        # Set the min and max values
+        self.beam_min = min(self.beam_min, data['beamVelB3_VSR'].min())
+        self.beam_max = max(self.beam_max, data['beamVelB3_VSR'].max())
+
         if display_text:
             # Display the raw data
             st.subheader("Beam Velocity - Beam 3 Raw Data (Vessel Speed Removed)")
@@ -962,12 +1054,40 @@ class ReadPlotCSV:
     def display_beam_vel_plots(self):
         """
         Display the Beam Velocity plots stacked.
+        Also save the plots to html files.
         """
+        # Make all the min and max match for all plots
+        self.beam_b0_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b1_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b2_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b3_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
 
-        st.plotly_chart(self.beam_b0_fig)
-        st.plotly_chart(self.beam_b1_fig)
-        st.plotly_chart(self.beam_b2_fig)
-        st.plotly_chart(self.beam_b3_fig)
+
+        # Display and save the plot
+        #st.plotly_chart(self.beam_b0_fig)
+        self.beam_b0_fig.write_html(self.gen_file_path(file_suffix="_plot_beam_vel_0", file_ext=".html"))
+
+        #st.plotly_chart(self.beam_b1_fig)
+        #self.beam_b1_fig.to_html(self.gen_file_path(file_suffix="_plot_beam_vel_1", file_ext=".html"))
+
+        #st.plotly_chart(self.beam_b2_fig)
+        #self.beam_b2_fig.to_html(self.gen_file_path(file_suffix="_plot_beam_vel_2", file_ext=".html"))
+
+        #st.plotly_chart(self.beam_b3_fig)
+        #self.beam_b3_fig.to_html(self.gen_file_path(file_suffix="_plot_beam_vel_3", file_ext=".html"))
+
+        # Get the min and max for all the plots
+        #zmin = min(self.beam_b0_fig.data[0].zmin, self.beam_b1_fig.data[0].zmin, self.beam_b2_fig.data[0].zmin, self.beam_b3_fig.data[0].zmin)
+        #zmax = max(self.beam_b0_fig.data[0].zmax, self.beam_b1_fig.data[0].zmax, self.beam_b2_fig.data[0].zmax, self.beam_b3_fig.data[0].zmax)
+
+        self.beam_fig_subplots = make_subplots(rows=4, cols=1, subplot_titles=("Beam 0", "Beam 1", "Beam 2", "Beam 3"), shared_xaxes=True, shared_yaxes=True)
+        self.beam_fig_subplots.update_layout(title_text="Beam Velocity")
+        self.beam_fig_subplots.add_trace(self.beam_b0_fig.data[0], row=1, col=1)
+        self.beam_fig_subplots.add_trace(self.beam_b1_fig.data[0], row=2, col=1)
+        self.beam_fig_subplots.add_trace(self.beam_b2_fig.data[0], row=3, col=1)
+        self.beam_fig_subplots.add_trace(self.beam_b3_fig.data[0], row=4, col=1)
+        self.beam_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_beam_vel", file_ext=".html"))
+        st.plotly_chart(self.beam_fig_subplots)
 
     def intr_x_vel_remove_ship(self, filter_query: str, max_vel: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
         """
@@ -1000,6 +1120,10 @@ class ReadPlotCSV:
         # Remove vessel speed
         # Add the bottom track velocity to remove the velocity
         data['instrVelX_VSR'] = data['instrX'] + data['btVelX']
+
+        # Set the min and max values
+        self.instr_min = min(self.instr_min, data['instrVelX_VSR'].min())
+        self.instr_max = max(self.instr_max, data['instrVelX_VSR'].max())
 
         if display_text:
             # Display the raw data
@@ -1108,6 +1232,10 @@ class ReadPlotCSV:
         # Remove vessel speed
         # Add the bottom track velocity to remove the velocity
         data['instrVelY_VSR'] = data['instrY'] + data['btVelY']
+
+        # Set the min and max values
+        self.instr_min = min(self.instr_min, data['instrVelY_VSR'].min())
+        self.instr_max = max(self.instr_max, data['instrVelY_VSR'].max())
 
         if display_text:
             # Display the raw data
@@ -1218,6 +1346,10 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['instrVelZ_VSR'] = data['instrZ'] + data['btVelZ']
 
+        # Set the min and max values
+        self.instr_min = min(self.instr_min, data['instrVelZ_VSR'].min())
+        self.instr_max = max(self.instr_max, data['instrVelZ_VSR'].max())
+
         if display_text:
             # Display the raw data
             st.subheader("Instrument Velocity - Z Data (Vessel Speed Removed)")
@@ -1326,6 +1458,10 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['instrVelErr_VSR'] = data['instrErr'] + data['btVelErr']
 
+        # Set the min and max values
+        self.instr_min = min(self.instr_min, data['instrVelErr_VSR'].min())
+        self.instr_max = max(self.instr_max, data['instrVelErr_VSR'].max())
+
         if display_text:
             # Display the raw data
             st.subheader("Instrument Velocity - Error Data (Vessel Speed Removed)")
@@ -1406,11 +1542,26 @@ class ReadPlotCSV:
         """
         Display all the Instrument Velocity plots stacked.
         """
+        # Make all the min and max match for all plots
+        self.instr_x_fig.data[0].update(zmin=self.instr_min, zmax=self.instr_max, zauto=False, xaxis="x", yaxis="y")
+        self.instr_y_fig.data[0].update(zmin=self.instr_min, zmax=self.instr_max, zauto=False, xaxis="x", yaxis="y")
+        self.instr_z_fig.data[0].update(zmin=self.instr_min, zmax=self.instr_max, zauto=False, xaxis="x", yaxis="y")
+        self.instr_err_fig.data[0].update(zmin=self.instr_min, zmax=self.instr_max, zauto=False, xaxis="x", yaxis="y")
+
         # Add the plot
-        st.plotly_chart(self.instr_x_fig)
-        st.plotly_chart(self.instr_y_fig)
-        st.plotly_chart(self.instr_z_fig)
-        st.plotly_chart(self.instr_err_fig)
+        #st.plotly_chart(self.instr_x_fig)
+        #st.plotly_chart(self.instr_y_fig)
+        #st.plotly_chart(self.instr_z_fig)
+        #st.plotly_chart(self.instr_err_fig)
+
+        self.instr_fig_subplots = make_subplots(rows=4, cols=1, subplot_titles=("X", "Y", "Z", "Error"), shared_xaxes=True, shared_yaxes=True)
+        self.instr_fig_subplots.update_layout(title_text="Instrument Velocity")
+        self.instr_fig_subplots.add_trace(self.instr_x_fig.data[0], row=1, col=1)
+        self.instr_fig_subplots.add_trace(self.instr_y_fig.data[0], row=2, col=1)
+        self.instr_fig_subplots.add_trace(self.instr_z_fig.data[0], row=3, col=1)
+        self.instr_fig_subplots.add_trace(self.instr_err_fig.data[0], row=4, col=1)
+        self.instr_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_instr_vel", file_ext=".html"))
+        st.plotly_chart(self.instr_fig_subplots)
 
     def earth_east_vel_remove_ship(self, filter_query: str, max_vel: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
         """
@@ -1443,6 +1594,10 @@ class ReadPlotCSV:
         # Remove vessel speed
         # Add the bottom track velocity to remove the velocity
         data['earthVelEast_VSR'] = data['earthEast'] + data['btVelEast']
+
+        # Set the min and max values
+        self.earth_min = min(self.earth_min, data['earthVelEast_VSR'].min())
+        self.earth_max = max(self.earth_max, data['earthVelEast_VSR'].max())
 
         if display_text:
             # Display the raw data
@@ -1552,6 +1707,10 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['earthVelNorth_VSR'] = data['earthNorth'] + data['btVelNorth']
 
+        # Set the min and max values
+        self.earth_min = min(self.earth_min, data['earthVelNorth_VSR'].min())
+        self.earth_max = max(self.earth_max, data['earthVelNorth_VSR'].max())
+
         if display_text:
             # Display the raw data
             st.subheader("Earth Velocity - North Data (Vessel Speed Removed)")
@@ -1660,113 +1819,9 @@ class ReadPlotCSV:
         # Add the bottom track velocity to remove the velocity
         data['earthVelVert_VSR'] = data['earthVert'] + data['btVelVert']
 
-        if display_text:
-            # Display the raw data
-            st.subheader("Earth Velocity - Vertical Data (Vessel Speed Removed)")
-            st.write(data)
-
-        if display_stats:
-            col1, col2, col3 = st.beta_columns(3)
-
-            with col1:
-                # Display the stats of the data
-                st.subheader("Earth Velocity - Vertical")
-                st.markdown("**(Raw)**")
-                mean_beamVel = round(data['earthVert'].mean(), round_val)
-                median_beamVel = round(data['earthVert'].median(), round_val)
-                min_beamVel = round(data['earthVert'].min(), round_val)
-                max_beamVel = round(data['earthVert'].max(), round_val)
-                std_beamVel = round(data['earthVert'].std(), round_val)
-                st.markdown("***Average Mean: *** " + str(mean_beamVel))
-                st.markdown("***Average Median: *** " + str(median_beamVel))
-                st.markdown("***Min: *** " + str(min_beamVel))
-                st.markdown("***Max: *** " + str(max_beamVel))
-                st.markdown("***Standard Deviation: *** " + str(std_beamVel))
-
-            with col2:
-                st.subheader("Bottom Track")
-                st.markdown("**Earth Velocity**")
-                mean_beamBtVel = round(data['btVelVert'].mean(), round_val)
-                median_beamBtVel = round(data['btVelVert'].median(), round_val)
-                min_beamBtVel = round(data['btVelVert'].min(), round_val)
-                max_beamBtVel = round(data['btVelVert'].max(), round_val)
-                std_beamBtVel = round(data['btVelVert'].std(), round_val)
-                st.markdown("***Average Mean: *** " + str(mean_beamBtVel))
-                st.markdown("***Average Median: *** " + str(median_beamBtVel))
-                st.markdown("***Min: *** " + str(min_beamBtVel))
-                st.markdown("***Max: *** " + str(max_beamBtVel))
-                st.markdown("***Standard Deviation: *** " + str(std_beamBtVel))
-
-            with col3:
-                st.subheader("Earth Velocity")
-                st.markdown("**(Vessel Speed Removed)**")
-                mean_beamBtVel_vsr = round(data['earthVelVert_VSR'].mean(), round_val)
-                median_beamBtVel_vsr = round(data['earthVelVert_VSR'].median(), round_val)
-                min_beamBtVel_vsr = round(data['earthVelVert_VSR'].min(), round_val)
-                max_beamBtVel_vsr = round(data['earthVelVert_VSR'].max(), round_val)
-                std_beamBtVel_vsr = round(data['earthVelVert_VSR'].std(), round_val)
-                st.markdown("***Average Mean: *** " + str(mean_beamBtVel_vsr))
-                st.markdown("***Average Median: *** " + str(median_beamBtVel_vsr))
-                st.markdown("***Min: *** " + str(min_beamBtVel_vsr))
-                st.markdown("***Max: *** " + str(max_beamBtVel_vsr))
-                st.markdown("***Standard Deviation: *** " + str(std_beamBtVel_vsr))
-
-        # Get the data from the query
-        bin_nums = data['bin']
-        dates = data['dateTime']
-        z = data['earthVelVert_VSR']
-
-        # Create the plot
-        self.earth_vert_fig = go.Figure(data=go.Heatmap(
-            z=z,
-            x=dates,
-            y=bin_nums,
-            colorscale='Viridis'))
-
-        # Set the layout with downward looking
-        self.earth_vert_fig.update_layout(
-            title="Earth Vertical Velocity",
-            xaxis_title="DateTime",
-            yaxis_title="Bin Number",
-            yaxis_autorange='reversed'  # Downward looking 'reversed'
-        )
-
-        if display_plot:
-            # Add the plot
-            st.subheader("Plot Earth - Vertical Velocity (Vessel Speed Removed)")
-            st.plotly_chart(self.earth_vert_fig)
-
-    def earth_vert_vel_remove_ship(self, filter_query: str, max_vel: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
-        """
-        Get the Earth Vertical Velocity values.  Display and plot the data.  Use the filter query
-        to filter the data.
-
-        :param filter_query: Filter string to run in the query.
-        :param max_vel: Maximum velocity to allow.  Bad Velocity is 88.888
-        :param max_bt_vel: Maximum Bottom Track Velocity to allow.
-        :param round_val: Round the stat values to this decimal place.
-        :param display_text: Flag if the data should be displayed by streamlit.
-        :param display_stats: Flag if the stats should be displayed by streamlit.
-        :param display_plot: Flag if the plot should be displayed by streamlit.
-        """
-        bv_query = "SELECT ensembles.ensNum,ensembles.dateTIme,earthVelocity.bin,earthVelocity.binDepth,earthVelocity.beam2,bottomtrack.earthVelBeam2,bottomtrack.avgRange " \
-                   "FROM ensembles " \
-                   "INNER JOIN earthVelocity ON ensembles.id=earthVelocity.ensIndex " \
-                   "INNER JOIN bottomtrack ON ensembles.id=bottomtrack.ensIndex " + filter_query + ";"
-        data = self.query_data(self.project.file_path, query=bv_query)
-
-        # Rename the columns so we know which column is bottom track
-        data.rename(columns={"earthVelBeam2": "btVelVert", "beam2": "earthVert"}, inplace=True)
-
-        # Clean up data
-        # Check if the number exceeds the max value
-        # Use absolute value to handle negative and positive the same
-        data['earthVert'] = [x if abs(x) < abs(max_vel) else np.nan for x in data['earthVert']]
-        data['btVelVert'] = [x if abs(x) < abs(max_bt_vel) else np.nan for x in data['btVelVert']]
-
-        # Remove vessel speed
-        # Add the bottom track velocity to remove the velocity
-        data['earthVelVert_VSR'] = data['earthVert'] + data['btVelVert']
+        # Set the min and max values
+        self.earth_min = min(self.earth_min, data['earthVelVert_VSR'].min())
+        self.earth_max = max(self.earth_max, data['earthVelVert_VSR'].max())
 
         if display_text:
             # Display the raw data
@@ -1848,11 +1903,26 @@ class ReadPlotCSV:
         """
         Display all the Instrument Velocity plots stacked.
         """
+        # Make all the min and max match for all plots
+        self.earth_east_fig.data[0].update(zmin=self.earth_min, zmax=self.earth_max, zauto=False, xaxis="x", yaxis="y")
+        self.earth_north_fig.data[0].update(zmin=self.earth_min, zmax=self.earth_max, zauto=False, xaxis="x", yaxis="y")
+        self.earth_vert_fig.data[0].update(zmin=self.earth_min, zmax=self.earth_max, zauto=False, xaxis="x", yaxis="y")
+        self.instr_err_fig.data[0].update(zmin=self.earth_min, zmax=self.earth_max, zauto=False, xaxis="x", yaxis="y")
+
         # Add the plot
-        st.plotly_chart(self.earth_east_fig)
-        st.plotly_chart(self.earth_north_fig)
-        st.plotly_chart(self.earth_vert_fig)
-        st.plotly_chart(self.instr_err_fig)
+        #st.plotly_chart(self.earth_east_fig)
+        #st.plotly_chart(self.earth_north_fig)
+        #st.plotly_chart(self.earth_vert_fig)
+        #st.plotly_chart(self.instr_err_fig)
+
+        self.earth_fig_subplots = make_subplots(rows=4, cols=1, subplot_titles=("East", "North", "Vertical", "Error"), shared_xaxes=True, shared_yaxes=True)
+        self.earth_fig_subplots.update_layout(title_text="Earth Velocity")
+        self.earth_fig_subplots.add_trace(self.earth_east_fig.data[0], row=1, col=1)
+        self.earth_fig_subplots.add_trace(self.earth_north_fig.data[0], row=2, col=1)
+        self.earth_fig_subplots.add_trace(self.earth_vert_fig.data[0], row=3, col=1)
+        self.earth_fig_subplots.add_trace(self.instr_err_fig.data[0], row=4, col=1)
+        self.earth_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_earth_vel", file_ext=".html"))
+        st.plotly_chart(self.earth_fig_subplots)
 
     def mag_plot(self, filter_query: str, max_mag: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
         """
@@ -1951,7 +2021,7 @@ class ReadPlotCSV:
         # Clean up data
         # Check if the number exceeds the max value
         # Use absolute value to handle negative and positive the same
-        data['dir'] = [x if abs(x) < abs(max_vel) else np.nan for x in data['dir']]
+        #data['dir'] = [x if abs(x) < abs(max_vel) else np.nan for x in data['dir']]
 
         if display_text:
             # Display the raw data
@@ -1998,6 +2068,70 @@ class ReadPlotCSV:
             st.subheader("Plot Water Direction (Vessel Speed Removed)")
             st.plotly_chart(self.dir_fig)
 
+    def display_mag_dir_plots(self):
+        """
+        Display the magnitude and direction plot together.
+        """
+        self.mag_fig.data[0].update(colorbar=dict(len=0.40, y=0.80))
+        self.dir_fig.data[0].update(colorbar=dict(len=0.40, y=0.20))
+
+        self.magdir_fig_subplots = make_subplots(rows=2, cols=1, subplot_titles=("Magnitude", "Direction"), shared_xaxes=True, shared_yaxes=True)
+        self.magdir_fig_subplots.update_layout(title_text="Earth Velocity")
+        self.magdir_fig_subplots.add_trace(self.mag_fig.data[0], row=1, col=1)
+        self.magdir_fig_subplots.add_trace(self.dir_fig.data[0], row=2, col=1)
+        self.magdir_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_mag_dir_vel", file_ext=".html"))
+        st.plotly_chart(self.magdir_fig_subplots)
+
+    def display_all_plots(self):
+        # Get the min and max for all plots
+        zmin = min(self.beam_min, self.instr_min, self.earth_min)
+        zmax = max(self.beam_max, self.instr_max, self.earth_max)
+
+        # Make all the min and max match for all plots
+        self.beam_b0_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b1_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b2_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.beam_b3_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+
+        self.instr_x_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.instr_y_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.instr_z_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.instr_err_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+
+        self.earth_east_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.earth_north_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.earth_vert_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.instr_err_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+
+        self.mag_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+
+        # Group all the plots
+        all_fig_subplots = make_subplots(rows=12,
+                                         cols=1,
+                                         subplot_titles=("Beam 0", "Beam 1", "Beam 2", "Beam 3", "X", "Y", "Z", "East", "North", "Vert", "Error", "Magnitude"),
+                                         shared_xaxes=True,
+                                         shared_yaxes=True)
+
+        # Add all the plots
+        all_fig_subplots.add_trace(self.beam_b0_fig.data[0], row=1, col=1)
+        all_fig_subplots.add_trace(self.beam_b1_fig.data[0], row=2, col=1)
+        all_fig_subplots.add_trace(self.beam_b2_fig.data[0], row=3, col=1)
+        all_fig_subplots.add_trace(self.beam_b3_fig.data[0], row=4, col=1)
+
+        all_fig_subplots.add_trace(self.instr_x_fig.data[0], row=5, col=1)
+        all_fig_subplots.add_trace(self.instr_y_fig.data[0], row=6, col=1)
+        all_fig_subplots.add_trace(self.instr_z_fig.data[0], row=7, col=1)
+
+        all_fig_subplots.add_trace(self.earth_east_fig.data[0], row=8, col=1)
+        all_fig_subplots.add_trace(self.earth_north_fig.data[0], row=9, col=1)
+        all_fig_subplots.add_trace(self.earth_vert_fig.data[0], row=10, col=1)
+        all_fig_subplots.add_trace(self.instr_err_fig.data[0], row=11, col=1)
+
+        all_fig_subplots.add_trace(self.mag_fig.data[0], row=12, col=1)
+        #all_fig_subplots.add_trace(self.dir_fig.data[0], row=13, col=1)
+
+        all_fig_subplots.write_html(self.gen_file_path(file_suffix="_plots", file_ext=".html"))
+
     def ens_handler(self, sender, ens):
         """
         Handle all the incoming data from the codec.  Add the ensembles
@@ -2043,6 +2177,26 @@ class ReadPlotCSV:
 
         # Write the results to the CSV file
         df.to_csv(csv_name, index=False)
+
+    def gen_file_path(self, file_suffix: str, file_ext: str = ".csv"):
+        """
+        Generate a file path for the project.
+        This will place all the files in the same folder and the project file.
+        This will append the file_suffix to the file name.
+        This will use the extenstion given.
+
+        :param file_suffix: File suffix to append to the file name.
+        :param file_ext: File extension.
+        """
+
+        # Get the folder path from the project file path
+        # Then create the CSV file
+        folder_path = PurePath(self.project.file_path).parent
+        prj_name = PurePath(self.project.file_path).stem + file_suffix
+        file_path = folder_path.joinpath(str(prj_name) + file_ext).as_posix()
+        logging.debug("File Path: " + file_path)
+
+        return file_path
 
 
 if __name__ == "__main__":

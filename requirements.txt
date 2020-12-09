@@ -13,3 +13,4 @@ configparser
 tqdm
 mttkinter
 pygeodesy
+crc16
