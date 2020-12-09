@@ -48,6 +48,7 @@ class RtiCheckFile:
         self.prev_ens_datetime = None
         self.is_prev_ens_vertical = False
         self.is_upward = False
+        self.ping_avgs = {}
         self.error_output_str = []
         self.summary_str = []
 
@@ -189,6 +190,11 @@ class RtiCheckFile:
         self.summary_str.append("Total number of Primary Beam ensembles in file:     " + str(self.primary_beam_ens_count))
         self.summary_str.append("Total number of Vertical Beam ensembles in file:     " + str(self.vert_beam_ens_count))
         self.summary_str.append("Total number of Ensemble Pairs in file:     " + str(self.ens_pairs_count))
+
+        # Set the ping counts
+        for ping_ct in self.ping_avgs.keys():
+            self.summary_str.append("Average Ensemble Count: " + str(ping_ct) + " pings [" + str(self.ping_avgs[ping_ct]) + "]")
+
         if self.ens_count > 0:
             self.summary_str.append("Percentage of ensembles found bad:    " + str(round((self.bad_ens / self.ens_count) * 100.0, 3)) + "%")
 
@@ -333,6 +339,13 @@ class RtiCheckFile:
         # Check if we have 4 Beam and Vertical Beam pairs
         if self.prev_ens and self.prev_ens.EnsembleData.NumBeams >= 3 and ens.EnsembleData.NumBeams == 1:
             self.ens_pairs_count += 1
+
+        # Count the ensemble ping numbers
+        ping_count = ens.EnsembleData.ActualPingCount
+        if ping_count in self.ping_avgs.keys():
+            self.ping_avgs[ping_count] = self.ping_avgs[ping_count] + 1
+        else:
+            self.ping_avgs[ping_count] = 1
 
         # Store the ensemble to check next pass
         self.prev_ens = ens
@@ -596,7 +609,7 @@ class RtiCheckFile:
                 # Upward looking, if roll is greater than max tilt
                 # Good tilt is 0 to max_tilt
                 if ens.AncillaryData.Roll > max_tilt:
-                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\t Roll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
 
                     # Display the error if turned on
                     if show_live_errors:
@@ -607,9 +620,7 @@ class RtiCheckFile:
             else:
                 # Downward facing 180-max_tilt to 180 is OK
                 if (180.0 - max_tilt) > ens.AncillaryData.Roll > (-180.0 + max_tilt):
-                    err_str = "Error in ensemble: " + str(
-                        ens.EnsembleData.EnsembleNumber) + "\tRoll Tilt Extreme: [" + str(
-                        ens.AncillaryData.Roll) + "]"
+                    err_str = "Error in ensemble: " + str(ens.EnsembleData.EnsembleNumber) + "\t Roll Tilt Extreme: [" + str(ens.AncillaryData.Roll) + "]"
 
                     # Display the error if turned on
                     if show_live_errors:
