@@ -5,6 +5,7 @@ import sqlite3
 import pandas as pd
 import numpy as np
 import streamlit as st
+from datetime import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from rti_python.Utilities.check_binary_file import RtiCheckFile
@@ -417,7 +418,7 @@ class ReadPlotCSV:
 
     def export_mag_dir_to_csv(self, max_roll: float = 160.0, max_vel: float = 88.0):
         """
-        Export the data to a CSV.
+        Export the magnitude and direction data to a CSV.
 
         :param max_roll: Maximum roll value to allow.
         :param max_vel: Maximum velocity to allow.
@@ -462,6 +463,139 @@ class ReadPlotCSV:
 
         # Write the results to the CSV file
         df.to_csv(csv_name, index=False)
+
+    def export_avg_depth_vel_dist_travel_to_csv(self, max_roll: float = 160.0, max_vel: float = 88.0):
+        """
+        Create a CSV with the average depth, average velocity and distance traveled.
+
+        Average depth is already done, but is the average of the bottom track ranges not including
+        the bad values.
+
+        Average velocity is average velocity magnitude of all the bins in each ensemble.
+
+        Distance Traveld is speed (BT) * delta_time.
+
+        :param max_roll: Maximum roll value to allow.
+        :param max_vel: Maximum velocity to allow.
+        """
+
+        # Filter some of the data
+        filter_query = "WHERE ensembles.roll > " + str(max_roll) + " OR ensembles.roll < -" + str(max_roll)
+
+        # Setup a query to get the data from the database
+        query = "SELECT " \
+                "ensembles.ensNum," \
+                "ensembles.dateTime," \
+                "earthMagDir.bin," \
+                "earthMagDir.binDepth," \
+                "earthMagDir.mag," \
+                "earthMagDir.dir,"\
+                "bottomtrack.beamVelBeam0," \
+                "bottomtrack.beamVelBeam1," \
+                "bottomtrack.beamVelBeam2," \
+                "bottomtrack.beamVelBeam3," \
+                "bottomtrack.avgRange, " \
+                "bottomtrack.vesselSpeed, " \
+                "bottomtrack.vesselDirection " \
+                "FROM ensembles " \
+                "INNER JOIN earthMagDir ON ensembles.id=earthMagDir.ensIndex " \
+                "INNER JOIN bottomtrack ON ensembles.id=bottomtrack.ensIndex " + filter_query + ";"
+
+        # Filter the data using the query
+        df = self.query_data(self.project.file_path, query)
+
+        # Clean up data
+        # Check if the number exceeds the max value
+        # Use absolute value to handle negative and postive the same
+        # This is also used to remove BAD_VELOCITY
+        df['mag'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['mag']]
+        df['vesselSpeed'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['vesselSpeed']]
+        df['vesselDirection'] = [x if abs(x) < abs(max_vel) else np.nan for x in df['vesselDirection']]
+
+        # Convert the dateTime column from a string to datetime
+        df['dateTime'] = pd.to_datetime(df['dateTime'])
+
+        # Create a delta time column which is the difference between the current and past time
+        #df['delta_dt'] = df['dateTime'].diff()
+
+        # Calculate the distance traveled for each bin
+        #df['dist_trav'] = df['delta_dt'] * df['mag']
+
+        # Average the magnitude value
+        # Find all the datetime to breakup the DB into ensembles
+        # (b-a)/np.timedelta64 subtracts to the 2 times then converts to seconds
+        unique_dt = df['dateTime'].unique()
+        delta_time = [(b-a)/np.timedelta64(1,'s') for a, b in zip(unique_dt, unique_dt[1:])]
+        # Ignore the first value, but fill it in with a nan
+        delta_time = [np.nan] + delta_time
+
+        # Get all the rows for a specific ensemble
+        # Then average the mag column.  This will average all the bins
+        avg_vel = []
+        dist_trav = []
+        dir_trav = []
+        avg_depth = []
+        date_time = []
+        for index, ens_dt in enumerate(unique_dt):
+            # Get all the ensembles for a specific datetime
+            df_ens = df[df.dateTime == ens_dt]
+
+            # Calculate the average velocity for the ensemble
+            vel_mean = df_ens['mag'].mean()
+            avg_vel.append(vel_mean)
+
+            # Convert the delta time to seconds
+            #delta_time_sec = time.mktime(delta_time[index])
+            delta_time_sec = delta_time[index]
+
+            # Get the average speed of the ADCP moving
+            avg_vessel_speed = df_ens['vesselSpeed'].mean()
+
+            # Get the average direction the ADCP moving
+            dir_trav.append(df_ens['vesselDirection'].mean())
+
+            # Calculate the distanced traveled from the average vel and delta time
+            dist_trav.append(delta_time_sec * avg_vessel_speed)
+
+            # Set the average depth
+            avg_depth.append(df_ens['avgRange'].mean())
+
+            # Set the time to
+            date_time.append(ens_dt)
+
+
+        # Get the folder path from the project file path
+        # Then create the CSV file
+        folder_path = PurePath(self.project.file_path).parent
+        prj_name = PurePath(self.project.file_path).stem + "_avg_depth_vel_dist_trav"
+        csv_name = folder_path.joinpath(str(prj_name) + ".csv").as_posix()
+        logging.debug("CSV File: " + csv_name)
+
+        # Write the results to the CSV file
+        with open(csv_name, "w") as file:
+            file.write("datetime, avgDepth, avgVel, distanceTraveled, directionTraveled \n")
+            for index in range(len(unique_dt)):
+                # Replace nan with blank so plotting in excel works
+                avg_vel_str = str(avg_vel[index])
+                if np.isnan(avg_vel[index]):
+                    avg_vel_str = ""
+
+                # Replace nan with blank so plotting in excel works
+                avg_depth_str = str(avg_depth[index])
+                if np.isnan(avg_depth[index]):
+                    avg_depth_str = ""
+
+                # Replace nan with blank so plotting in excel works
+                dist_trav_str = str(dist_trav[index])
+                if np.isnan(dist_trav[index]):
+                    dist_trav_str = ""
+
+                # Replace nan with blank so plotting in excel works
+                dir_trav_str = str(dir_trav[index])
+                if np.isnan(dir_trav[index]):
+                    dir_trav_str = ""
+
+                file.write(str(unique_dt[index]) + "," + avg_depth_str + "," + avg_vel_str + "," + dist_trav_str + "," + dir_trav_str + "\n")
 
     def export_to_csv(self, df: pd.DataFrame, file_name_suffix: str):
         """
@@ -2726,6 +2860,8 @@ class ReadPlotCSV:
         """
         Display the magnitude and direction plot together.
         """
+        # Create 2 different color bars
+        # Make the mags and dir overlap
         self.mag_fig.data[0].update(colorbar=dict(len=0.40, y=0.80))
         self.dir_fig.data[0].update(colorbar=dict(len=0.40, y=0.20))
         self.mag_vsr_fig.data[0].update(colorbar=dict(len=0.40, y=0.80))
@@ -2742,7 +2878,7 @@ class ReadPlotCSV:
 
         self.magdir_fig_subplots = make_subplots(rows=4,                                        # Number of rows
                                                  cols=1,                                        # Number of columns
-                                                 row_titles=("Magnitude", "Direction", "Mag VSR", "Dir VSR"),         # Plot titles
+                                                 row_titles=("Magnitude", "Mag VSR", "Direction", "Dir VSR"),         # Plot titles
                                                  shared_xaxes="all",                            # Share movement in X axis
                                                  shared_yaxes="all",                            # Share movement in Y axis
                                                  vertical_spacing=0.05)                         # Spacing between plots
@@ -2750,9 +2886,9 @@ class ReadPlotCSV:
         self.magdir_fig_subplots.update_layout(title_text="Magnitude and Direction")
 
         self.magdir_fig_subplots.add_trace(self.mag_fig.data[0], row=1, col=1)
-        self.magdir_fig_subplots.add_trace(self.dir_fig.data[0], row=2, col=1)
+        self.magdir_fig_subplots.add_trace(self.mag_vsr_fig.data[0], row=2, col=1)
 
-        self.magdir_fig_subplots.add_trace(self.mag_vsr_fig.data[0], row=3, col=1)
+        self.magdir_fig_subplots.add_trace(self.dir_fig.data[0], row=3, col=1)
         self.magdir_fig_subplots.add_trace(self.dir_vsr_fig.data[0], row=4, col=1)
 
         self.magdir_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_mag_dir_raw_vsr", file_ext=".html"))
@@ -3331,6 +3467,9 @@ class ReadPlotCSV:
         zmin = min(self.beam_min, self.instr_min, self.earth_vsr_min, self.mag_min)
         zmax = max(self.beam_max, self.instr_max, self.earth_vsr_max, self.mag_max)
 
+        # Remove settings so that all the colorbars will overlap
+        self.mag_vsr_fig.data[0].update(colorbar=dict(len=None, y=None))
+
         # Make all the min and max match for all plots
         self.beam_b0_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
         self.beam_b1_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
@@ -3346,7 +3485,7 @@ class ReadPlotCSV:
         self.earth_north_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
         self.earth_vert_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
 
-        self.mag_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.mag_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
 
         # Group all the plots
         all_fig_subplots = make_subplots(rows=12,
@@ -3355,6 +3494,8 @@ class ReadPlotCSV:
                                          shared_xaxes="all",  # Share movement in X axis
                                          shared_yaxes="all",  # Share movement in Y axis
                                          vertical_spacing=0.025)  # Spacing between plots
+
+        all_fig_subplots.update_layout(title_text="Speeds (Vessel Speed Removed)")
 
         # Add all the plots
         all_fig_subplots.add_trace(self.beam_b0_fig.data[0], row=1, col=1)
@@ -3371,35 +3512,49 @@ class ReadPlotCSV:
         all_fig_subplots.add_trace(self.earth_vert_vsr_fig.data[0], row=10, col=1)
         all_fig_subplots.add_trace(self.instr_err_fig.data[0], row=11, col=1)
 
-        all_fig_subplots.add_trace(self.mag_fig.data[0], row=12, col=1)
+        all_fig_subplots.add_trace(self.mag_vsr_fig.data[0], row=12, col=1)
 
         all_fig_subplots.write_html(self.gen_file_path(file_suffix="_plots", file_ext=".html"))
 
     def display_mag_dir_earth_corr_amp(self):
         # Get the min and max for all plots
-        zmin = min(self.earth_vsr_min, self.mag_min)
-        zmax = max(self.earth_vsr_max, self.mag_max)
+        zmin = min(self.earth_vsr_min, self.mag_vsr_min)
+        zmax = max(self.earth_vsr_max, self.mag_vsr_max)
 
         # Make all the min and max match for all plots
-        self.earth_east_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
-        self.earth_north_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
-        self.earth_vert_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.earth_east_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.earth_north_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.earth_vert_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
         self.instr_err_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
-        self.mag_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
+        self.mag_vsr_fig.data[0].update(zmin=zmin, zmax=zmax, zauto=False, xaxis="x", yaxis="y")
 
-        self.dir_fig.data[0].update(colorbar=dict(len=None, y=None))
+        # Make the earth and mag overlap
+        # Then move the other bars to align with plots
+        self.mag_vsr_fig.data[0].update(colorbar=dict(len=0.1, y=0.95))
+        self.dir_vsr_fig.data[0].update(colorbar=dict(len=0.1, y=0.82))
+
+        vel_len = 0.50
+        vel_y = 0.45
+        self.earth_east_vsr_fig.data[0].update(colorbar=dict(len=vel_len, y=vel_len))
+        self.earth_north_vsr_fig.data[0].update(colorbar=dict(len=vel_len, y=vel_len))
+        self.earth_vert_vsr_fig.data[0].update(colorbar=dict(len=vel_len, y=vel_len))
+        self.instr_err_fig.data[0].update(colorbar=dict(len=vel_len, y=vel_len))
+
+        self.amp_b0_fig.data[0].update(colorbar=dict(len=0.10, y=0.18))
+
+        self.corr_b0_fig.data[0].update(colorbar=dict(len=0.10, y=0.05))
 
         # Group all the plots
         all_fig_subplots = make_subplots(rows=8,
                                          cols=1,
-                                         row_titles=("Magnitude", "Direction", "East", "North", "Vertical", "Error", "Correlation", "Amplitude"),
+                                         row_titles=("Magnitude", "Direction", "East", "North", "Vertical", "Error", "Amplitude", "Correlation"),
                                          shared_xaxes="all",  # Share movement in X axis
                                          shared_yaxes="all",  # Share movement in Y axis
                                          vertical_spacing=0.025)  # Spacing between plots
 
         # Add all the plots
-        all_fig_subplots.add_trace(self.mag_fig.data[0], row=1, col=1)
-        all_fig_subplots.add_trace(self.dir_fig.data[0], row=2, col=1)
+        all_fig_subplots.add_trace(self.mag_vsr_fig.data[0], row=1, col=1)
+        all_fig_subplots.add_trace(self.dir_vsr_fig.data[0], row=2, col=1)
 
         all_fig_subplots.add_trace(self.earth_east_vsr_fig.data[0], row=3, col=1)
         all_fig_subplots.add_trace(self.earth_north_vsr_fig.data[0], row=4, col=1)
