@@ -446,6 +446,11 @@ class RtiSqliteProjects:
         if ens.IsEarthVelocity:
             avg_mag, avg_dir = ens.EarthVelocity.average_mag_dir()
 
+        # Switch bool to an int
+        is_upward_looking = 0
+        if ens.AncillaryData.is_upward_facing():
+            is_upward_looking = 1
+
         # Add line for each dataset type
         ens_query = "INSERT INTO ensembles (" \
                     "ensnum, " \
@@ -499,8 +504,8 @@ class RtiSqliteProjects:
                     'WpReceiveBandwidth, ' \
                     'AvgMagnitude, ' \
                     'AvgDirection, ' \
-                    'burstNum, ' \
                     'isUpwardLooking, ' \
+                    'burstNum, ' \
                     'project_id)' \
                     'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); '
 
@@ -555,7 +560,7 @@ class RtiSqliteProjects:
                                                   ens.SystemSetup.WpReceiveBandwidth,
                                                   avg_mag,
                                                   avg_dir,
-                                                  ens.AncillaryData.is_upward_facing(),
+                                                  is_upward_looking,
                                                   burst_num,
                                                   self.batch_prj_id))
         ens_idx = self.batch_sql.cursor.lastrowid
@@ -824,7 +829,7 @@ class RtiSqliteProjects:
             query_corr_val += "{0}, ".format(ens.RangeTracking.Correlation[beam])
 
             query_beam_vel_label += "beamVelBeam{0}, ".format(beam)
-            query_beam_vel_val += "{0}, ".format(ens.RangeTracking.Wt[beam])
+            query_beam_vel_val += "{0}, ".format(ens.RangeTracking.BeamVelocity[beam])
 
             query_pings_label += "pingsBeam{0}, ".format(beam)
             query_pings_val += "{0}, ".format(int(ens.RangeTracking.Pings[beam]))

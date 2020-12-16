@@ -166,16 +166,21 @@ class AncillaryData:
 
         return DataFrame(df_result, columns=df_earth_columns)
 
-    def is_upward_facing(self):
+    def is_upward_facing(self, min_roll: float = 0.0, max_roll: float = 20.0):
         """
-        Check the roll value if it is near 0.  A value near
+        Check the roll value if it is near 0 degrees.  A value near
         zero means the ADCP is upward facing.
+        Upward looking is around 0 degrees for roll.
+        Downward looking is around 180 degrees for roll.
+
+        :param min_roll: Minimum roll for upward looking taking absolute value.
+        :param max_roll: Maximum roll for the upward looking taking absolute value.
         :return: TRUE if Upward facing.
         """
 
         # Check if the roll value is near 0
-        roll = abs(self.Roll)
-        if roll > 0 and roll < 30:
+        if min_roll <= abs(self.Roll) <= max_roll:
             return True
 
         return False
+

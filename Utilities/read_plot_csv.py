@@ -81,6 +81,10 @@ class ReadPlotCSV:
         self.earth_raw_vsr_fig_subplots = None
         self.magdir_fig_subplots = None
 
+        self.water_temp_fig = None
+        self.sys_temp_fig = None
+        self.temps_subplots = None
+
     def select_and_process(self):
         """
         Select the files you would like to process.  Then create a DB file based on the binary files.
@@ -142,6 +146,9 @@ class ReadPlotCSV:
                 # Create a connection to the sqlite project file
                 self.project = RtiSqliteProjects(file_path=db_path)
                 prj_idx = self.project.check_project_exist(str(prj_name))
+
+            return True
+        return False
 
     def export_to_csv_(self, max_roll: float = 160.0):
         """
@@ -515,18 +522,12 @@ class ReadPlotCSV:
         # Convert the dateTime column from a string to datetime
         df['dateTime'] = pd.to_datetime(df['dateTime'])
 
-        # Create a delta time column which is the difference between the current and past time
-        #df['delta_dt'] = df['dateTime'].diff()
-
-        # Calculate the distance traveled for each bin
-        #df['dist_trav'] = df['delta_dt'] * df['mag']
-
         # Average the magnitude value
         # Find all the datetime to breakup the DB into ensembles
         # (b-a)/np.timedelta64 subtracts to the 2 times then converts to seconds
         unique_dt = df['dateTime'].unique()
         delta_time = [(b-a)/np.timedelta64(1,'s') for a, b in zip(unique_dt, unique_dt[1:])]
-        # Ignore the first value, but fill it in with a nan
+        # We Ignored the first value, but fill it in with a nan
         delta_time = [np.nan] + delta_time
 
         # Get all the rows for a specific ensemble
@@ -562,7 +563,6 @@ class ReadPlotCSV:
 
             # Set the time to
             date_time.append(ens_dt)
-
 
         # Get the folder path from the project file path
         # Then create the CSV file
@@ -663,7 +663,7 @@ class ReadPlotCSV:
         # Display all the plots in a single HTML
         self.display_all_plots()
 
-    def beam_0_vel(self, filter_query: str, max_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True, is_export: bool = True):
+    def beam_0_vel(self, filter_query: str, max_vel: float = 88.0, round_val: int = 3, use_bin_depth=True, display_text: bool = True, display_stats: bool = True, display_plot: bool = True, is_export: bool = True):
         """
         Get the Beam 0 raw values.  Display and plot the data.  Use the filter query
         to filter the data.
@@ -671,18 +671,22 @@ class ReadPlotCSV:
         :param filter_query: Filter string to run in the query.
         :param max_vel: Maximum velocity to allow.  Bad Velocity is 88.888
         :param round_val: Round the values displayed to this decimal place.
+        :param use_bin_depth: Use bin or bin depth for the y axis
         :param display_text: Flag if the data should be displayed by streamlit.
         :param display_stats: Flag if the stats should be displayed by streamlit.
         :param display_plot: Flag if the plot should be displayed by streamlit.
         :param is_export: Flag if the data should be export to a CSV.
         """
-        bv_query = "SELECT dateTIme,bin,binDepth,beam0 FROM ensembles INNER JOIN beamVelocity ON ensembles.id=beamVelocity.ensIndex " + filter_query + ";"
+        bv_query = "SELECT dateTime,bin,binDepth,beam0 " \
+                   "FROM ensembles " \
+                   "INNER JOIN beamVelocity ON ensembles.id=beamVelocity.ensIndex " + filter_query + ";"
         data = self.query_data(self.project.file_path, query=bv_query)
 
         # Clean up data
         # Check if the number exceeds the max value
         # Use absolute value to handle negative and postive the same
         data['beam0'] = [x if abs(x) < abs(max_vel) else np.nan for x in data['beam0']]
+        data['binDepth'] = [round(x, 1) for x in data['binDepth']]
 
         if is_export:
             # Export to CSV
@@ -711,7 +715,10 @@ class ReadPlotCSV:
         if display_plot:
             # Get the data from the query
             st.subheader("Plot Beam 0 Velocity")
-            bin_nums = data['bin']
+            #if use_bin_depth:
+            bin_nums = data['binDepth']
+            #else:
+            #    bin_nums = data['bin']
             dates = data['dateTime']
             z = data['beam0']
 
@@ -732,8 +739,9 @@ class ReadPlotCSV:
 
             # Add the plot
             st.plotly_chart(fig)
+            fig.write_html(self.gen_file_path(file_suffix="_plot_beam_vel_0", file_ext=".html"))
 
-    def beam_0_vel_remove_ship(self, filter_query: str, max_vel: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True, is_export: bool = True):
+    def beam_0_vel_remove_ship(self, filter_query: str, max_vel: float = 88.0, max_bt_vel: float = 88.0, round_val: int = 3, use_bin_depth=True, display_text: bool = True, display_stats: bool = True, display_plot: bool = True, is_export: bool = True):
         """
         Get the Beam 0 raw values.  Display and plot the data.  Use the filter query
         to filter the data.
@@ -742,12 +750,13 @@ class ReadPlotCSV:
         :param max_vel: Maximum velocity to allow.  Bad Velocity is 88.888
         :param max_bt_vel: Maximum Bottom Track Velocity to allow.
         :param round_val: Round the stat values to this decimal place.
+        :param use_bin_depth: Use bin or bin depth for the y axis
         :param display_text: Flag if the data should be displayed by streamlit.
         :param display_stats: Flag if the stats should be displayed by streamlit.
         :param display_plot: Flag if the plot should be displayed by streamlit.
         :param is_export: Flag if the data should be export to CSV.
         """
-        bv_query = "SELECT ensembles.ensNum,ensembles.dateTIme,beamVelocity.bin,beamVelocity.binDepth,beamVelocity.beam0,bottomtrack.beamVelBeam0,bottomtrack.avgRange " \
+        bv_query = "SELECT ensembles.ensNum,ensembles.dateTime, ensembles.isUpwardLooking, beamVelocity.bin,beamVelocity.binDepth,beamVelocity.beam0,bottomtrack.beamVelBeam0,bottomtrack.avgRange " \
                    "FROM ensembles " \
                    "INNER JOIN beamVelocity ON ensembles.id=beamVelocity.ensIndex " \
                    "INNER JOIN bottomtrack ON ensembles.id=bottomtrack.ensIndex " + filter_query + ";"
@@ -756,11 +765,18 @@ class ReadPlotCSV:
         # Rename the columns so we know which column is bottom track
         data.rename(columns={"beamVelBeam0": "btVelB0", "beam0": "beamB0"}, inplace=True)
 
+        # Check if the data is upward or downward looking
+        is_upward_looking = False
+        if len(data['isUpwardLooking']) > 0 and data['isUpwardLooking'].mean() > 0:
+            is_upward_looking = True
+
         # Clean up data
         # Check if the number exceeds the max value
         # Use absolute value to handle negative and positive the same
         data['beamB0'] = [x if abs(x) < abs(max_vel) else np.nan for x in data['beamB0']]
         data['btVelB0'] = [x if abs(x) < abs(max_bt_vel) else np.nan for x in data['btVelB0']]
+        data['avgRange'] = [x if x != 0 else np.nan for x in data['avgRange']]
+        data['binDepth'] = [round(x, 1) for x in data['binDepth']]
 
         # Remove vessel speed
         # Add the bottom track velocity to remove the velocity
@@ -825,32 +841,55 @@ class ReadPlotCSV:
                 st.markdown("***Max: *** " + str(max_beamBtVel_vsr))
                 st.markdown("***Standard Deviation: *** " + str(std_beamBtVel_vsr))
 
-
         # Get the data from the query
-        bin_nums = data['bin']
+        #if use_bin_depth:
+        bin_nums = data['binDepth']
+        #else:
+        #    bin_nums = data['bin']
         dates = data['dateTime']
         z = data['beamVelB0_VSR']
 
+        bt_range = data['avgRange']
+
         # Create the plot
-        self.beam_b0_fig = go.Figure(data=go.Heatmap(
+        beam_vel = go.Heatmap(
             z=z,
             x=dates,
             y=bin_nums,
-            colorscale='Viridis')
+            colorscale='Viridis'
         )
 
-        # Set the layout with downward looking
-        self.beam_b0_fig.update_layout(
-            title="Beam 0 Velocity",
-            xaxis_title="DateTime",
-            yaxis_title="Bin Number",
-            yaxis_autorange='reversed'  # Downward looking 'reversed'
+        bt_line = go.Scatter(
+            x=dates,
+            y=bt_range
         )
+
+        plots = [beam_vel, bt_line]
+
+        # Combine all the plots
+        self.beam_b0_fig = go.Figure(data=plots)
+
+        if is_upward_looking:
+            # Set the layout with downward looking
+            self.beam_b0_fig.update_layout(
+                title="Beam 0 Velocity",
+                xaxis_title="DateTime",
+                yaxis_title="Bin Number",
+            )
+        else:
+            # Set the layout with downward looking
+            self.beam_b0_fig.update_layout(
+                title="Beam 0 Velocity",
+                xaxis_title="DateTime",
+                yaxis_title="Bin Number",
+                yaxis_autorange='reversed'  # Downward looking 'reversed'
+            )
 
         if display_plot:
             # Add the plot
             st.subheader("Plot Beam Velocity - Beam 0 (Vessel Speed Removed)")
             st.plotly_chart(self.beam_b0_fig)
+            self.beam_b0_fig.write_html(self.gen_file_path(file_suffix="_plot_beam_vel_vsr_0", file_ext=".html"))
 
     def beam_1_vel(self, filter_query: str, max_vel: float = 88.0, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
         """
@@ -1396,10 +1435,9 @@ class ReadPlotCSV:
         self.beam_b2_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
         self.beam_b3_fig.data[0].update(zmin=self.beam_min, zmax=self.beam_max, zauto=False, xaxis="x", yaxis="y")
 
-
         # Display and save the plot
         #st.plotly_chart(self.beam_b0_fig)
-        self.beam_b0_fig.write_html(self.gen_file_path(file_suffix="_plot_beam_vel_0", file_ext=".html"))
+        #self.beam_b0_fig.write_html(self.gen_file_path(file_suffix="_plot_beam_vel_0", file_ext=".html"))
 
         #st.plotly_chart(self.beam_b1_fig)
         #self.beam_b1_fig.to_html(self.gen_file_path(file_suffix="_plot_beam_vel_1", file_ext=".html"))
@@ -3170,7 +3208,7 @@ class ReadPlotCSV:
 
         # Add Earth plots
         self.amp_fig_subplots = make_subplots(rows=4, cols=1, row_titles=("East", "North", "Vertical", "Error"), shared_xaxes="all", shared_yaxes="all")
-        self.amp_fig_subplots.update_layout(title_text="Earth Velocity")
+        self.amp_fig_subplots.update_layout(title_text="Amplitude")
         self.amp_fig_subplots.add_trace(self.amp_b0_fig.data[0], row=1, col=1)
         self.amp_fig_subplots.add_trace(self.amp_b1_fig.data[0], row=2, col=1)
         self.amp_fig_subplots.add_trace(self.amp_b2_fig.data[0], row=3, col=1)
@@ -3452,15 +3490,147 @@ class ReadPlotCSV:
         self.corr_b2_fig.data[0].update(zmin=self.corr_min, zmax=self.corr_max, zauto=False, xaxis="x", yaxis="y")
         self.corr_b3_fig.data[0].update(zmin=self.corr_min, zmax=self.corr_max, zauto=False, xaxis="x", yaxis="y")
 
-        # Add Earth plots
+        # Add plots
         self.corr_fig_subplots = make_subplots(rows=4, cols=1, row_titles=("B0", "B1", "B2", "B3"), shared_xaxes="all", shared_yaxes="all")
-        self.corr_fig_subplots.update_layout(title_text="Earth Velocity")
+        self.corr_fig_subplots.update_layout(title_text="Correlation")
         self.corr_fig_subplots.add_trace(self.corr_b0_fig.data[0], row=1, col=1)
         self.corr_fig_subplots.add_trace(self.corr_b1_fig.data[0], row=2, col=1)
         self.corr_fig_subplots.add_trace(self.corr_b2_fig.data[0], row=3, col=1)
         self.corr_fig_subplots.add_trace(self.corr_b3_fig.data[0], row=4, col=1)
         self.corr_fig_subplots.write_html(self.gen_file_path(file_suffix="_plot_corr", file_ext=".html"))
         st.plotly_chart(self.corr_fig_subplots)
+
+    def water_temp(self, filter_query: str, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
+        """
+        Get the Water Temperature values.  Display and plot the data.  Use the filter query
+        to filter the data.
+
+        :param filter_query: Filter string to run in the query.
+        :param round_val: Round the stat values to this decimal place.
+        :param display_text: Flag if the data should be displayed by streamlit.
+        :param display_stats: Flag if the stats should be displayed by streamlit.
+        :param display_plot: Flag if the plot should be displayed by streamlit.
+        """
+        bv_query = "SELECT ensembles.ensNum,ensembles.dateTime,  ensembles.waterTemp " \
+                   "FROM ensembles " + filter_query + ";"
+        data = self.query_data(self.project.file_path, query=bv_query)
+
+        if display_text:
+            # Display the raw data
+            st.subheader("Water Temperature (C)")
+            st.write(data)
+
+        if display_stats:
+            # Display the stats of the data
+            st.subheader("Water Temperature (C)")
+            st.markdown("**(Raw)**")
+            mean_beamVel = round(data['waterTemp'].mean(), round_val)
+            median_beamVel = round(data['waterTemp'].median(), round_val)
+            min_beamVel = round(data['waterTemp'].min(), round_val)
+            max_beamVel = round(data['waterTemp'].max(), round_val)
+            std_beamVel = round(data['waterTemp'].std(), round_val)
+            st.markdown("***Average Mean: *** " + str(mean_beamVel))
+            st.markdown("***Average Median: *** " + str(median_beamVel))
+            st.markdown("***Min: *** " + str(min_beamVel))
+            st.markdown("***Max: *** " + str(max_beamVel))
+            st.markdown("***Standard Deviation: *** " + str(std_beamVel))
+
+        # Get the data from the query
+        temps = data['waterTemp']
+        dates = data['dateTime']
+
+        # Create the plot
+        self.water_temp_fig = go.Figure(data=go.Scatter(
+            x=dates,
+            y=temps))
+
+        # Set the layout with downward looking
+        self.water_temp_fig.update_layout(
+            title="Water Temperature (C)",
+            xaxis_title="DateTime",
+            yaxis_title="Temperature (C)",
+            yaxis_autorange='reversed'  # Downward looking 'reversed'
+        )
+
+        if display_plot:
+            # Add the plot
+            st.subheader("Water Temperature (C)")
+            st.plotly_chart(self.water_temp_fig)
+
+    def system_temp(self, filter_query: str, round_val: int = 3, display_text: bool = True, display_stats: bool = True, display_plot: bool = True):
+        """
+        Get the System Temperature values.  Display and plot the data.  Use the filter query
+        to filter the data.
+
+        :param filter_query: Filter string to run in the query.
+        :param round_val: Round the stat values to this decimal place.
+        :param display_text: Flag if the data should be displayed by streamlit.
+        :param display_stats: Flag if the stats should be displayed by streamlit.
+        :param display_plot: Flag if the plot should be displayed by streamlit.
+        """
+        bv_query = "SELECT ensembles.ensNum,ensembles.dateTime,  ensembles.sysTemp " \
+                   "FROM ensembles " + filter_query + ";"
+        data = self.query_data(self.project.file_path, query=bv_query)
+
+        if display_text:
+            # Display the raw data
+            st.subheader("System Temperature (C)")
+            st.write(data)
+
+        if display_stats:
+            # Display the stats of the data
+            st.subheader("System Temperature (C)")
+            st.markdown("**(Raw)**")
+            mean_beamVel = round(data['sysTemp'].mean(), round_val)
+            median_beamVel = round(data['sysTemp'].median(), round_val)
+            min_beamVel = round(data['sysTemp'].min(), round_val)
+            max_beamVel = round(data['sysTemp'].max(), round_val)
+            std_beamVel = round(data['sysTemp'].std(), round_val)
+            st.markdown("***Average Mean: *** " + str(mean_beamVel))
+            st.markdown("***Average Median: *** " + str(median_beamVel))
+            st.markdown("***Min: *** " + str(min_beamVel))
+            st.markdown("***Max: *** " + str(max_beamVel))
+            st.markdown("***Standard Deviation: *** " + str(std_beamVel))
+
+        # Get the data from the query
+        temps = data['sysTemp']
+        dates = data['dateTime']
+
+        # Create the plot
+        self.sys_temp_fig = go.Figure(data=go.Scatter(
+            x=dates,
+            y=temps))
+
+        # Set the layout with downward looking
+        self.sys_temp_fig.update_layout(
+            title="System Temperature (C)",
+            xaxis_title="DateTime",
+            yaxis_title="Temperature (C)",
+            yaxis_autorange='reversed'  # Downward looking 'reversed'
+        )
+
+        if display_plot:
+            # Add the plot
+            st.subheader("System Temperature (C)")
+            st.plotly_chart(self.sys_temp_fig)
+
+    def display_temp_plots(self):
+        # Group all the plots
+        self.temps_subplots = make_subplots(rows=2,
+                                            cols=1,
+                                            row_titles=("Water", "System"),
+                                            shared_xaxes="all",  # Share movement in X axis
+                                            shared_yaxes="all",  # Share movement in Y axis
+                                            vertical_spacing=0.025)  # Spacing between plots
+
+        self.temps_subplots.update_layout(title_text="Temperatures")
+
+        # Add all the plots
+        self.temps_subplots.add_trace(self.water_temp_fig.data[0], row=1, col=1)
+        self.temps_subplots.add_trace(self.sys_temp_fig.data[0], row=1, col=1)
+
+        self.temps_subplots.write_html(self.gen_file_path(file_suffix="_temperatures", file_ext=".html"))
+        st.plotly_chart(self.temps_subplots)
 
     def display_all_plots(self):
         # Get the min and max for all plots
